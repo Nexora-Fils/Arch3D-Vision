@@ -270,15 +270,15 @@ const FurnitureBlocks = ({ item, isEvening, isOutdoor, fabric, pillow }: Furnitu
         </>
       );
     case "stairs": {
-      const steps = 13;
+      // Stairs with no level above (top floor): a short decorative flight.
+      const steps = Math.max(3, Math.round(h / 0.175));
       const stepDepth = d / steps;
       const stepHeight = h / steps;
       return (
         <>
           {Array.from({ length: steps }, (_, index) => (
-            <Block key={index} size={[w, stepHeight * (index + 1), stepDepth]} position={[0, (stepHeight * (index + 1)) / 2, d / 2 - stepDepth * (index + 0.5)]} color={index % 2 === 0 ? color : light} roughness={0.6} />
+            <Block key={index} size={[w, stepHeight * (index + 1), stepDepth]} position={[0, (stepHeight * (index + 1)) / 2, d / 2 - stepDepth * (index + 0.5)]} color={color} roughness={0.6} />
           ))}
-          <Block size={[0.03, 0.9, d]} position={[w / 2 + 0.015, h / 2 + 0.35, 0]} color="#4b4f55" metalness={0.5} roughness={0.4} />
         </>
       );
     }

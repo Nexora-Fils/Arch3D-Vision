@@ -144,7 +144,7 @@ export const useRoofMaterial = (scene: SceneMaterials, materialId: string | null
  * Box geometries map their UVs 0..1 per face, so a textured slab needs its own
  * texture repeat: clone the material and its map for the given footprint.
  */
-export const useTiledMaterial = (base: MeshStandardMaterial, width: number, depth: number): MeshStandardMaterial => {
+export const useTiledMaterial = (base: MeshStandardMaterial, width: number, depth: number, offsetX = 0, offsetY = 0): MeshStandardMaterial => {
   const material = useMemo(() => {
     const reference = base.map ?? base.normalMap;
     if (!reference) return base;
@@ -155,6 +155,8 @@ export const useTiledMaterial = (base: MeshStandardMaterial, width: number, dept
     const retile = (texture: Texture) => {
       const copy = texture.clone();
       copy.repeat.set(repeatX, repeatY);
+      // Offsets (meters) keep the pattern continuous across the pieces of a slab cut by a stairwell.
+      copy.offset.set(offsetX / scale, offsetY / scale);
       copy.needsUpdate = true;
       return copy;
     };
@@ -162,7 +164,7 @@ export const useTiledMaterial = (base: MeshStandardMaterial, width: number, dept
     if (base.normalMap) clone.normalMap = retile(base.normalMap);
     if (base.roughnessMap) clone.roughnessMap = retile(base.roughnessMap);
     return clone;
-  }, [base, width, depth]);
+  }, [base, width, depth, offsetX, offsetY]);
   useEffect(() => () => {
     if (material !== base) {
       material.map?.dispose();
