@@ -5,22 +5,27 @@ import { IcosahedronGeometry, Vector3, type BufferGeometry, type MeshStandardMat
 import {
   buildSolidSegments,
   buildWallSegments,
+  floorBaseHeight,
   floorBounds,
+  LEVEL_SLAB_THICKNESS,
   isOutdoorRoom,
   isPointInRoom,
   roomCenter,
   vecAdd,
   vecScale,
   type Bounds,
+  type SolidSegment,
   type WallOpening,
   type WallSegment,
 } from "@/domain/plan/geometry";
 import type { Floor, Lot, Material, Plan, Room } from "@/domain/plan/schema";
-import { floorBaseHeight, LEVEL_SLAB_THICKNESS, toScene } from "@/features/viewer-3d/convert";
+import { toScene } from "@/features/viewer-3d/convert";
+import { distanceToWalls, buildStairFlights, subtractRects, type StairFlight } from "@/domain/plan/stairs";
 import { FurnitureMesh } from "@/features/viewer-3d/furniture-mesh";
 import { ScannedModel } from "@/features/viewer-3d/scanned-model";
 import { buildRoofGeometry } from "@/features/viewer-3d/roof-geometry";
 import { pickMaterial, useRoofMaterial, useSceneMaterials, useTiledMaterial, type SceneMaterials } from "@/features/viewer-3d/scene-materials";
+import { GuardRail, StairFlightMesh } from "@/features/viewer-3d/stair-mesh";
 import { buildWallGeometry } from "@/features/viewer-3d/wall-geometry";
 import type { TimeOfDay } from "@/store/viewer-store";
 
@@ -118,6 +123,7 @@ export const HouseModel = ({ plan, showRoof, hiddenFloorIds = [], mode, timeOfDa
   const materials = useSceneMaterials(plan.materials, plan.settings.frameColor);
   const materialById = useMemo(() => new Map(plan.materials.map((material) => [material.id, material])), [plan.materials]);
   const topIndex = plan.floors.length - 1;
+  const flights = useMemo(() => buildStairFlights(plan), [plan]);
   const ground = plan.floors[0];
   const groundBounds = useMemo(() => (ground ? floorBounds(ground, { indoorOnly: true }) : null), [ground]);
   const paths = useMemo(() => (ground ? computePaths(ground, plan.lot) : []), [ground, plan.lot]);
@@ -138,7 +144,10 @@ export const HouseModel = ({ plan, showRoof, hiddenFloorIds = [], mode, timeOfDa
             floor={floor}
             nextFloor={plan.floors[index + 1] ?? null}
             base={floorBaseHeight(plan, index)}
-            isTop={index === topIndex}
+            // A floor is "top" when nothing is shown above it (upper levels can be hidden for a cutaway).
+            isTop={!plan.floors.slice(index + 1).some((upper) => !hiddenFloorIds.includes(upper.id))}
+            flightsFrom={flights.filter((flight) => flight.lowerIndex === index)}
+            flightsTo={flights.filter((flight) => flight.upperIndex === index)}
             plan={plan}
             materials={materials}
             materialById={materialById}
@@ -400,6 +409,10 @@ const PathSlab = ({ path, lot, material }: { path: PathRect; lot: Lot; material:
 
 interface FloorModelProps {
   floor: Floor;
+  /** Flights climbing from this floor (their stairwell is cut in this floor's ceiling). */
+  flightsFrom: StairFlight[];
+  /** Flights arriving on this floor (their stairwell is cut in this floor's slab). */
+  flightsTo: StairFlight[];
   nextFloor: Floor | null;
   base: number;
   isTop: boolean;
@@ -411,8 +424,12 @@ interface FloorModelProps {
   lightsEnabled: boolean;
 }
 
-const FloorModel = ({ floor, nextFloor, base, isTop, plan, materials, materialById, mode, isEvening, lightsEnabled }: FloorModelProps) => {
+const FloorModel = ({ floor, flightsFrom, flightsTo, nextFloor, base, isTop, plan, materials, materialById, mode, isEvening, lightsEnabled }: FloorModelProps) => {
   const segments = useMemo(() => buildWallSegments(floor), [floor]);
+  const walls = useMemo(() => buildSolidSegments(segments), [segments]);
+  const floorHoles = useMemo(() => flightsTo.map((flight) => flight.opening), [flightsTo]);
+  const ceilingHoles = useMemo(() => flightsFrom.map((flight) => flight.opening), [flightsFrom]);
+  const flightByItem = useMemo(() => new Map(flightsFrom.map((flight) => [flight.item.id, flight])), [flightsFrom]);
   const indoorRooms = useMemo(() => floor.rooms.filter((room) => !isOutdoorRoom(room)), [floor.rooms]);
   const exteriorMaterial = pickMaterial(materials, plan.settings.exteriorMaterialId, materials.exterior);
   const showCeilings = mode === "walk" || !isTop;
@@ -434,6 +451,8 @@ const FloorModel = ({ floor, nextFloor, base, isTop, plan, materials, materialBy
             isEvening={isEvening}
             lightsEnabled={lightsEnabled && !outdoor}
             isOutdoor={outdoor}
+            floorHoles={outdoor ? [] : floorHoles}
+            ceilingHoles={outdoor ? [] : ceilingHoles}
           />
         );
       })}
@@ -459,16 +478,31 @@ const FloorModel = ({ floor, nextFloor, base, isTop, plan, materials, materialBy
         );
       })}
       {!isTop && nextFloor ? <TerraceRailings floor={floor} nextFloor={nextFloor} top={base + floor.height + LEVEL_SLAB_THICKNESS - 0.02} lot={plan.lot} materials={materials} /> : null}
-      {floor.furniture.map((item) => (
-        <FurnitureMesh
-          key={item.id}
-          item={item}
-          base={base}
-          lot={plan.lot}
-          materials={materials}
-          isEvening={isEvening}
-          isOutdoor={floor.rooms.some((room) => isOutdoorRoom(room) && isPointInRoom(room, item))}
-        />
+      {floor.furniture.map((item) => {
+        const flight = flightByItem.get(item.id);
+        if (flight) {
+          const [bottomLeft, bottomRight, topRight, topLeft] = flight.corners;
+          const middle = (a: { x: number; y: number }, b: { x: number; y: number }) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+          const openSides = {
+            left: distanceToWalls(walls, middle(bottomLeft, topLeft)) > HANDRAIL_WALL_CLEARANCE,
+            right: distanceToWalls(walls, middle(bottomRight, topRight)) > HANDRAIL_WALL_CLEARANCE,
+          };
+          return <StairFlightMesh key={item.id} flight={flight} base={base} lot={plan.lot} materials={materials} openSides={openSides} />;
+        }
+        return (
+          <FurnitureMesh
+            key={item.id}
+            item={item}
+            base={base}
+            lot={plan.lot}
+            materials={materials}
+            isEvening={isEvening}
+            isOutdoor={floor.rooms.some((room) => isOutdoorRoom(room) && isPointInRoom(room, item))}
+          />
+        );
+      })}
+      {flightsTo.map((flight) => (
+        <StairwellGuards key={flight.id} flight={flight} walls={walls} top={base} lot={plan.lot} materials={materials} />
       ))}
     </group>
   );
@@ -594,6 +628,8 @@ const FlowerBeds = ({ lot, houseBounds, paths }: { lot: Lot; houseBounds: Bounds
 
 interface RoomSlabsProps {
   room: Room;
+  floorHoles: Bounds[];
+  ceilingHoles: Bounds[];
   base: number;
   lot: Lot;
   height: number;
@@ -605,30 +641,53 @@ interface RoomSlabsProps {
   isOutdoor: boolean;
 }
 
-const RoomSlabs = ({ room, base, lot, height, floorMaterial, ceilingMaterial, materials, isEvening, lightsEnabled, isOutdoor }: RoomSlabsProps) => {
-  const [x, z] = toScene(roomCenter(room), lot);
-  const tiledFloor = useTiledMaterial(floorMaterial, room.width, room.depth);
-  const tiledCeiling = useTiledMaterial(ceilingMaterial ?? floorMaterial, room.width, room.depth);
-  const ceilingPaint = useTiledMaterial(materials.ceiling, room.width, room.depth);
+const RoomSlabs = ({ room, base, lot, height, floorMaterial, ceilingMaterial, materials, isEvening, lightsEnabled, isOutdoor, floorHoles, ceilingHoles }: RoomSlabsProps) => {
+  const bounds = useMemo<Bounds>(() => ({ minX: room.x, minY: room.y, maxX: room.x + room.width, maxY: room.y + room.depth }), [room.x, room.y, room.width, room.depth]);
+  const floorPieces = useMemo(() => subtractRects(bounds, floorHoles), [bounds, floorHoles]);
+  const ceilingPieces = useMemo(() => subtractRects(bounds, ceilingHoles), [bounds, ceilingHoles]);
+  // The pendant and its light hang over the largest part of the room that is not a stairwell.
+  const lampSpot = useMemo(() => {
+    const pieces = subtractRects(bounds, [...floorHoles, ...ceilingHoles]);
+    const largest = pieces.reduce<Bounds | null>((best, piece) => {
+      const area = (piece.maxX - piece.minX) * (piece.maxY - piece.minY);
+      return !best || area > (best.maxX - best.minX) * (best.maxY - best.minY) ? piece : best;
+    }, null);
+    if (!largest) return null;
+    return { x: (largest.minX + largest.maxX) / 2, y: (largest.minY + largest.maxY) / 2, area: (largest.maxX - largest.minX) * (largest.maxY - largest.minY) };
+  }, [bounds, floorHoles, ceilingHoles]);
   const isGroundDeck = isOutdoor && base < 0.01;
-  const hasPendant = ceilingMaterial !== null && room.width * room.depth >= 3;
+  const hasPendant = ceilingMaterial !== null && lampSpot !== null && lampSpot.area >= 3;
+  const [lampX, lampZ] = lampSpot ? toScene(lampSpot, lot) : [0, 0];
   return (
     <group>
-      <mesh position={[x, base - SLAB_THICKNESS / 2 - (isGroundDeck ? 0.01 : 0), z]} receiveShadow castShadow={isOutdoor} material={tiledFloor}>
-        <boxGeometry args={[room.width, isGroundDeck ? 0.12 : SLAB_THICKNESS, room.depth]} />
-      </mesh>
-      {ceilingMaterial ? (
-        // BoxGeometry face order: +x, -x, +y, -y, +z, -z — the underside is always a painted ceiling.
-        <mesh
-          position={[x, base + height + (LEVEL_SLAB_THICKNESS - 0.02) / 2, z]}
-          receiveShadow
-          material={[tiledCeiling, tiledCeiling, tiledCeiling, ceilingPaint, tiledCeiling, tiledCeiling]}
-        >
-          <boxGeometry args={[room.width, LEVEL_SLAB_THICKNESS - 0.02, room.depth]} />
-        </mesh>
-      ) : null}
+      {floorPieces.map((piece, index) => (
+        <SlabPiece
+          key={`floor-${index}`}
+          piece={piece}
+          room={bounds}
+          lot={lot}
+          bottom={base - SLAB_THICKNESS - (isGroundDeck ? 0.02 : 0)}
+          thickness={isGroundDeck ? 0.12 : SLAB_THICKNESS}
+          material={floorMaterial}
+          castShadow={isOutdoor}
+        />
+      ))}
+      {ceilingMaterial
+        ? ceilingPieces.map((piece, index) => (
+            <SlabPiece
+              key={`ceiling-${index}`}
+              piece={piece}
+              room={bounds}
+              lot={lot}
+              bottom={base + height}
+              thickness={LEVEL_SLAB_THICKNESS - 0.02}
+              material={ceilingMaterial}
+              underside={materials.ceiling}
+            />
+          ))
+        : null}
       {hasPendant ? (
-        <group position={[x, base + height - 0.75, z]}>
+        <group position={[lampX, base + height - 0.75, lampZ]}>
           <ScannedModel model="ceilingLamp" width={0.43} depth={0.43} height={0.75} />
           {isEvening ? (
             <mesh position-y={0.12} material={materials.lampLit}>
@@ -637,7 +696,57 @@ const RoomSlabs = ({ room, base, lot, height, floorMaterial, ceilingMaterial, ma
           ) : null}
         </group>
       ) : null}
-      {lightsEnabled ? <pointLight position={[x, base + height - 0.6, z]} color="#ffe2c2" intensity={10} distance={9} decay={2} /> : null}
+      {lightsEnabled && lampSpot ? <pointLight position={[lampX, base + height - 0.6, lampZ]} color="#ffe2c2" intensity={10} distance={9} decay={2} /> : null}
+    </group>
+  );
+};
+
+interface SlabPieceProps {
+  piece: Bounds;
+  /** Whole room, so textures stay continuous across the pieces around a stairwell. */
+  room: Bounds;
+  lot: Lot;
+  bottom: number;
+  thickness: number;
+  material: MeshStandardMaterial;
+  /** Material of the underside (painted ceiling); defaults to `material`. */
+  underside?: MeshStandardMaterial;
+  castShadow?: boolean;
+}
+
+const SlabPiece = ({ piece, room, lot, bottom, thickness, material, underside, castShadow = false }: SlabPieceProps) => {
+  const width = piece.maxX - piece.minX;
+  const depth = piece.maxY - piece.minY;
+  // Box top faces map U along +x and V towards -y: offset by the piece's corner within the room.
+  const offsetX = piece.minX - room.minX;
+  const offsetY = room.maxY - piece.maxY;
+  const top = useTiledMaterial(material, width, depth, offsetX, offsetY);
+  const below = useTiledMaterial(underside ?? material, width, depth, offsetX, offsetY);
+  const [x, z] = toScene({ x: (piece.minX + piece.maxX) / 2, y: (piece.minY + piece.maxY) / 2 }, lot);
+  return (
+    // BoxGeometry face order: +x, -x, +y, -y, +z, -z.
+    <mesh position={[x, bottom + thickness / 2, z]} receiveShadow castShadow={castShadow} material={[top, top, top, below, top, top]}>
+      <boxGeometry args={[width, thickness, depth]} />
+    </mesh>
+  );
+};
+
+/** Distance from a wall below which a flight side or a stairwell edge needs no handrail (m). */
+const HANDRAIL_WALL_CLEARANCE = 0.25;
+
+/** Glass guards around a stairwell, on every edge except the arrival and the edges along a wall. */
+const StairwellGuards = ({ flight, walls, top, lot, materials }: { flight: StairFlight; walls: SolidSegment[]; top: number; lot: Lot; materials: SceneMaterials }) => {
+  const [bottomLeft, bottomRight, topRight, topLeft] = flight.corners;
+  const edges = [
+    { start: bottomLeft, end: topLeft },
+    { start: bottomRight, end: topRight },
+    { start: bottomLeft, end: bottomRight },
+  ].filter(({ start, end }) => distanceToWalls(walls, { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 }) > HANDRAIL_WALL_CLEARANCE);
+  return (
+    <group>
+      {edges.map((edge, index) => (
+        <GuardRail key={index} start={edge.start} end={edge.end} top={top} lot={lot} materials={materials} />
+      ))}
     </group>
   );
 };
@@ -674,27 +783,9 @@ const TerraceRailings = ({ floor, nextFloor, top, lot, materials }: { floor: Flo
   }, [floor, nextFloor]);
   return (
     <group>
-      {rails.map((rail, index) => {
-        const length = Math.hypot(rail.end.x - rail.start.x, rail.end.y - rail.start.y);
-        const angle = Math.atan2(rail.end.y - rail.start.y, rail.end.x - rail.start.x);
-        const [x, z] = toScene({ x: (rail.start.x + rail.end.x) / 2, y: (rail.start.y + rail.end.y) / 2 }, lot);
-        const posts = Math.max(2, Math.round(length / 1.2) + 1);
-        return (
-          <group key={index} position={[x, top, z]} rotation-y={-angle}>
-            <mesh position-y={1.02} material={materials.frame} castShadow>
-              <boxGeometry args={[length, 0.04, 0.05]} />
-            </mesh>
-            <mesh position-y={0.55} material={materials.glass}>
-              <boxGeometry args={[length - 0.06, 0.9, 0.012]} />
-            </mesh>
-            {Array.from({ length: posts }, (_, post) => (
-              <mesh key={post} position={[-length / 2 + (length * post) / (posts - 1), 0.5, 0]} material={materials.frame} castShadow>
-                <boxGeometry args={[0.04, 1, 0.04]} />
-              </mesh>
-            ))}
-          </group>
-        );
-      })}
+      {rails.map((rail, index) => (
+        <GuardRail key={index} start={rail.start} end={rail.end} top={top} lot={lot} materials={materials} />
+      ))}
     </group>
   );
 };

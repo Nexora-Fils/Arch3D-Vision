@@ -14,6 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { floorArea, formatArea, formatMeters, roomArea, wallLength } from "@/domain/plan/geometry";
 import { DOOR_TYPE_LABELS, FURNITURE_TYPE_LABELS, ROOM_TYPE_LABELS, WALL_SIDE_LABELS } from "@/domain/plan/labels";
+import { checkStairs } from "@/domain/plan/stairs";
 import { formatDimension } from "@/features/editor-2d/canvas/annotation-shape";
 import {
   type Annotation,
@@ -349,11 +350,36 @@ const WindowProperties = ({ window, wall, floorId }: { window: Window; wall: Wal
   );
 };
 
+/** Where a flight leads, or why it does not lead upstairs. */
+const StairsReport = ({ item, floorId }: { item: Furniture; floorId: string }) => {
+  const plan = usePlanStore((state) => state.plan);
+  if (!plan) return null;
+  const floorIndex = plan.floors.findIndex((floor) => floor.id === floorId);
+  const { arrivalRoom, issues } = checkStairs(plan, floorIndex, item);
+  const upper = plan.floors[floorIndex + 1];
+  if (issues.length === 0) {
+    return (
+      <p className="rounded-lg bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+        Mène à : {upper?.name} · {arrivalRoom}. La flèche indique le sens de la montée ; la trémie est découpée automatiquement à l&apos;étage.
+      </p>
+    );
+  }
+  return (
+    <ul className="grid gap-1 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+      {issues.map((issue) => (
+        <li key={issue}>{issue}</li>
+      ))}
+      <li className="text-amber-200/70">Déplacez ou tournez l&apos;escalier (Rotation) pour que la flèche aboutisse dans un dégagement de l&apos;étage.</li>
+    </ul>
+  );
+};
+
 const FurnitureProperties = ({ item, floorId }: { item: Furniture; floorId: string }) => {
   const { updateFurniture, commit } = usePlanStore.getState();
   return (
     <>
-      <PanelSection title="Meuble">
+      {item.type === "stairs" ? <StairsReport item={item} floorId={floorId} /> : null}
+      <PanelSection title={item.type === "stairs" ? "Escalier" : "Meuble"}>
         <div className="grid gap-1.5">
           <Label className="text-xs text-muted-foreground">Type</Label>
           <Select value={item.type} onValueChange={(type) => updateFurniture(floorId, item.id, { type: type as FurnitureType })}>

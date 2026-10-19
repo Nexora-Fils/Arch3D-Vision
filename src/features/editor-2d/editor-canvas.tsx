@@ -2,14 +2,16 @@
 
 import type { KonvaEventObject } from "konva/lib/Node";
 import type { Stage as KonvaStage } from "konva/lib/Stage";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Layer, Stage } from "react-konva";
 import { toast } from "sonner";
 import { findWallAt, floorBounds, isOutdoorRoom, pointAlongWall, snapToGrid } from "@/domain/plan/geometry";
 import { FURNITURE_PRESETS, ROOM_TYPE_LABELS } from "@/domain/plan/labels";
 import type { Floor, Vec2 } from "@/domain/plan/schema";
 import { Minus, Plus } from "lucide-react";
+import { buildStairFlights, stairIssues } from "@/domain/plan/stairs";
 import { AnnotationShape, DimensionLine } from "@/features/editor-2d/canvas/annotation-shape";
+import { StairwellOutline } from "@/features/editor-2d/canvas/stairwell-outline";
 import { DraftRoom, DraftWall, WallHoverMarker } from "@/features/editor-2d/canvas/draft-shapes";
 import { FurnitureShape } from "@/features/editor-2d/canvas/furniture-shape";
 import { GridLayer } from "@/features/editor-2d/canvas/grid-layer";
@@ -60,6 +62,14 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
   const lot = usePlanStore((state) => state.plan?.lot ?? { width: 20, depth: 15 });
   const materials = usePlanStore((state) => state.plan?.materials ?? []);
   const settings = usePlanStore((state) => state.plan?.settings);
+  const plan = usePlanStore((state) => state.plan);
+  // Stairwells cut in this floor by the flights coming from the level below, and stairs that lead nowhere.
+  const stairwells = useMemo(() => {
+    if (!plan) return [];
+    const index = plan.floors.findIndex((candidate) => candidate.id === floor.id);
+    return buildStairFlights(plan).filter((flight) => flight.upperIndex === index);
+  }, [plan, floor.id]);
+  const issues = useMemo(() => (plan ? stairIssues(plan) : new Map<string, string[]>()), [plan]);
 
   const showGridToggle = useEditorStore((state) => state.toggleGrid);
   const images = usePlanImages();
@@ -437,6 +447,9 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
                 />
               ) : null;
             })}
+            {stairwells.map((flight) => (
+              <StairwellOutline key={flight.id} flight={flight} />
+            ))}
             {floor.furniture.map((item) => (
               <FurnitureShape
                 key={item.id}
@@ -445,6 +458,7 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
                 gridStep={gridStep}
                 isSelected={selection?.kind === "furniture" && selection.id === item.id}
                 isInteractive={tool === "select"}
+                hasIssue={issues.has(item.id)}
               />
             ))}
             {floor.annotations.map((annotation) => (
