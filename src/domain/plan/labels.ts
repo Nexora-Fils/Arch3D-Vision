@@ -74,7 +74,7 @@ export const FURNITURE_PRESETS: Record<FurnitureType, FurniturePreset> = {
   bathtub: { width: 0.8, depth: 1.7, height: 0.55, color: "#f8fafc" },
   toilet: { width: 0.4, depth: 0.65, height: 0.8, color: "#f8fafc" },
   desk: { width: 1.2, depth: 0.6, height: 0.75, color: "#a16207" },
-  stairs: { width: 0.9, depth: 2.4, height: 2.7, color: "#9ca3af" },
+  stairs: { width: 0.9, depth: 3.4, height: 2.7, color: "#e8e6e1" },
   tv: { width: 1.8, depth: 0.45, height: 0.6, color: "#1f2937" },
   plant: { width: 0.5, depth: 0.5, height: 1.4, color: "#3f6b35" },
   armchair: { width: 0.82, depth: 0.99, height: 1.02, color: "#2b2f36" },

@@ -2,6 +2,7 @@ import type {
   Door,
   DoorType,
   Floor,
+  Plan,
   Room,
   Vec2,
   Wall,
@@ -11,6 +12,8 @@ import type {
 import { WALL_SIDES } from "./schema";
 
 export const EPSILON = 1e-3;
+/** Thickness of the slab separating two levels (m). */
+export const LEVEL_SLAB_THICKNESS = 0.25;
 /** Two walls closer than this (m) are considered collinear and merged. */
 const COLLINEAR_TOLERANCE = 0.02;
 const ANGLE_TOLERANCE = 1e-3;
@@ -154,7 +157,7 @@ export interface WallHit {
 }
 
 /** Closest point on a segment, returned as the parameter t ∈ [0, length]. */
-const projectOnSegment = (segment: Segment, point: Vec2): { offset: number; distance: number } => {
+export const projectOnSegment = (segment: Segment, point: Vec2): { offset: number; distance: number } => {
   const direction = wallDirection(segment);
   const length = wallLength(segment);
   const offset = clamp(vecDot(vecSub(point, segment.start), direction), 0, length);
@@ -471,3 +474,7 @@ export const openingPlacement = (wall: Wall, opening: Pick<Door | Window, "offse
   const center = pointAlongWall(wall, opening.offset);
   return { center, direction, normal: vecPerp(direction), angle: angleOf(direction) };
 };
+
+/** Elevation of a floor's finished ground, from the stacked heights of the levels below (floors sorted by level). */
+export const floorBaseHeight = (plan: Pick<Plan, "floors">, floorIndex: number): number =>
+  plan.floors.slice(0, floorIndex).reduce((height, floor) => height + floor.height + LEVEL_SLAB_THICKNESS, 0);
