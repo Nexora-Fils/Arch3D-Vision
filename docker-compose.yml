@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: homeplan3d_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-homeplan3d}
+      POSTGRES_USER: ${POSTGRES_USER:-homeplan}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - homeplan3d_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-homeplan} -d ${POSTGRES_DB:-homeplan3d}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  homeplan3d_pgdata:

@@ -1,0 +1,169 @@
+// HomePlan 3D — Prisma schema
+//
+// Modelling choices:
+// - Every architectural entity (floor, room, wall, door, window, furniture,
+//   material) is a relational row so projects stay queryable (counts, joins)
+//   and referential integrity is enforced by PostgreSQL.
+// - All geometry is stored in METERS as plain Float columns. Pixel conversion
+//   belongs to the 2D editor, 3D conversion to the renderer.
+// - Flexible, rarely-queried data (project settings, future room polygons)
+//   lives in Json columns validated with Zod before any write.
+// - IDs are UUIDs generated client-side so a plan keeps its ids across saves
+//   (the editor's undo history and 3D scene stay consistent).
+// - `ownerId` on Project is nullable: it prepares the model for authentication
+//   without forcing it on the prototype.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  slug        String?  @unique
+  // Reserved for authentication: filled once users exist.
+  ownerId     String?
+  lotWidth    Float
+  lotDepth    Float
+  // Roof type, default wall height/thickness, material defaults (Zod validated).
+  settings    Json
+  // JPEG data URL captured from the real 3D view (dashboard thumbnail).
+  thumbnail   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  floors    Floor[]
+  materials Material[]
+
+  @@index([ownerId])
+  @@index([updatedAt])
+}
+
+model Material {
+  id        String  @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  // "wall" | "floor" | "roof" | "exterior"
+  kind      String
+  color     String
+  roughness Float   @default(0.8)
+
+  rooms Room[]
+  walls Wall[]
+
+  @@index([projectId])
+}
+
+model Floor {
+  id        String  @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  level     Int
+  // Wall height for this floor (m).
+  height    Float
+  // Plan annotations (free texts and dimension lines), Zod validated.
+  annotations Json @default("[]")
+
+  rooms     Room[]
+  walls     Wall[]
+  furniture Furniture[]
+
+  @@unique([projectId, level])
+}
+
+model Room {
+  id              String    @id @default(uuid())
+  floorId         String
+  floor           Floor     @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  name            String
+  // "living" | "kitchen" | "bedroom" | "bathroom" | "toilet" | "hallway" | ...
+  type            String
+  // Rectangle in meters (top-left corner, plan coordinates).
+  x               Float
+  y               Float
+  width           Float
+  depth           Float
+  // Reserved for non-rectangular rooms: array of {x, y} points.
+  polygon         Json?
+  floorMaterialId String?
+  floorMaterial   Material? @relation(fields: [floorMaterialId], references: [id], onDelete: SetNull)
+  sortOrder       Int       @default(0)
+
+  @@index([floorId])
+}
+
+model Wall {
+  id         String    @id @default(uuid())
+  floorId    String
+  floor      Floor     @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  // When a wall belongs to a room side it follows the room; null = free wall.
+  roomId     String?
+  side       String?
+  x1         Float
+  y1         Float
+  x2         Float
+  y2         Float
+  thickness  Float
+  height     Float
+  materialId String?
+  material   Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+
+  doors   Door[]
+  windows Window[]
+
+  @@index([floorId])
+}
+
+model Door {
+  id     String @id @default(uuid())
+  wallId String
+  wall   Wall   @relation(fields: [wallId], references: [id], onDelete: Cascade)
+  // Distance from the wall start to the door center (m).
+  offset Float
+  width  Float
+  height Float
+  // "standard" (leaf) | "opening" (no leaf)
+  type   String @default("standard")
+  // "left" | "right"
+  swing  String @default("left")
+
+  @@index([wallId])
+}
+
+model Window {
+  id         String @id @default(uuid())
+  wallId     String
+  wall       Wall   @relation(fields: [wallId], references: [id], onDelete: Cascade)
+  offset     Float
+  width      Float
+  height     Float
+  sillHeight Float
+
+  @@index([wallId])
+}
+
+model Furniture {
+  id       String @id @default(uuid())
+  floorId  String
+  floor    Floor  @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  // "bed" | "sofa" | "table" | "wardrobe" | "kitchen" | "bathtub" | "toilet" | "desk"
+  type     String
+  x        Float
+  y        Float
+  // Degrees, counter-clockwise in plan coordinates.
+  rotation Float  @default(0)
+  width    Float
+  depth    Float
+  height   Float
+  color    String
+
+  @@index([floorId])
+}
