@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { House, LogOut, Maximize, Moon, Mouse, RotateCcw, RotateCw, Sun, TreePine } from "lucide-react";
 import { PlanSvg } from "@/components/plan-svg";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,16 +47,22 @@ export const Walkthrough = () => {
   const { input, isLocked, isTouchDevice, requestLock, setJoystick, setTurn, pressKey, releaseKey, teleport } = useWalkInput(containerRef);
 
   const floor = plan?.floors.find((item) => item.id === walkFloorId) ?? plan?.floors[0] ?? null;
-  const floorId = floor?.id ?? null;
-  const start = useMemo(() => (plan && floor ? startPointFor(floor.rooms, plan.lot) : { x: 0, y: 0 }), [floor, plan]);
-
-  // Entering a floor (or switching floors) always restarts from that floor's main room.
-  useEffect(() => {
-    // Face north, across the room towards its main glazing.
-    if (floorId) teleport(start, 0);
-  }, [floorId, start, teleport]);
+  // The visit starts in the main room of the first floor shown; later floor changes come from the stairs or the buttons.
+  const [start] = useState(() => (plan && floor ? startPointFor(floor.rooms, plan.lot) : { x: 0, y: 0 }));
 
   if (!plan || !floor) return null;
+
+  /** Floor buttons jump to the main room of that level, facing north. */
+  const goToFloor = (target: Floor) => {
+    setWalkFloor(target.id);
+    teleport(startPointFor(target.rooms, plan.lot), 0, target.id);
+  };
+
+  const goOutside = () => {
+    const ground = plan.floors[0];
+    setWalkFloor(ground.id);
+    teleport(outsidePointFor(ground, plan.lot), 0, ground.id);
+  };
 
   const toggleFullscreen = () => {
     if (document.fullscreenElement) void document.exitFullscreen();
@@ -87,7 +93,7 @@ export const Walkthrough = () => {
   return (
     <div ref={containerRef} className="canvas-surface relative h-full bg-[#0d1830]" onClick={requestLock}>
       <div className="absolute inset-0">
-        <WalkCanvas plan={plan} floor={floor} start={start} input={input} />
+        <WalkCanvas plan={plan} floorId={floor.id} start={start} input={input} onFloorChange={setWalkFloor} />
       </div>
 
       {/* Current room chip and floors, top left. */}
@@ -104,14 +110,14 @@ export const Walkthrough = () => {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setWalkFloor(item.id)}
+                onClick={() => goToFloor(item)}
                 aria-pressed={item.id === floor.id}
                 className={cn("h-8 rounded-lg px-3 text-xs text-white/80 hover:bg-white/10", item.id === floor.id && "bg-electric text-white hover:bg-electric")}
               >
                 {item.level === 0 ? "RDC" : item.name}
               </button>
             ))}
-            <button type="button" onClick={() => teleport(outsidePointFor(floor, plan.lot), 0)} className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs text-white/80 hover:bg-white/10">
+            <button type="button" onClick={goOutside} className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs text-white/80 hover:bg-white/10">
               <TreePine className="size-3.5" />
               Extérieur
             </button>
@@ -144,7 +150,7 @@ export const Walkthrough = () => {
         <div className="pointer-events-auto flex items-end gap-3" data-walk-ui onClick={stopClick}>
           <Minimap floor={floor} lot={plan.lot} onRoomSelect={(roomId) => {
             const room = floor.rooms.find((item) => item.id === roomId);
-            if (room) teleport(roomCenter(room));
+            if (room) teleport(roomCenter(room), undefined, floor.id);
           }} />
           {isTouchDevice ? <VirtualJoystick onChange={setJoystick} /> : null}
         </div>

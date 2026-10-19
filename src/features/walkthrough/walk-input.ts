@@ -7,6 +7,8 @@ export interface TeleportTarget {
   position: Vec2;
   /** Optional heading in radians. */
   yaw?: number;
+  /** Floor to stand on after the jump (defaults to the current one). */
+  floorId?: string;
 }
 
 interface WalkInputState {
@@ -82,8 +84,8 @@ export const useWalkInput = (containerRef: RefObject<HTMLDivElement | null>) => 
         releaseKey: (code: string) => {
           state.keys.delete(code);
         },
-        teleport: (position: Vec2, yaw?: number) => {
-          state.teleport = { position, yaw };
+        teleport: (position: Vec2, yaw?: number, floorId?: string) => {
+          state.teleport = { position, yaw, floorId };
         },
       },
     };
