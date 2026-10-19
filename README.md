@@ -118,7 +118,8 @@ Si la démo existait déjà dans votre base (ancienne version), restaurez-la : `
 - Toiture : cheminée et gouttières sur les toits en pente, option panneaux solaires sur le versant sud, bandeaux et sous-face.
 - Mode Jour / Soir : ciel, soleil, exposition, suspensions et lampadaires allumés, vitrages lumineux vus de l'extérieur.
 - Environnement : reflets (drei `Environment` + `Lightformer`), haies continues, trois essences d'arbres, arbustes, allées depuis chaque porte extérieure, bordure de terrain.
-- Autres meubles en primitives proportionnées : armoire, cuisine, baignoire, douche, lavabo, WC, bureau, escalier, tableau, lampadaire, parasol, tapis ; mobilier extérieur en primitives.
+- Escaliers entre étages (`src/domain/plan/stairs.ts`, `walk.ts`) : une volée droite relie un niveau au suivant (hauteur sous plafond + épaisseur de plancher), marches bois et mains courantes ; la trémie est découpée dans le plancher de l'étage et bordée d'un garde-corps. Dans la visite, on monte et on descend en marchant ; l'étage affiché bascule à mi-volée. L'éditeur dessine la flèche de montée, la trémie sur le plan de l'étage, et signale un escalier dont l'arrivée ou le départ est bloqué.
+- Autres meubles en primitives proportionnées : armoire, cuisine, baignoire, douche, lavabo, WC, bureau, tableau, lampadaire, parasol, tapis ; mobilier extérieur en primitives.
 - Performance : rendu à la demande en vue extérieure (`frameloop="demand"`), niveaux de qualité Automatique / Économique / Élevée (résolution, ombres, environnement), lumières limitées au niveau visité, géométries et matériaux libérés au démontage.
 
 ## Modèles
@@ -128,7 +129,7 @@ Si la démo existait déjà dans votre base (ancienne version), restaurez-la : `
 ## Limitations connues
 
 - Pièces rectangulaires uniquement (la colonne `polygon` et le type `Room.polygon` préparent les polygones).
-- Pas d'escalier entre étages : la visite se fait étage par étage.
+- Escaliers droits uniquement (une volée, sans palier intermédiaire ni quart tournant). La trémie suit le rectangle englobant de la volée : une rotation qui n'est pas un multiple de 90° découpe une trémie plus large.
 - Les meubles ne bloquent pas le visiteur.
 - Pas d'authentification : tous les projets sont visibles par tous.
-- La 3D n'est pas testée automatiquement (WebGL) ; les tests couvrent la géométrie, le schéma et le projet de démonstration.
+- La 3D n'est pas testée automatiquement (WebGL) ; les tests couvrent la géométrie, le schéma, le projet de démonstration et la marche dans les escaliers (montée, descente, garde-corps).
