@@ -2,7 +2,7 @@
 
 import { Environment, Sky, SoftShadows, useEnvironment } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import { Vector3, type Texture } from "three";
 import { GroundedSkybox } from "three/examples/jsm/objects/GroundedSkybox.js";
 import type { TimeOfDay } from "@/store/viewer-store";
@@ -77,10 +77,19 @@ export const SceneEnvironment = ({ timeOfDay, shadowSize = 40, quality = "high",
     getState().gl.toneMappingExposure = spec.exposure;
   }, [getState, spec]);
 
+  // Download the other sky in the background so switching Day / Evening is immediate.
+  useEffect(() => {
+    if (quality !== "high") return;
+    for (const sky of Object.values(SKIES)) useEnvironment.preload({ files: sky.file });
+  }, [quality]);
+
   return (
     <>
       {quality === "high" ? (
-        <PhotographicSky spec={spec} interior={interior} />
+        // Own boundary: loading a sky must not suspend (and remount) the house, the controls and the camera.
+        <Suspense fallback={null}>
+          <PhotographicSky spec={spec} interior={interior} />
+        </Suspense>
       ) : (
         <>
           <Sky sunPosition={sun.toArray()} turbidity={timeOfDay === "evening" ? 10 : 4} rayleigh={timeOfDay === "evening" ? 4 : 1.4} mieCoefficient={0.005} mieDirectionalG={0.8} distance={450000} />
