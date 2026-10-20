@@ -42,7 +42,7 @@ interface ViewerState {
 
 export const useViewerStore = create<ViewerState>()((set) => ({
   showRoof: true,
-  timeOfDay: "evening",
+  timeOfDay: "day",
   quality: "auto",
   autoRotate: false,
   hiddenFloorIds: [],

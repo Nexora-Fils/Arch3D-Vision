@@ -4,6 +4,7 @@ import { AppWindow, Armchair, DoorOpen, Footprints, MousePointer2, Ruler, Square
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FURNITURE_TYPE_LABELS } from "@/domain/plan/labels";
 import { FURNITURE_TYPES } from "@/domain/plan/schema";
+import { isStairs } from "@/domain/plan/stairs";
 import { useDeleteSelection } from "@/features/editor-2d/use-delete-selection";
 import { cn } from "@/lib/utils";
 import { useEditorStore, type EditorTool } from "@/store/editor-store";
@@ -59,7 +60,7 @@ export const EditorToolbar = () => {
         <PopoverContent side="right" align="start" className="w-60 p-2">
           <p className="px-1 pb-2 text-xs font-medium text-muted-foreground">Choisir un meuble à poser</p>
           <div className="grid grid-cols-2 gap-1">
-            {FURNITURE_TYPES.filter((type) => type !== "stairs").map((type) => (
+            {FURNITURE_TYPES.filter((type) => !isStairs(type)).map((type) => (
               <button
                 key={type}
                 type="button"

@@ -45,6 +45,9 @@ export const FURNITURE_TYPES = [
   "toilet",
   "desk",
   "stairs",
+  "stairs_quarter_left",
+  "stairs_quarter_right",
+  "stairs_half_turn",
   "tv",
   "plant",
   "armchair",
@@ -173,6 +176,8 @@ export const planSettingsSchema = z.object({
   defaultWallThickness: positiveMeters,
   /** Photovoltaic panels on the roof (rendered on the sunny slope). */
   solarPanels: z.boolean().default(false),
+  /** Traditional joinery: open timber shutters, render surrounds around windows, panelled entrance door. */
+  shutters: z.boolean().default(false),
   /** Window and door frames (aluminium color). */
   frameColor: color.default("#2b2f36"),
 });

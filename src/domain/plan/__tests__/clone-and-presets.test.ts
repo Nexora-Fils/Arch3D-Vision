@@ -67,6 +67,8 @@ describe("planStats", () => {
     const stats = planStats(buildDemoPlan());
     expect(stats.bedrooms).toBe(3);
     expect(stats.bathrooms).toBe(2);
+    // 192 m² of indoor rooms minus the 13.5 m² garage; terrace, pool and carport are outdoor.
+    expect(stats.habitableArea).toBeCloseTo(178.5);
     expect(formatPlanStats(stats)).toBe("3 chambres · 2 salles de bain · 1 garage · Terrain : 300 m²");
   });
 });

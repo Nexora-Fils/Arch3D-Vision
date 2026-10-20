@@ -12,9 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { floorArea, formatArea, formatMeters, roomArea, wallLength } from "@/domain/plan/geometry";
-import { DOOR_TYPE_LABELS, FURNITURE_TYPE_LABELS, ROOM_TYPE_LABELS, WALL_SIDE_LABELS } from "@/domain/plan/labels";
-import { checkStairs } from "@/domain/plan/stairs";
+import { floorArea, formatArea, formatMeters, habitableArea, LEVEL_SLAB_THICKNESS, roomArea, wallLength } from "@/domain/plan/geometry";
+import { DOOR_TYPE_LABELS, FURNITURE_PRESETS, FURNITURE_TYPE_LABELS, ROOM_TYPE_LABELS, WALL_SIDE_LABELS } from "@/domain/plan/labels";
+import { buildStairShape, checkStairs, isStairs, STAIR_TYPES, type StairType } from "@/domain/plan/stairs";
 import { formatDimension } from "@/features/editor-2d/canvas/annotation-shape";
 import {
   type Annotation,
@@ -169,8 +169,10 @@ const FloorOverview = ({ floor, materialsCount }: { floor: Floor; materialsCount
           </ul>
         )}
         <dl className="grid grid-cols-2 gap-1 rounded-lg bg-muted/60 p-3 text-sm">
-          <dt className="text-muted-foreground">Surface totale</dt>
-          <dd className="text-right font-medium tabular-nums">{formatArea(floorArea(floor))}</dd>
+          <dt className="text-muted-foreground">Surface habitable</dt>
+          <dd className="text-right font-medium tabular-nums">{formatArea(habitableArea(floor.rooms))}</dd>
+          <dt className="text-muted-foreground">Avec garage et extérieurs</dt>
+          <dd className="text-right tabular-nums">{formatArea(floorArea(floor))}</dd>
           <dt className="text-muted-foreground">Murs</dt>
           <dd className="text-right tabular-nums">{floor.walls.length}</dd>
           <dt className="text-muted-foreground">Ouvertures</dt>
@@ -357,10 +359,12 @@ const StairsReport = ({ item, floorId }: { item: Furniture; floorId: string }) =
   const floorIndex = plan.floors.findIndex((floor) => floor.id === floorId);
   const { arrivalRoom, issues } = checkStairs(plan, floorIndex, item);
   const upper = plan.floors[floorIndex + 1];
+  const shape = buildStairShape(item, (plan.floors[floorIndex]?.height ?? item.height) + LEVEL_SLAB_THICKNESS);
   if (issues.length === 0) {
     return (
       <p className="rounded-lg bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
-        Mène à : {upper?.name} · {arrivalRoom}. La flèche indique le sens de la montée ; la trémie est découpée automatiquement à l&apos;étage.
+        Mène à : {upper?.name} · {arrivalRoom}. {shape.steps} marches de {formatMeters(Math.round(shape.riser * 1000) / 1000)}, volée de {formatMeters(Math.round(shape.flightWidth * 100) / 100)}. La flèche indique le sens de la
+        montée ; la trémie est découpée automatiquement à l&apos;étage.
       </p>
     );
   }
@@ -378,23 +382,48 @@ const FurnitureProperties = ({ item, floorId }: { item: Furniture; floorId: stri
   const { updateFurniture, commit } = usePlanStore.getState();
   return (
     <>
-      {item.type === "stairs" ? <StairsReport item={item} floorId={floorId} /> : null}
-      <PanelSection title={item.type === "stairs" ? "Escalier" : "Meuble"}>
-        <div className="grid gap-1.5">
-          <Label className="text-xs text-muted-foreground">Type</Label>
-          <Select value={item.type} onValueChange={(type) => updateFurniture(floorId, item.id, { type: type as FurnitureType })}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {FURNITURE_TYPES.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {FURNITURE_TYPE_LABELS[type]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {isStairs(item.type) ? <StairsReport item={item} floorId={floorId} /> : null}
+      <PanelSection title={isStairs(item.type) ? "Escalier" : "Meuble"}>
+        {isStairs(item.type) ? (
+          <div className="grid gap-1.5">
+            <Label className="text-xs text-muted-foreground">Modèle</Label>
+            {/* A new model takes its own footprint (a turning stair needs a wider box). */}
+            <Select
+              value={item.type}
+              onValueChange={(type) => {
+                const preset = FURNITURE_PRESETS[type as StairType];
+                updateFurniture(floorId, item.id, { type: type as StairType, width: preset.width, depth: preset.depth });
+              }}
+            >
+              <SelectTrigger className="w-full" aria-label="Modèle d'escalier">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STAIR_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {FURNITURE_TYPE_LABELS[type]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="grid gap-1.5">
+            <Label className="text-xs text-muted-foreground">Type</Label>
+            <Select value={item.type} onValueChange={(type) => updateFurniture(floorId, item.id, { type: type as FurnitureType })}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FURNITURE_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {FURNITURE_TYPE_LABELS[type]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <NumberField label="Position X" unit="m" step={0.1} value={item.x} onChange={(x) => updateFurniture(floorId, item.id, { x })} />
           <NumberField label="Position Y" unit="m" step={0.1} value={item.y} onChange={(y) => updateFurniture(floorId, item.id, { y })} />

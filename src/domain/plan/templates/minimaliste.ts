@@ -6,12 +6,13 @@ export const MINIMALISTE: HouseTemplateSpec = {
   idPrefix: "tpl-mini",
   name: "Maison minimaliste",
   shortName: "Minimaliste",
+  style: "Minimaliste",
   slug: null,
   description: "Plain-pied de 80 m² à toit plat : grand séjour ouvert sur la cuisine et la terrasse, une chambre, un bureau, dressing et salle de bain, sur un terrain de 192 m².",
   lot: { width: 16, depth: 12 },
   houseOffset: { x: 3, y: 1.5 },
   wallHeight: 2.8,
-  settings: { roofType: "flat", roofOverhang: 0.6, roofMaterial: "gravel-roof", exteriorMaterial: "exterior-white" },
+  settings: { roofType: "flat", roofOverhang: 0, roofMaterial: "gravel-roof", exteriorMaterial: "exterior-concrete" },
   floors: [
     {
       key: "rdc",

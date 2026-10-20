@@ -98,6 +98,13 @@ export const findRoomAt = (floor: Floor, point: Vec2): Room | undefined =>
 /** Terraces, balconies, pools and carports are open-air: no walls, no roof, no interior. */
 export const isOutdoorRoom = (room: Pick<Room, "type">): boolean => room.type === "terrace" || room.type === "pool" || room.type === "carport";
 
+/** Counted in the habitable area (surface habitable): indoor rooms except the garage. Terraces, pools and carports are outdoor. */
+export const isHabitableRoom = (room: Pick<Room, "type">): boolean => !isOutdoorRoom(room) && room.type !== "garage";
+
+/** Habitable area of a set of rooms (m²). */
+export const habitableArea = (rooms: Pick<Room, "type" | "width" | "depth">[]): number =>
+  rooms.filter(isHabitableRoom).reduce((sum, room) => sum + room.width * room.depth, 0);
+
 export interface WallDefaults {
   thickness: number;
   height: number;

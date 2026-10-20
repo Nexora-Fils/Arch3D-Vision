@@ -3,6 +3,7 @@
 import { useTexture } from "@react-three/drei";
 import { useMemo } from "react";
 import { Color, RepeatWrapping, SRGBColorSpace, type Texture } from "three";
+import type { TextureVariation } from "@/features/viewer-3d/texture-variation";
 
 /**
  * Photographic PBR texture sets (CC0, Poly Haven, see src/assets/images/LICENSES.md)
@@ -10,27 +11,31 @@ import { Color, RepeatWrapping, SRGBColorSpace, type Texture } from "three";
  * covered by one repetition of the texture.
  */
 export const PHOTO_TEXTURES = {
-  laminate: { dir: "laminate_floor_02", scale: 2.2, normal: 0.8 },
-  deck: { dir: "wood_floor_deck", scale: 2, normal: 1 },
-  cladding: { dir: "brown_planks_05", scale: 2, normal: 1 },
-  plaster: { dir: "white_plaster_02", scale: 3, normal: 0.35, colorMap: false },
-  sandstone: { dir: "large_sandstone_blocks_01", scale: 1.6, normal: 1.2 },
-  slateTiles: { dir: "grey_roof_tiles_02", scale: 1.6, normal: 1 },
-  shingles: { dir: "roof_slates_02", scale: 1.6, normal: 1 },
-  clayTiles: { dir: "clay_roof_tiles", scale: 2, normal: 1 },
-  concrete: { dir: "concrete_floor_02", scale: 3, normal: 0.5 },
-  patio: { dir: "patio_tiles", scale: 2.4, normal: 0.8 },
-  whiteTiles: { dir: "long_white_tiles", scale: 1.2, normal: 0.7 },
-  greyTiles: { dir: "large_grey_tiles", scale: 2, normal: 0.8 },
-  grass: { dir: "leafy_grass", scale: 3, normal: 0.8 },
-  gravel: { dir: "gravel_floor_02", scale: 2, normal: 1 },
-  linen: { dir: "rough_linen", scale: 0.6, normal: 0.6 },
-} as const;
+  laminate: { dir: "laminate_floor_02", scale: 2.2, normal: 0.8, variation: { mode: "tint", strength: 0.06 } },
+  deck: { dir: "wood_floor_deck", scale: 2, normal: 1, variation: { mode: "tint", strength: 0.08 } },
+  cladding: { dir: "brown_planks_05", scale: 2, normal: 1, variation: { mode: "tint", strength: 0.08 } },
+  plaster: { dir: "white_plaster_02", scale: 3, normal: 0.35, colorMap: false, variation: { mode: "tint", strength: 0.035 } },
+  sandstone: { dir: "large_sandstone_blocks_01", scale: 1.6, normal: 1.2, variation: { mode: "tint", strength: 0.08 } },
+  slateTiles: { dir: "grey_roof_tiles_02", scale: 1.6, normal: 1, variation: { mode: "tint", strength: 0.1 } },
+  shingles: { dir: "roof_slates_02", scale: 1.6, normal: 1, variation: { mode: "tint", strength: 0.1 } },
+  clayTiles: { dir: "clay_roof_tiles_02", scale: 2.6, normal: 1, variation: { mode: "tint", strength: 0.12 } },
+  concrete: { dir: "concrete_floor_02", scale: 3, normal: 0.5, variation: { mode: "blend", strength: 0.06 } },
+  concreteWall: { dir: "concrete_wall_008", scale: 2.5, normal: 1, variation: { mode: "tint", strength: 0.07 } },
+  patio: { dir: "patio_tiles", scale: 2.4, normal: 0.8, variation: { mode: "tint", strength: 0.08 } },
+  whiteTiles: { dir: "long_white_tiles", scale: 1.2, normal: 0.7, variation: null },
+  greyTiles: { dir: "large_grey_tiles", scale: 2, normal: 0.8, variation: null },
+  grass: { dir: "leafy_grass", scale: 3, normal: 0.8, variation: { mode: "blend", strength: 0.12 } },
+  gravel: { dir: "gravel_floor_02", scale: 2, normal: 1, variation: { mode: "blend", strength: 0.08 } },
+  linen: { dir: "rough_linen", scale: 0.6, normal: 0.6, variation: null },
+  bark: { dir: "bark_brown_02", scale: 1.2, normal: 1.2, variation: null },
+} as const satisfies Record<string, { dir: string; scale: number; normal: number; colorMap?: false; variation: TextureVariation | null }>;
 
 export type PhotoKey = keyof typeof PHOTO_TEXTURES;
 
 export interface PhotoSet {
   key: PhotoKey;
+  /** Anti-tiling settings for large surfaces (see texture-variation). */
+  variation: TextureVariation | null;
   /** Null when only the relief is used (painted surfaces keep a uniform color). */
   map: Texture | null;
   normalMap: Texture;
@@ -88,6 +93,7 @@ export const usePhotoTextures = (): Record<PhotoKey, PhotoSet> => {
       const usesColor = !("colorMap" in PHOTO_TEXTURES[key]);
       library[key] = {
         key,
+        variation: PHOTO_TEXTURES[key].variation,
         map: usesColor ? map : null,
         normalMap,
         roughnessMap,

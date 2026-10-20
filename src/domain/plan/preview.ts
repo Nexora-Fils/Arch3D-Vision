@@ -1,3 +1,4 @@
+import { habitableArea } from "./geometry";
 import type { Floor, Lot, Plan, Room, Wall } from "./schema";
 
 /** The minimum needed to draw a floor plan thumbnail (dashboard cards, minimap). */
@@ -18,7 +19,8 @@ export interface PlanStats {
   bedrooms: number;
   bathrooms: number;
   garages: number;
-  livingArea: number;
+  /** Habitable floor area: indoor rooms, garages excluded (terraces, pools and carports are outdoor) (m²). */
+  habitableArea: number;
   lotArea: number;
 }
 
@@ -27,7 +29,7 @@ export const statsFromRooms = (rooms: Pick<Room, "type" | "width" | "depth">[], 
   bedrooms: rooms.filter((room) => room.type === "bedroom").length,
   bathrooms: rooms.filter((room) => room.type === "bathroom").length,
   garages: rooms.filter((room) => room.type === "garage").length,
-  livingArea: rooms.reduce((sum, room) => sum + room.width * room.depth, 0),
+  habitableArea: habitableArea(rooms),
   lotArea: lot.width * lot.depth,
 });
 

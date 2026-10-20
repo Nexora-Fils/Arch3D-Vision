@@ -1,10 +1,12 @@
 "use client";
 
 import type { KonvaEventObject } from "konva/lib/Node";
-import { Arrow, Group, Line, Rect, Text } from "react-konva";
+import { Group, Rect, Text } from "react-konva";
 import { snapToGrid } from "@/domain/plan/geometry";
 import { FURNITURE_TYPE_LABELS } from "@/domain/plan/labels";
 import type { Furniture } from "@/domain/plan/schema";
+import { isStairs } from "@/domain/plan/stairs";
+import { StairSymbol } from "@/features/editor-2d/canvas/stair-symbol";
 import { SELECTION_COLOR } from "@/features/editor-2d/canvas-utils";
 import { useEditorStore } from "@/store/editor-store";
 import { usePlanStore } from "@/store/plan-store";
@@ -37,6 +39,7 @@ export const FurnitureShape = ({ item, floorId, gridStep, isSelected, isInteract
   };
 
   const label = FURNITURE_TYPE_LABELS[item.type];
+  const stairType = isStairs(item.type) ? item.type : null;
   return (
     <Group
       x={item.x}
@@ -55,34 +58,19 @@ export const FurnitureShape = ({ item, floorId, gridStep, isSelected, isInteract
         y={-item.depth / 2}
         width={item.width}
         height={item.depth}
-        fill={item.type === "stairs" ? "#f8fafc" : item.color}
-        opacity={item.type === "stairs" ? 0.95 : 0.7}
+        // Stairs: the box only catches clicks (and shows the selection); the symbol draws the model.
+        fill={stairType ? "rgba(248, 250, 252, 0.01)" : item.color}
+        opacity={stairType ? 1 : 0.7}
         cornerRadius={0.06}
-        stroke={isSelected ? SELECTION_COLOR : "rgba(30, 41, 59, 0.45)"}
+        stroke={isSelected ? SELECTION_COLOR : stairType ? undefined : "rgba(30, 41, 59, 0.45)"}
         strokeWidth={isSelected ? 2.5 : 1}
         strokeScaleEnabled={false}
       />
-      {item.type === "stairs" ? (
-        <StairSymbol width={item.width} depth={item.depth} hasIssue={hasIssue} />
+      {stairType ? (
+        <StairSymbol item={{ ...item, type: stairType }} hasIssue={hasIssue} />
       ) : item.width > 0.9 && item.depth > 0.5 ? (
         <Text x={-item.width / 2} y={-0.09} width={item.width} align="center" text={label} fontSize={0.16} fill="#1e293b" opacity={0.65} listening={false} />
       ) : null}
     </Group>
-  );
-};
-
-/** Tread lines and an arrow pointing up the flight (the flight climbs towards local -y). */
-const StairSymbol = ({ width, depth, hasIssue }: { width: number; depth: number; hasIssue: boolean }) => {
-  const steps = Math.max(3, Math.round(depth / 0.21));
-  const tread = depth / steps;
-  const color = hasIssue ? "#dc2626" : "#334155";
-  return (
-    <>
-      {Array.from({ length: steps - 1 }, (_, index) => {
-        const y = depth / 2 - tread * (index + 1);
-        return <Line key={index} points={[-width / 2, y, width / 2, y]} stroke={color} strokeWidth={0.8} strokeScaleEnabled={false} opacity={0.55} listening={false} />;
-      })}
-      <Arrow points={[0, depth / 2 - 0.15, 0, -depth / 2 + 0.2]} stroke={color} fill={color} strokeWidth={1.6} strokeScaleEnabled={false} pointerLength={0.22} pointerWidth={0.22} listening={false} />
-    </>
   );
 };

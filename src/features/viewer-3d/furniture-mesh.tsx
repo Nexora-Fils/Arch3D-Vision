@@ -269,19 +269,6 @@ const FurnitureBlocks = ({ item, isEvening, isOutdoor, fabric, pillow }: Furnitu
           <Block size={[0.08, 0.02, 0.02]} position={[w / 2 - 0.08, 0.77, -d / 2 + 0.02]} color="#b0b4b8" metalness={0.7} roughness={0.3} />
         </>
       );
-    case "stairs": {
-      // Stairs with no level above (top floor): a short decorative flight.
-      const steps = Math.max(3, Math.round(h / 0.175));
-      const stepDepth = d / steps;
-      const stepHeight = h / steps;
-      return (
-        <>
-          {Array.from({ length: steps }, (_, index) => (
-            <Block key={index} size={[w, stepHeight * (index + 1), stepDepth]} position={[0, (stepHeight * (index + 1)) / 2, d / 2 - stepDepth * (index + 0.5)]} color={color} roughness={0.6} />
-          ))}
-        </>
-      );
-    }
     case "tv": {
       // Front of the TV (screen side) is local -z, like the artwork.
       const screenWidth = Math.min(1.45, w * 0.7);

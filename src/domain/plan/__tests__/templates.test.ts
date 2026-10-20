@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { buildWallSegments, floorArea, isOutdoorRoom, wallLength } from "../geometry";
+import { buildWallSegments, floorArea, habitableArea, isOutdoorRoom, wallLength } from "../geometry";
 import { planSchema } from "../schema";
 import { HOUSE_TEMPLATES, buildPlanFromSpec } from "../templates";
 
 describe.each(HOUSE_TEMPLATES.map((template) => [template.key, template] as const))("template %s", (_key, template) => {
   const plan = buildPlanFromSpec(template);
+
+  it("announces in its description the habitable area computed from its rooms (garage and outdoor rooms excluded)", () => {
+    const match = template.description.match(/(\d+(?:,\d+)?) m²( habitables| de plain-pied| à|\s)/);
+    expect(match, "the description states the habitable area").not.toBeNull();
+    const announced = Number(match?.[1].replace(",", "."));
+    expect(habitableArea(plan.floors.flatMap((floor) => floor.rooms))).toBeCloseTo(announced, 6);
+  });
 
   it("is a valid plan with unique ids and the announced lot", () => {
     const result = planSchema.safeParse(plan);

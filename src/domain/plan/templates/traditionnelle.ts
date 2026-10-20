@@ -6,12 +6,13 @@ export const TRADITIONNELLE: HouseTemplateSpec = {
   idPrefix: "tpl-trad",
   name: "Maison traditionnelle",
   shortName: "Traditionnelle",
+  style: "Traditionnel",
   slug: null,
   description: "Plain-pied de 99 m² à toiture en tuiles : séjour, cuisine, deux chambres, salle de bain, toilettes et cellier, sur un terrain de 330 m².",
   lot: { width: 22, depth: 15 },
   houseOffset: { x: 5.5, y: 3 },
   wallHeight: 2.6,
-  settings: { roofType: "gable", roofPitch: 35, roofOverhang: 0.6, roofMaterial: "clay-roof", exteriorMaterial: "exterior-beige" },
+  settings: { roofType: "gable", roofPitch: 35, roofOverhang: 0.5, roofMaterial: "clay-roof", exteriorMaterial: "exterior-beige", shutters: true },
   floors: [
     {
       key: "rdc",

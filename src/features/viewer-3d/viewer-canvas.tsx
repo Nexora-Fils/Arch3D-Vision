@@ -70,7 +70,8 @@ const houseFrame = (plan: Plan): HouseFrame => {
 /** Architectural framings: the house fills the view without being cut. */
 const presetPosition = (preset: CameraPreset, frame: HouseFrame): Vector3 => {
   const { center, radius } = frame;
-  const distance = radius * 1.05 + 3;
+  // Far enough for the house and its garden to stay clear of the floating panels (materials, tool rail).
+  const distance = radius * 1.55 + 4;
   switch (preset) {
     case "main":
       return new Vector3(center.x + distance * 0.82, Math.max(2.4, center.y + distance * 0.24), center.z + distance * 0.8);
