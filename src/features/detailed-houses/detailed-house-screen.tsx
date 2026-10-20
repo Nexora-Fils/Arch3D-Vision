@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Moon, Sun } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMeters } from "@/domain/plan/geometry";
-import type { DetailedHouse } from "@/features/detailed-houses/catalog";
+import { interiorNote, type DetailedHouse } from "@/features/detailed-houses/catalog";
 import { cn } from "@/lib/utils";
 import { useViewerStore } from "@/store/viewer-store";
 
@@ -57,15 +57,13 @@ export const DetailedHouseScreen = ({ house }: { house: DetailedHouse }) => {
             <dd className="font-medium">{formatMeters(house.height)}</dd>
           </div>
         </dl>
-        <p className="text-xs text-white/55">
-          Maquette sans plan : surface habitable et nombre de pièces non renseignés. Visite intérieure non disponible.
-        </p>
+        <p className="text-xs text-white/55">{interiorNote(house)} Maquette sans plan : surface habitable et nombre de pièces non renseignés.</p>
       </div>
 
       <p className={cn("absolute bottom-3 left-3 max-w-md rounded-lg px-3 py-2 text-[11px] text-white/75", glass)}>
         Modèle 3D :{" "}
         <a href={house.sourceUrl} target="_blank" rel="noreferrer" className="underline hover:text-white">
-          « {house.name} » par {house.author}
+          « {house.sourceTitle} » par {house.author}
         </a>{" "}
         (Sketchfab), licence{" "}
         <a href={house.license.url} target="_blank" rel="noreferrer" className="underline hover:text-white">

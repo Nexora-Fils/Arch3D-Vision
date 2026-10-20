@@ -25,7 +25,10 @@ export const TemplateCard = ({ template, compact = false }: TemplateCardProps) =
     <Card className="group flex flex-col overflow-hidden pt-0 transition-shadow hover:shadow-lg">
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
         {image ? <Image src={image} alt={`Rendu 3D généré à partir du plan : ${template.name}`} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" /> : null}
-        <Badge className="absolute top-3 left-3 bg-midnight/80 text-white backdrop-blur">Plan modifiable</Badge>
+        <div className="absolute top-3 left-3 flex gap-1.5">
+          <Badge className="bg-midnight/80 text-white backdrop-blur">Plan modifiable</Badge>
+          <Badge className="bg-emerald-600/90 text-white backdrop-blur">Visite intérieure</Badge>
+        </div>
       </div>
       <CardHeader>
         <p className="text-xs font-medium uppercase tracking-wide text-electric">{template.style}</p>

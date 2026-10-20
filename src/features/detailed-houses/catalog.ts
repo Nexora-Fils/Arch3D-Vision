@@ -24,6 +24,8 @@ export interface DetailedHouse {
   height: number;
   /** The model contains furnished rooms, visible through the windows. */
   hasModelledInterior: boolean;
+  /** Title of the work as published by its author (required by the CC BY attribution). */
+  sourceTitle: string;
   author: string;
   sourceUrl: string;
   license: { name: string; url: string };
@@ -44,6 +46,7 @@ export const DETAILED_HOUSES: DetailedHouse[] = [
     footprint: { width: 21.6, depth: 11.6 },
     height: 11,
     hasModelledInterior: true,
+    sourceTitle: "Villa Aalsmeer 7",
     author: "pjotr.van.schothorst",
     sourceUrl: "https://sketchfab.com/3d-models/63bf1b1ade914643b3b866d3bbae988a",
     license: CC_BY,
@@ -60,6 +63,7 @@ export const DETAILED_HOUSES: DetailedHouse[] = [
     footprint: { width: 10.2, depth: 16.9 },
     height: 8,
     hasModelledInterior: false,
+    sourceTitle: "Duplex House",
     author: "jimbogies",
     sourceUrl: "https://sketchfab.com/3d-models/9bce4b9490ce43b18900e2e99e8ebe66",
     license: CC_BY,
@@ -76,10 +80,17 @@ export const DETAILED_HOUSES: DetailedHouse[] = [
     footprint: { width: 13.4, depth: 14.6 },
     height: 8.8,
     hasModelledInterior: true,
+    sourceTitle: "White Silver Green Residence",
     author: "Francesco Coldesina (topfrank2013)",
     sourceUrl: "https://sketchfab.com/3d-models/ec516ba32f03403f97954472c5d4b2cf",
     license: CC_BY,
   },
 ];
+
+/** What the visitor can see of the interior: none of these fixed scenes has a walkthrough. */
+export const interiorNote = (house: DetailedHouse): string =>
+  house.hasModelledInterior
+    ? "Intérieur meublé visible à travers les baies, mais pas de visite intérieure (vue 3D seule)."
+    : "Extérieur seul : pas d'intérieur modélisé, pas de visite intérieure (vue 3D seule).";
 
 export const findDetailedHouse = (key: string): DetailedHouse | undefined => DETAILED_HOUSES.find((house) => house.key === key);
