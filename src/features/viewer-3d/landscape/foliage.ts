@@ -116,7 +116,13 @@ interface Card {
   size: number;
   /** 0 deep inside the volume, 1 on its outer shell. */
   shell: number;
+  /** Brightness of the plant it belongs to (each tree and hedge stretch differs slightly). */
+  tint: number;
 }
+
+/** Smooth pseudo-random field in [-1, 1] (sum of incommensurate sines): bumps on crowns and hedges. */
+export const smoothNoise = (x: number, y: number, z: number, seed: number): number =>
+  (Math.sin(x * 1.7 + seed) * Math.cos(z * 1.3 - seed * 0.7) + Math.sin(y * 2.3 + z * 0.9 + seed * 1.9) * 0.6 + Math.sin((x + y) * 3.1 + seed * 0.3) * 0.35) / 1.95;
 
 /** Packs cards into instance matrices (random spin, facing roughly outward) and local-space volume normals. */
 export const packCards = (cards: Card[], random: () => number): CardSet => {
@@ -140,7 +146,7 @@ export const packCards = (cards: Card[], random: () => number): CardSet => {
     matrix.toArray(matrices, index * 16);
     local.copy(card.normal).applyQuaternion(rotation.clone().invert()).normalize();
     local.toArray(normals, index * 3);
-    const shade = (0.5 + 0.5 * card.shell) * (0.82 + 0.18 * (card.normal.y + 1) * 0.5) * (0.88 + random() * 0.24);
+    const shade = card.tint * (0.5 + 0.5 * card.shell) * (0.82 + 0.18 * (card.normal.y + 1) * 0.5) * (0.88 + random() * 0.24);
     colors[index * 3] = shade * (0.96 + random() * 0.08);
     colors[index * 3 + 1] = shade;
     colors[index * 3 + 2] = shade * (0.9 + random() * 0.1);
@@ -154,8 +160,13 @@ export const cardAttributes = (set: CardSet) => ({
   foliageNormal: new InstancedBufferAttribute(set.normals, 3),
 });
 
-/** Cards on the shell of an ellipsoid (tree crown lobe). */
-export const ellipsoidCards = (center: Vector3, radii: Vector3, density: number, size: [number, number], random: () => number): Card[] => {
+/**
+ * Cards on the shell of an ellipsoid (tree crown lobe). The shell is bumped
+ * by a smooth noise and a few cards stick out like twigs, so the silhouette
+ * is irregular instead of a clean ellipse.
+ */
+export const ellipsoidCards = (center: Vector3, radii: Vector3, density: number, size: [number, number], random: () => number, tint = 1): Card[] => {
+  const seed = center.x * 3.7 + center.z * 1.3;
   const area = 4 * Math.PI * Math.pow((Math.pow(radii.x * radii.y, 1.6) + Math.pow(radii.x * radii.z, 1.6) + Math.pow(radii.y * radii.z, 1.6)) / 3, 1 / 1.6);
   const count = Math.round(area * density);
   const cards: Card[] = [];
@@ -166,15 +177,20 @@ export const ellipsoidCards = (center: Vector3, radii: Vector3, density: number,
     const direction = new Vector3(ring * Math.cos(angle), u, ring * Math.sin(angle));
     // Mostly on the shell, some cards deeper to fill the volume.
     const shell = Math.pow(random(), 0.5);
-    const position = new Vector3(direction.x * radii.x, direction.y * radii.y, direction.z * radii.z).multiplyScalar(0.62 + shell * 0.4).add(center);
+    const bump = 1 + 0.22 * smoothNoise(direction.x * 2, direction.y * 2, direction.z * 2, seed) + (shell > 0.92 && random() < 0.12 ? 0.18 : 0);
+    const position = new Vector3(direction.x * radii.x, direction.y * radii.y, direction.z * radii.z).multiplyScalar((0.62 + shell * 0.4) * bump).add(center);
     const normal = new Vector3(direction.x / radii.x, direction.y / radii.y, direction.z / radii.z).normalize();
-    cards.push({ position, normal, size: size[0] + random() * (size[1] - size[0]), shell });
+    cards.push({ position, normal, size: size[0] + random() * (size[1] - size[0]), shell, tint });
   }
   return cards;
 };
 
-/** Cards on the outside of a rounded box (clipped hedge), base excluded. */
+/**
+ * Cards on the outside of a rounded box (clipped hedge), base excluded. The
+ * top undulates and the faces bulge gently, like a hedge trimmed by hand.
+ */
 export const hedgeCards = (center: Vector3, half: Vector3, density: number, size: [number, number], random: () => number): Card[] => {
+  const seed = center.x * 0.37 + center.z * 0.71;
   const faces: { area: number; pick: () => { position: Vector3; normal: Vector3 } }[] = [
     { area: half.x * half.z * 4, pick: () => ({ position: new Vector3((random() * 2 - 1) * half.x, half.y, (random() * 2 - 1) * half.z), normal: new Vector3(0, 1, 0) }) },
     ...[1, -1].map((side) => ({ area: half.x * half.y * 4, pick: () => ({ position: new Vector3((random() * 2 - 1) * half.x, (random() * 2 - 1) * half.y, side * half.z), normal: new Vector3(0, 0, side) }) })),
@@ -191,9 +207,14 @@ export const hedgeCards = (center: Vector3, half: Vector3, density: number, size
     const radial = new Vector3(position.x / half.x, position.y / half.y, position.z / half.z);
     const corner = Math.max(0, radial.length() - 1.15);
     const offset = random();
-    position.multiplyScalar(1 - corner * 0.12).addScaledVector(normal, (offset - 0.6) * 0.12).add(center);
+    // Along the run: slow swell of height and thickness, plus finer bumps.
+    const world = position.clone().add(center);
+    const swell = smoothNoise(world.x * 0.35, 0, world.z * 0.35, seed);
+    const bumps = smoothNoise(world.x * 2.2, position.y * 2.2, world.z * 2.2, seed + 5);
+    position.y += (position.y + half.y) / (2 * half.y) * swell * 0.12;
+    position.multiplyScalar(1 - corner * 0.16).addScaledVector(normal, (offset - 0.6) * 0.12 + bumps * 0.05 + swell * 0.04).add(center);
     const blended = normal.clone().multiplyScalar(1.4).add(radial.normalize()).normalize();
-    cards.push({ position, normal: blended, size: size[0] + random() * (size[1] - size[0]), shell: 0.45 + offset * 0.55 });
+    cards.push({ position, normal: blended, size: size[0] + random() * (size[1] - size[0]), shell: 0.45 + offset * 0.55, tint: 0.94 + swell * 0.06 });
   }
   return cards;
 };

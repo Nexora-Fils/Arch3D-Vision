@@ -365,7 +365,24 @@ const growTree = (tree: TreePlacement, random: () => number): { limbs: Limb[]; l
     return { limbs, lobes };
   }
   const isBirch = tree.species === "birch";
-  const trunkHeight = (isBirch ? 2.8 : 2) * s;
+  if (isBirch) {
+    // Birch: a slender trunk carrying many small, airy clumps spread up its whole height (no single ball).
+    const height = 6.2 * s;
+    limbs.push({ start: base, end: base.clone().setY(height), bottomRadius: 0.12 * s, topRadius: 0.035 * s });
+    const clumps = 9;
+    for (let index = 0; index < clumps; index += 1) {
+      const t = 0.38 + (index / (clumps - 1)) * 0.6;
+      const heading = index * 2.4 + random() * 0.8;
+      const reach = (1 - t) * 1.6 * s + 0.3 * s;
+      const start = base.clone().setY(height * t);
+      const end = start.clone().add(new Vector3(Math.cos(heading) * reach, 0.25 * s + random() * 0.35 * s, Math.sin(heading) * reach));
+      limbs.push({ start, end, bottomRadius: 0.035 * s, topRadius: 0.012 * s });
+      const radius = (0.45 + random() * 0.35) * s * (1.1 - t * 0.4);
+      lobes.push({ center: end.clone().add(new Vector3(0, -radius * 0.2, 0)), radii: new Vector3(radius * 1.15, radius * 0.9, radius * 1.15) });
+    }
+    return { limbs, lobes };
+  }
+  const trunkHeight = 2 * s;
   const top = base.clone().setY(trunkHeight);
   limbs.push({ start: base, end: top, bottomRadius: (isBirch ? 0.12 : 0.19) * s, topRadius: (isBirch ? 0.07 : 0.11) * s });
   const branches = isBirch ? 4 : 5 + Math.floor(random() * 3);
@@ -444,7 +461,7 @@ export const Garden = ({ lot, houseBounds, paths, materials, quality }: { lot: L
       const onPath = paths.some((path) => boundsOverlap(path.bounds, { minX: x - 1.6, maxX: x + 1.6, minY: y - 1.6, maxY: y + 1.6 }));
       if (nearHouse || onPath || random() < 0.35) continue;
       const [sx, sz] = toScene({ x, y }, lot);
-      placements.push({ x: sx, z: sz, scale: 0.85 + random() * 0.4, species: species[Math.floor(random() * species.length)] });
+      placements.push({ x: sx, z: sz, scale: 0.75 + random() * 0.6, species: species[Math.floor(random() * species.length)] });
     }
     const shrubs: { x: number; y: number; r: number }[] = [];
     const corners = [
@@ -469,9 +486,14 @@ export const Garden = ({ lot, houseBounds, paths, materials, quality }: { lot: L
   const cardsBySpecies = useMemo(() => {
     const random = createRandom(lot.depth * 53 + 11);
     const pack = (species: TreeSpecies) => {
-      const lobes = grown.filter(({ tree }) => tree.species === species).flatMap(({ lobes }) => lobes);
+      const trees = grown.filter(({ tree }) => tree.species === species);
       const size: [number, number] = species === "conifer" ? [0.45, 0.7] : [0.55, 0.9];
-      return lobes.length > 0 ? packCards(lobes.flatMap((lobe) => ellipsoidCards(lobe.center, lobe.radii, density, size, random)), random) : null;
+      // Each tree gets its own shade, so neighbours of one species do not look cloned.
+      const cards = trees.flatMap(({ lobes }) => {
+        const tint = 0.84 + random() * 0.3;
+        return lobes.flatMap((lobe) => ellipsoidCards(lobe.center, lobe.radii, density, size, random, tint));
+      });
+      return cards.length > 0 ? packCards(cards, random) : null;
     };
     return { broadleaf: pack("broadleaf"), birch: pack("birch"), conifer: pack("conifer") };
   }, [grown, density, lot.depth]);
