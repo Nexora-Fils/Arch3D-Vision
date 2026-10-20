@@ -69,7 +69,7 @@ export const DetailedHouseScreen = ({ house }: { house: DetailedHouse }) => {
         <a href={house.license.url} target="_blank" rel="noreferrer" className="underline hover:text-white">
           {house.license.name}
         </a>
-        , optimisé pour le web (textures WebP, géométrie compressée).
+        , optimisé pour le web (textures WebP, géométrie compressée){house.relit ? " ; matériaux non éclairés convertis en matériaux PBR éclairés" : ""}.
       </p>
 
       <div className={cn("absolute right-3 bottom-3 flex items-center gap-1 rounded-xl p-1", glass)} role="group" aria-label="Moment de la journée">

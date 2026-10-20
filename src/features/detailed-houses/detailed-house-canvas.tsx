@@ -2,8 +2,8 @@
 
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useMemo } from "react";
-import { Box3, Mesh, Vector3 } from "three";
+import { Suspense, useEffect, useMemo } from "react";
+import { Box3, Mesh, MeshBasicMaterial, MeshStandardMaterial, Vector3 } from "three";
 import type { DetailedHouse } from "@/features/detailed-houses/catalog";
 import { Ground } from "@/features/viewer-3d/landscape/garden";
 import { SceneEffects } from "@/features/viewer-3d/scene-effects";
@@ -48,11 +48,34 @@ const Surroundings = ({ house, quality }: { house: DetailedHouse; quality: "low"
   return <Ground lot={lot} materials={materials} quality={quality} />;
 };
 
+/**
+ * Lit replacement for a material exported "unlit" (KHR_materials_unlit, which
+ * three.js draws without any lighting or shadow). Same texture, color and
+ * transparency; meshes without normals get flat shading (per-face normals
+ * computed on the GPU), right for architecture. The geometry is unchanged.
+ */
+const relight = (unlit: MeshBasicMaterial, hasNormals: boolean): MeshStandardMaterial =>
+  new MeshStandardMaterial({
+    name: unlit.name,
+    map: unlit.map,
+    color: unlit.color,
+    transparent: unlit.transparent,
+    opacity: unlit.opacity,
+    alphaTest: unlit.alphaTest,
+    side: unlit.side,
+    depthWrite: unlit.depthWrite,
+    flatShading: !hasNormals,
+    roughness: unlit.transparent ? 0.08 : 0.85,
+    metalness: 0,
+    envMapIntensity: unlit.transparent ? 1.2 : 0.8,
+  });
+
 /** The GLB scaled to meters, centered on its footprint, resting on y = 0, presentation plates hidden. */
 const DetailedModel = ({ house }: { house: DetailedHouse }) => {
   const { scene } = useGLTF(house.file);
   const prepared = useMemo(() => {
     const root = scene.clone(true);
+    const created = new Map<MeshBasicMaterial, MeshStandardMaterial>();
     root.scale.setScalar(house.metersPerUnit);
     root.traverse((object) => {
       if (!(object instanceof Mesh)) return;
@@ -62,6 +85,12 @@ const DetailedModel = ({ house }: { house: DetailedHouse }) => {
       }
       object.castShadow = true;
       object.receiveShadow = true;
+      if (house.relit && object.material instanceof MeshBasicMaterial) {
+        const unlit = object.material;
+        const lit = created.get(unlit) ?? relight(unlit, object.geometry.hasAttribute("normal"));
+        created.set(unlit, lit);
+        object.material = lit;
+      }
     });
     root.updateMatrixWorld(true);
     const bounds = new Box3();
@@ -70,7 +99,8 @@ const DetailedModel = ({ house }: { house: DetailedHouse }) => {
     });
     const center = bounds.getCenter(new Vector3());
     root.position.set(-center.x, 0, -center.z);
-    return root;
+    return { root, created: [...created.values()] };
   }, [scene, house]);
-  return <primitive object={prepared} />;
+  useEffect(() => () => prepared.created.forEach((material) => material.dispose()), [prepared]);
+  return <primitive object={prepared.root} />;
 };
