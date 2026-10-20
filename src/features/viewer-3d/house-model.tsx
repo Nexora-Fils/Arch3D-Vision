@@ -349,7 +349,7 @@ const RoomSlabs = ({ room, base, lot, height, floorMaterial, ceilingMaterial, ma
               bottom={base + height}
               thickness={LEVEL_SLAB_THICKNESS - 0.02}
               material={ceilingMaterial}
-              underside={materials.ceiling}
+              underside={isEvening ? materials.ceiling : materials.ceilingDaylight}
             />
           ))
         : null}

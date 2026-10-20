@@ -15,6 +15,8 @@ export interface SceneMaterials {
   roof: MeshStandardMaterial;
   exterior: MeshStandardMaterial;
   ceiling: MeshStandardMaterial;
+  /** Ceiling in daylight: a faint warm emission stands in for the light bounced by floors and walls. */
+  ceilingDaylight: MeshStandardMaterial;
   terrace: MeshStandardMaterial;
   path: MeshStandardMaterial;
   glass: MeshStandardMaterial;
@@ -132,6 +134,7 @@ export const useSceneMaterials = (materials: Material[], frameColor = "#2b2f36",
       roof: standard("#505a6b", 0.75, "slateTiles"),
       exterior: standard("#f1f0ec", 0.9, "plaster"),
       ceiling: standard("#f7f6f2", 0.95, "plaster"),
+      ceilingDaylight: standard("#f7f6f2", 0.95, "plaster", { emissive: new Color("#fff6ea"), emissiveIntensity: 0.6 }),
       terrace: standard("#d6d2ca", 0.9, "patio"),
       path: standard("#c9c3b8", 0.9, "patio"),
       glass: createGlass(quality),
