@@ -1,4 +1,4 @@
-import { isOutdoorRoom } from "./geometry";
+import { habitableArea } from "./geometry";
 import type { Floor, Lot, Plan, Room, Wall } from "./schema";
 
 /** The minimum needed to draw a floor plan thumbnail (dashboard cards, minimap). */
@@ -29,7 +29,7 @@ export const statsFromRooms = (rooms: Pick<Room, "type" | "width" | "depth">[], 
   bedrooms: rooms.filter((room) => room.type === "bedroom").length,
   bathrooms: rooms.filter((room) => room.type === "bathroom").length,
   garages: rooms.filter((room) => room.type === "garage").length,
-  habitableArea: rooms.filter((room) => !isOutdoorRoom(room) && room.type !== "garage").reduce((sum, room) => sum + room.width * room.depth, 0),
+  habitableArea: habitableArea(rooms),
   lotArea: lot.width * lot.depth,
 });
 

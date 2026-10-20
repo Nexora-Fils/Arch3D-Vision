@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { floorArea, formatArea, formatMeters, LEVEL_SLAB_THICKNESS, roomArea, wallLength } from "@/domain/plan/geometry";
+import { floorArea, formatArea, formatMeters, habitableArea, LEVEL_SLAB_THICKNESS, roomArea, wallLength } from "@/domain/plan/geometry";
 import { DOOR_TYPE_LABELS, FURNITURE_PRESETS, FURNITURE_TYPE_LABELS, ROOM_TYPE_LABELS, WALL_SIDE_LABELS } from "@/domain/plan/labels";
 import { buildStairShape, checkStairs, isStairs, STAIR_TYPES, type StairType } from "@/domain/plan/stairs";
 import { formatDimension } from "@/features/editor-2d/canvas/annotation-shape";
@@ -169,8 +169,10 @@ const FloorOverview = ({ floor, materialsCount }: { floor: Floor; materialsCount
           </ul>
         )}
         <dl className="grid grid-cols-2 gap-1 rounded-lg bg-muted/60 p-3 text-sm">
-          <dt className="text-muted-foreground">Surface totale</dt>
-          <dd className="text-right font-medium tabular-nums">{formatArea(floorArea(floor))}</dd>
+          <dt className="text-muted-foreground">Surface habitable</dt>
+          <dd className="text-right font-medium tabular-nums">{formatArea(habitableArea(floor.rooms))}</dd>
+          <dt className="text-muted-foreground">Avec garage et extérieurs</dt>
+          <dd className="text-right tabular-nums">{formatArea(floorArea(floor))}</dd>
           <dt className="text-muted-foreground">Murs</dt>
           <dd className="text-right tabular-nums">{floor.walls.length}</dd>
           <dt className="text-muted-foreground">Ouvertures</dt>

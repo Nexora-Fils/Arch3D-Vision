@@ -13,7 +13,7 @@ export const FAMILIALE: HouseTemplateSpec = {
   shortName: "Familiale",
   style: "Traditionnel à étage",
   slug: null,
-  description: "Maison sur deux niveaux : grand séjour, cuisine, cellier, toilettes et garage au rez-de-chaussée, quatre chambres et salle de bain à l'étage, autour d'un hall d'escalier, sur un terrain de 300 m².",
+  description: "158 m² habitables sur deux niveaux : grand séjour, cuisine, cellier, toilettes et garage au rez-de-chaussée, quatre chambres et salle de bain à l'étage, autour d'un hall d'escalier, sur un terrain de 300 m².",
   lot: { width: 20, depth: 15 },
   houseOffset: { x: 4.5, y: 3.5 },
   wallHeight: 2.6,
