@@ -19,6 +19,7 @@ export const DEFAULT_MATERIAL_SEEDS: MaterialSeed[] = [
   { key: "exterior-grey", name: "Enduit gris", kind: "exterior", color: "#b9b7b1", roughness: 0.9 },
   { key: "wood-cladding", name: "Bardage bois", kind: "exterior", color: "#a0683f", roughness: 0.8 },
   { key: "stone-cladding", name: "Parement pierre", kind: "exterior", color: "#cbbca3", roughness: 0.9 },
+  { key: "exterior-concrete", name: "Béton banché", kind: "exterior", color: "#8f8c85", roughness: 0.85 },
   { key: "oak-parquet", name: "Parquet chêne", kind: "floor", color: "#b98a5a", roughness: 0.7 },
   { key: "grey-tiles", name: "Carrelage gris", kind: "floor", color: "#9aa3ad", roughness: 0.5 },
   { key: "white-tiles", name: "Carrelage blanc", kind: "floor", color: "#e6e8eb", roughness: 0.4 },
@@ -47,6 +48,7 @@ export const createDefaultSettings = (materials: Material[], wallHeight: number)
   defaultWallHeight: wallHeight,
   defaultWallThickness: DEFAULT_WALL_THICKNESS,
   solarPanels: false,
+  shutters: false,
   frameColor: "#2b2f36",
 });
 

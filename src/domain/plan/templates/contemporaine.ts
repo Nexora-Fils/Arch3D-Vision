@@ -11,9 +11,10 @@ export const CONTEMPORAINE: HouseTemplateSpec = {
   idPrefix: "demo",
   name: "Maison familiale moderne",
   shortName: "Contemporaine",
+  style: "Contemporain",
   slug: "maison-familiale-moderne",
   description:
-    "Maison contemporaine de 192 m² sur deux niveaux, terrain de 300 m² : séjour ouvert sur la cuisine, la terrasse et la piscine, bureau, garage et carport, trois chambres, deux salles de bain, toit plat à grand débord, parement pierre, bardage bois et grandes baies vitrées.",
+    "Maison contemporaine sur deux niveaux, terrain de 300 m² : séjour ouvert sur la cuisine, la terrasse et la piscine, bureau, garage et carport, trois chambres, deux salles de bain, toit plat à grand débord, parement pierre, bardage bois et grandes baies vitrées.",
   lot: { width: 20, depth: 15 },
   houseOffset: { x: 5, y: 1.5 },
   wallHeight: 2.7,

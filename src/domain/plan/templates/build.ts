@@ -71,6 +71,8 @@ export interface HouseTemplateSpec {
   name: string;
   /** Label of the template card (« Contemporaine », « Petite maison »…). */
   shortName: string;
+  /** Architectural style shown in the gallery. */
+  style: string;
   slug: string | null;
   description: string;
   lot: Lot;

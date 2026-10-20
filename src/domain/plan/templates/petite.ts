@@ -6,6 +6,7 @@ export const PETITE: HouseTemplateSpec = {
   idPrefix: "tpl-petite",
   name: "Petite maison",
   shortName: "Petite maison",
+  style: "Compact",
   slug: null,
   description: "45 m² de plain-pied : séjour avec cuisine ouverte, une chambre, salle d'eau et toilettes, toiture ardoise à quatre pans, sur un terrain de 140 m².",
   lot: { width: 14, depth: 10 },

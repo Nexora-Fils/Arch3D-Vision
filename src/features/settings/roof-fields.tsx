@@ -57,6 +57,12 @@ export const RoofFields = () => {
         </Label>
         <Switch id="solar-panels" checked={settings.solarPanels} onCheckedChange={(solarPanels) => updateSettings({ solarPanels })} />
       </div>
+      <div className="flex items-center justify-between">
+        <Label htmlFor="shutters" className="text-xs text-muted-foreground">
+          Volets et encadrements
+        </Label>
+        <Switch id="shutters" checked={settings.shutters} onCheckedChange={(shutters) => updateSettings({ shutters })} />
+      </div>
       <MaterialSelect label="Matériau de toiture" materials={materials} kinds={["roof"]} value={settings.roofMaterialId} onChange={(roofMaterialId) => updateSettings({ roofMaterialId })} />
       <MaterialSelect label="Matériau de façade" materials={materials} kinds={["exterior", "wall"]} value={settings.exteriorMaterialId} onChange={(exteriorMaterialId) => updateSettings({ exteriorMaterialId })} />
     </div>

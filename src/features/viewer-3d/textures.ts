@@ -23,6 +23,7 @@ export const photoForMaterial = (material: Material): PhotoKey => {
       if (hasKeyword(name, ["carrelage", "faïence"])) return l > 0.7 ? "whiteTiles" : "greyTiles";
       return isWoody ? "laminate" : "greyTiles";
     case "exterior":
+      if (hasKeyword(name, ["béton", "beton", "banché"])) return "concreteWall";
       if (hasKeyword(name, ["enduit", "crépi", "peinture"])) return "plaster";
       if (hasKeyword(name, ["bardage", "bois"])) return "cladding";
       if (hasKeyword(name, ["pierre", "parement", "brique", "moellon"])) return "sandstone";
