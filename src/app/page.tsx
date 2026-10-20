@@ -166,7 +166,7 @@ export default function LandingPage() {
                 { src: showcaseAerial, alt: "Vue aérienne avec piscine" },
               ]}
               name={demo.name}
-              area={formatArea(stats.livingArea)}
+              area={formatArea(stats.habitableArea)}
               bedrooms={stats.bedrooms}
               openAction={openDemoProjectAction.bind(null, "view")}
             />
