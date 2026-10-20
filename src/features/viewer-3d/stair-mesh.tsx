@@ -2,76 +2,165 @@
 
 import { useEffect, useMemo } from "react";
 import type { MeshStandardMaterial } from "three";
-import type { Lot, Vec2 } from "@/domain/plan/schema";
-import type { StairFlight } from "@/domain/plan/stairs";
+import type { SolidSegment } from "@/domain/plan/geometry";
+import type { Furniture, Lot, Vec2 } from "@/domain/plan/schema";
+import { buildStairShape, distanceToWalls, edgeElevation, type LocalVec, type StairEdge, type StairFlight, type StairPiece, type StairShape } from "@/domain/plan/stairs";
+import { useMergedBoxes, type BoxPart } from "@/features/viewer-3d/architecture/merged-boxes";
+import { AlongSegment, MetricBox } from "@/features/viewer-3d/architecture/parts";
 import { toScene } from "@/features/viewer-3d/convert";
 import { createPhotoMaterial, type SceneMaterials } from "@/features/viewer-3d/scene-materials";
 
 const RAIL_HEIGHT = 0.9;
 const TREAD_THICKNESS = 0.04;
+/** Handrails stand this far inside the edge of the stair (m). */
+const RAIL_INSET = 0.035;
+const BALUSTER_SPACING = 0.4;
+/** Distance from a wall below which a stair side or a stairwell edge needs no handrail (m). */
+const HANDRAIL_WALL_CLEARANCE = 0.25;
 
-interface StairFlightMeshProps {
-  flight: StairFlight;
-  /** Elevation of the lower floor. */
+type Triple = [number, number, number];
+
+/** Item frame (a to the right, c up the first flight) to the stair group's local scene frame (x = a, z = -c). */
+const local3 = (point: LocalVec, height: number): Triple => [point.a, height, -point.c];
+
+const pieceStart = (piece: StairPiece): LocalVec => {
+  const center = { a: (piece.rect.minA + piece.rect.maxA) / 2, c: (piece.rect.minC + piece.rect.maxC) / 2 };
+  return { a: center.a - (piece.axis.a * piece.length) / 2, c: center.c - (piece.axis.c * piece.length) / 2 };
+};
+
+/** Box covering [from, to] along a piece's axis, full width, between two heights (item frame, scene axes). */
+const stepBox = (piece: StairPiece, from: number, to: number, bottom: number, top: number): BoxPart => {
+  const start = pieceStart(piece);
+  const middle = { a: start.a + (piece.axis.a * (from + to)) / 2, c: start.c + (piece.axis.c * (from + to)) / 2 };
+  const along = to - from;
+  const alongC = piece.axis.c !== 0;
+  return {
+    size: alongC ? [piece.width, top - bottom, along] : [along, top - bottom, piece.width],
+    position: local3(middle, (bottom + top) / 2),
+  };
+};
+
+/** Solid bodies (painted) and oak treads of every step and landing. */
+const stairParts = (stair: StairShape): { bodies: BoxPart[]; treads: BoxPart[] } => {
+  const bodies: BoxPart[] = [];
+  const treads: BoxPart[] = [];
+  for (const piece of stair.pieces) {
+    if (piece.kind === "landing") {
+      bodies.push(stepBox(piece, 0, piece.length, 0, piece.fromHeight - TREAD_THICKNESS));
+      treads.push(stepBox(piece, -0.01, piece.length + 0.01, piece.fromHeight - TREAD_THICKNESS, piece.fromHeight));
+      continue;
+    }
+    const tread = piece.length / piece.steps;
+    for (let index = 0; index < piece.steps; index += 1) {
+      const top = piece.fromHeight + stair.riser * (index + 1);
+      bodies.push(stepBox(piece, tread * index, tread * (index + 1), 0, top - TREAD_THICKNESS));
+      // Slight nosing over the step below.
+      treads.push(stepBox(piece, tread * index - 0.02, tread * (index + 1), top - TREAD_THICKNESS, top));
+    }
+  }
+  return { bodies, treads };
+};
+
+interface Rail {
+  start: Triple;
+  end: Triple;
+}
+
+/** Handrail and balusters along one outline edge, set inside the stair and following its slope. */
+const railFor = (stair: StairShape, edge: StairEdge): { rail: Rail; balusters: BoxPart[] } => {
+  const piece = stair.pieces[edge.piece];
+  const center = { a: (piece.rect.minA + piece.rect.maxA) / 2, c: (piece.rect.minC + piece.rect.maxC) / 2 };
+  const length = Math.hypot(edge.localEnd.a - edge.localStart.a, edge.localEnd.c - edge.localStart.c);
+  const direction = { a: (edge.localEnd.a - edge.localStart.a) / length, c: (edge.localEnd.c - edge.localStart.c) / length };
+  let inward = { a: -direction.c, c: direction.a };
+  if ((center.a - edge.localStart.a) * inward.a + (center.c - edge.localStart.c) * inward.c < 0) inward = { a: -inward.a, c: -inward.c };
+  const at = (t: number) => {
+    const local = { a: edge.localStart.a + direction.a * length * t + inward.a * RAIL_INSET, c: edge.localStart.c + direction.c * length * t + inward.c * RAIL_INSET };
+    const plan = { x: edge.start.x + (edge.end.x - edge.start.x) * t, y: edge.start.y + (edge.end.y - edge.start.y) * t };
+    return { local, height: edgeElevation(stair, edge, plan) };
+  };
+  const from = at(0);
+  const to = at(1);
+  const count = Math.max(2, Math.ceil(length / BALUSTER_SPACING) + 1);
+  const balusters = Array.from({ length: count }, (_, index) => {
+    const point = at(index / (count - 1));
+    return { size: [0.022, RAIL_HEIGHT, 0.022], position: local3(point.local, point.height + RAIL_HEIGHT / 2) } satisfies BoxPart;
+  });
+  return { rail: { start: local3(from.local, from.height + RAIL_HEIGHT), end: local3(to.local, to.height + RAIL_HEIGHT) }, balusters };
+};
+
+interface StairMeshProps {
+  stair: StairShape;
+  /** Elevation of the floor the stair stands on. */
   base: number;
   lot: Lot;
   materials: SceneMaterials;
-  /** Sides without a wall next to them get a handrail (left/right while climbing). */
-  openSides: { left: boolean; right: boolean };
+  /** Outline edges that get a handrail (sides away from walls). */
+  railEdges: StairEdge[];
 }
 
 /**
- * Straight flight: a solid stair body with oak treads, rising exactly to the
- * finished floor of the level above, plus a sloped handrail with balusters
- * on each open side. Local frame: the flight climbs towards -z, +x is its right.
+ * A stair of any model: painted solid bodies with oak treads, landings, and
+ * a sloped handrail with balusters on every open side.
  */
-export const StairFlightMesh = ({ flight, base, lot, materials, openSides }: StairFlightMeshProps) => {
-  const { item, steps, rise, run, width } = flight;
-  const riser = rise / steps;
-  const tread = run / steps;
+export const StairMesh = ({ stair, base, lot, materials, railEdges }: StairMeshProps) => {
+  const { item } = stair;
   const oak = useMemo(() => createPhotoMaterial(materials.photos.laminate, "#b07a4a", 0.6), [materials.photos.laminate]);
   useEffect(() => () => oak.dispose(), [oak]);
+  const parts = useMemo(() => stairParts(stair), [stair]);
+  const rails = useMemo(() => railEdges.map((edge) => railFor(stair, edge)), [stair, railEdges]);
+  const balusterParts = useMemo(() => rails.flatMap((rail) => rail.balusters), [rails]);
+  const bodies = useMergedBoxes(parts.bodies);
+  const treads = useMergedBoxes(parts.treads);
+  const balusters = useMergedBoxes(balusterParts);
   const [x, z] = toScene({ x: item.x, y: item.y }, lot);
-  const railLength = Math.hypot(run - tread, rise - riser);
-  const railAngle = Math.atan2(rise - riser, run - tread);
-  const railCenter = { y: (riser + rise) / 2 + RAIL_HEIGHT, z: 0 };
-  const sides = [openSides.left ? -1 : 0, openSides.right ? 1 : 0].filter((side) => side !== 0);
   return (
     <group position={[x, base, z]} rotation-y={(-item.rotation * Math.PI) / 180}>
-      {Array.from({ length: steps }, (_, index) => {
-        const top = riser * (index + 1);
-        const centerZ = run / 2 - tread * (index + 0.5);
-        return (
-          <group key={index}>
-            <mesh position={[0, (top - TREAD_THICKNESS) / 2, centerZ]} material={materials.trim} castShadow receiveShadow>
-              <boxGeometry args={[width, top - TREAD_THICKNESS, tread]} />
-            </mesh>
-            <mesh position={[0, top - TREAD_THICKNESS / 2, centerZ + 0.01]} material={oak} castShadow receiveShadow>
-              <boxGeometry args={[width + 0.02, TREAD_THICKNESS, tread + 0.02]} />
-            </mesh>
-          </group>
-        );
-      })}
-      {sides.map((side) => {
-        const railX = side * (width / 2 - 0.035);
-        return (
-          <group key={side}>
-            <mesh position={[railX, railCenter.y, railCenter.z]} rotation-x={railAngle} material={materials.frame} castShadow>
-              <boxGeometry args={[0.045, 0.045, railLength + 0.1]} />
-            </mesh>
-            {Array.from({ length: steps }, (_, index) => index)
-              .filter((index) => index % 3 === 0 || index === steps - 1)
-              .map((index) => {
-                const top = riser * (index + 1);
-                return (
-                  <mesh key={index} position={[railX, top + RAIL_HEIGHT / 2, run / 2 - tread * (index + 0.5)]} material={materials.frame} castShadow>
-                    <boxGeometry args={[0.022, RAIL_HEIGHT, 0.022]} />
-                  </mesh>
-                );
-              })}
-          </group>
-        );
-      })}
+      {bodies ? <mesh geometry={bodies} material={materials.trim} castShadow receiveShadow /> : null}
+      {treads ? <mesh geometry={treads} material={oak} castShadow receiveShadow /> : null}
+      {balusters ? <mesh geometry={balusters} material={materials.frame} castShadow /> : null}
+      {rails.map(({ rail }, index) => (
+        <AlongSegment key={index} segment={rail}>
+          <MetricBox size={[Math.hypot(rail.end[0] - rail.start[0], rail.end[1] - rail.start[1], rail.end[2] - rail.start[2]) + 0.05, 0.045, 0.045]} material={materials.frame} castShadow />
+        </AlongSegment>
+      ))}
+    </group>
+  );
+};
+
+const edgeMiddle = (edge: StairEdge): Vec2 => ({ x: (edge.start.x + edge.end.x) / 2, y: (edge.start.y + edge.end.y) / 2 });
+
+interface StairModelProps {
+  item: Furniture;
+  /** The stair connecting this floor to the next one, or null on the top floor. */
+  flight: StairFlight | null;
+  walls: SolidSegment[];
+  base: number;
+  lot: Lot;
+  materials: SceneMaterials;
+}
+
+/** A stairs item: the real stair up to the next level, or a short decorative one on the top floor. */
+export const StairModel = ({ item, flight, walls, base, lot, materials }: StairModelProps) => {
+  const stair = useMemo(() => flight ?? buildStairShape(item, item.height), [flight, item]);
+  const railEdges = useMemo(
+    () => (flight ? flight.edges.filter((edge) => edge.role === "side" && distanceToWalls(walls, edgeMiddle(edge)) > HANDRAIL_WALL_CLEARANCE) : []),
+    [flight, walls],
+  );
+  return <StairMesh stair={stair} base={base} lot={lot} materials={materials} railEdges={railEdges} />;
+};
+
+/** Glass guards around a stairwell, on every edge except the arrival and the edges along a wall. */
+export const StairwellGuards = ({ flight, walls, top, lot, materials }: { flight: StairFlight; walls: SolidSegment[]; top: number; lot: Lot; materials: SceneMaterials }) => {
+  const edges = useMemo(
+    () => flight.footprintEdges.filter((edge) => edge.role !== "exit" && distanceToWalls(walls, edgeMiddle(edge)) > HANDRAIL_WALL_CLEARANCE),
+    [flight, walls],
+  );
+  return (
+    <group>
+      {edges.map((edge, index) => (
+        <GuardRail key={index} start={edge.start} end={edge.end} top={top} lot={lot} materials={materials} />
+      ))}
     </group>
   );
 };

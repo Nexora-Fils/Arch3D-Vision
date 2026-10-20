@@ -13,118 +13,400 @@ import {
   type Bounds,
   type SolidSegment,
 } from "./geometry";
-import type { Floor, Furniture, Plan, Vec2 } from "./schema";
+import type { Floor, Furniture, FurnitureType, Plan, Vec2 } from "./schema";
 
-/** Comfortable riser height used to count the steps of a flight (m). */
+/** Furniture types that are stairs, one per model. */
+export const STAIR_TYPES = ["stairs", "stairs_quarter_left", "stairs_quarter_right", "stairs_half_turn"] as const satisfies readonly FurnitureType[];
+export type StairType = (typeof STAIR_TYPES)[number];
+
+export const isStairs = (type: FurnitureType): type is StairType => (STAIR_TYPES as readonly FurnitureType[]).includes(type);
+
+/** Comfortable riser height used to count the steps (m). */
 const TARGET_RISER = 0.175;
-/** Thickness given to the virtual walls around a flight or a stairwell (m). */
+/** Thickness given to the virtual walls around a stair or a stairwell (m). */
 const RAIL_HALF_THICKNESS = 0.03;
-/** Inner margin so that walls touching the edge of a flight are not reported as crossing it (m). */
+/** Inner margin so that walls touching the edge of a stair are not reported as crossing it (m). */
 const EDGE_TOLERANCE = 0.05;
+/** Flight width of turning stairs, reduced when the item is too small (m). */
+const TURNING_FLIGHT_WIDTH = 0.9;
+/** Open well between the two flights of a half-turn stair (m). */
+const HALF_TURN_WELL = 0.1;
+/** Shortest usable flight (m). */
+const MIN_FLIGHT_LENGTH = 0.5;
+/** Tolerance when locating a point on the stair (m). */
+const LOCATE_EPSILON = 0.02;
 
 /**
- * A straight flight of stairs drawn on a floor, connecting it to the next
- * level. The stairs item is a rectangle (width × depth) rotated by
- * `rotation` degrees; it climbs towards its local "north" (plan -y at 0°).
+ * Stair layout in the item's own frame: `a` runs to the right of a person
+ * climbing the first flight, `c` up the first flight (towards the item's
+ * local north, plan -y at 0°). The item rectangle is the bounding box.
  */
-export interface StairFlight {
-  id: string;
-  item: Furniture;
-  lowerIndex: number;
-  upperIndex: number;
-  /** Center of the bottom edge, where the climb starts (plan meters). */
-  bottom: Vec2;
-  /** Unit vector of the climb, from the bottom edge to the top edge. */
-  direction: Vec2;
-  /** Unit vector across the flight (direction rotated +90°). */
-  across: Vec2;
-  run: number;
-  width: number;
-  /** Height climbed: from the lower floor to the finished floor of the upper level. */
-  rise: number;
-  steps: number;
-  /** Bottom-left, bottom-right, top-right, top-left (left/right seen while climbing). */
-  corners: [Vec2, Vec2, Vec2, Vec2];
-  /** Axis-aligned stairwell cut in the upper slab (and the lower ceiling). */
-  opening: Bounds;
+export interface LocalVec {
+  a: number;
+  c: number;
 }
 
-/** Climb direction of a stairs item rotated by `rotation` degrees (0° climbs towards -y). */
+export interface LocalRect {
+  minA: number;
+  maxA: number;
+  minC: number;
+  maxC: number;
+}
+
+/** A flight (steps climbing along `axis`) or a landing (flat), axis-aligned in the item frame. */
+export interface StairPiece {
+  kind: "flight" | "landing";
+  rect: LocalRect;
+  /** Walking direction: the climb for a flight, the arriving flight's climb for a landing. */
+  axis: LocalVec;
+  steps: number;
+  /** Height above the lower floor where the piece starts and ends (equal for a landing). */
+  fromHeight: number;
+  toHeight: number;
+  /** Plan frame: center of the entry edge, unit direction, unit vector to the right, extents. */
+  start: Vec2;
+  direction: Vec2;
+  across: Vec2;
+  length: number;
+  width: number;
+  corners: [Vec2, Vec2, Vec2, Vec2];
+  bounds: Bounds;
+}
+
+/** Part of the outline of a stair, in plan and in the item frame. */
+export interface StairEdge {
+  start: Vec2;
+  end: Vec2;
+  localStart: LocalVec;
+  localEnd: LocalVec;
+  /** "entry": where the climb starts; "exit": the arrival; "side": everything else. */
+  role: "side" | "entry" | "exit";
+  /** Index of the piece the edge belongs to; -1 for the well of a half-turn stair. */
+  piece: number;
+}
+
+export interface StairShape {
+  item: Furniture;
+  type: StairType;
+  /** Height climbed (m). */
+  rise: number;
+  riser: number;
+  /** Treads, landing included. */
+  steps: number;
+  flightWidth: number;
+  pieces: StairPiece[];
+  /** Outline of the walkable pieces: rails while climbing. */
+  edges: StairEdge[];
+  /** Outline of the whole footprint (pieces and well): stairwell guards. */
+  footprintEdges: StairEdge[];
+  /** Axis-aligned rectangles cut in the slab above (pieces and well). */
+  openings: Bounds[];
+  entry: { center: Vec2; direction: Vec2 };
+  exit: { center: Vec2; direction: Vec2 };
+}
+
+/** A stair connecting a floor to the next level. */
+export interface StairFlight extends StairShape {
+  id: string;
+  lowerIndex: number;
+  upperIndex: number;
+}
+
+/** Climb direction of the first flight of a stairs item rotated by `rotation` degrees (0° climbs towards -y). */
 export const stairDirection = (rotation: number): Vec2 => {
   const radians = (rotation * Math.PI) / 180;
   return { x: Math.sin(radians), y: -Math.cos(radians) };
 };
 
-const createFlight = (plan: Plan, item: Furniture, lowerIndex: number): StairFlight => {
-  const lower = plan.floors[lowerIndex];
-  const direction = stairDirection(item.rotation);
-  const across = { x: -direction.y, y: direction.x };
-  const center = { x: item.x, y: item.y };
-  const bottom = vecAdd(center, vecScale(direction, -item.depth / 2));
-  const top = vecAdd(center, vecScale(direction, item.depth / 2));
-  const half = vecScale(across, item.width / 2);
-  const corners: StairFlight["corners"] = [vecSub(bottom, half), vecAdd(bottom, half), vecAdd(top, half), vecSub(top, half)];
-  const rise = lower.height + LEVEL_SLAB_THICKNESS;
+interface LocalLayout {
+  flightWidth: number;
+  pieces: { kind: StairPiece["kind"]; rect: LocalRect; axis: LocalVec }[];
+  wells: LocalRect[];
+}
+
+const UP: LocalVec = { a: 0, c: 1 };
+const DOWN: LocalVec = { a: 0, c: -1 };
+
+/** Flights and landings of each stair model inside the item's width × depth. */
+export const stairLayout = (type: StairType, width: number, depth: number): LocalLayout => {
+  const halfW = width / 2;
+  const halfD = depth / 2;
+  if (type === "stairs") {
+    return { flightWidth: width, pieces: [{ kind: "flight", rect: { minA: -halfW, maxA: halfW, minC: -halfD, maxC: halfD }, axis: UP }], wells: [] };
+  }
+  if (type === "stairs_half_turn") {
+    // Up the left column, across the full-width landing, back down the right column (climbing).
+    const w = Math.max(0.3, (width - HALF_TURN_WELL) / 2);
+    return {
+      flightWidth: w,
+      pieces: [
+        { kind: "flight", rect: { minA: -halfW, maxA: -halfW + w, minC: -halfD, maxC: halfD - w }, axis: UP },
+        { kind: "landing", rect: { minA: -halfW, maxA: halfW, minC: halfD - w, maxC: halfD }, axis: UP },
+        { kind: "flight", rect: { minA: halfW - w, maxA: halfW, minC: -halfD, maxC: halfD - w }, axis: DOWN },
+      ],
+      wells: [{ minA: -halfW + w, maxA: halfW - w, minC: -halfD, maxC: halfD - w }],
+    };
+  }
+  // Quarter turn: up one column, square landing in the far corner, then along the far row.
+  const w = Math.max(0.3, Math.min(TURNING_FLIGHT_WIDTH, width * 0.45, depth * 0.45));
+  const side = type === "stairs_quarter_right" ? 1 : -1;
+  const column = side === 1 ? { minA: -halfW, maxA: -halfW + w } : { minA: halfW - w, maxA: halfW };
+  const row = side === 1 ? { minA: -halfW + w, maxA: halfW } : { minA: -halfW, maxA: halfW - w };
   return {
-    id: item.id,
+    flightWidth: w,
+    pieces: [
+      { kind: "flight", rect: { ...column, minC: -halfD, maxC: halfD - w }, axis: UP },
+      { kind: "landing", rect: { ...column, minC: halfD - w, maxC: halfD }, axis: UP },
+      { kind: "flight", rect: { ...row, minC: halfD - w, maxC: halfD }, axis: { a: side, c: 0 } },
+    ],
+    wells: [],
+  };
+};
+
+type Side = "minA" | "maxA" | "minC" | "maxC";
+
+/** Side of a rectangle crossed when walking in along `axis` (entry) or out along it (exit). */
+const entrySide = (axis: LocalVec): Side => (axis.c > 0 ? "minC" : axis.c < 0 ? "maxC" : axis.a > 0 ? "minA" : "maxA");
+const exitSide = (axis: LocalVec): Side => (axis.c > 0 ? "maxC" : axis.c < 0 ? "minC" : axis.a > 0 ? "maxA" : "minA");
+const OPPOSITE: Record<Side, Side> = { minA: "maxA", maxA: "minA", minC: "maxC", maxC: "minC" };
+
+/** Extent of a rectangle along the axis of one of its sides: [line value, interval start, interval end]. */
+const sideLine = (rect: LocalRect, side: Side): [number, number, number] =>
+  side === "minA" || side === "maxA" ? [rect[side], rect.minC, rect.maxC] : [rect[side], rect.minA, rect.maxA];
+
+const subtractInterval = (intervals: [number, number][], from: number, to: number): [number, number][] =>
+  intervals.flatMap(([start, end]): [number, number][] => {
+    if (to <= start + 1e-9 || from >= end - 1e-9) return [[start, end]];
+    const parts: [number, number][] = [];
+    if (from > start + 1e-9) parts.push([start, from]);
+    if (to < end - 1e-9) parts.push([to, end]);
+    return parts;
+  });
+
+interface LocalEdge {
+  from: LocalVec;
+  to: LocalVec;
+  role: StairEdge["role"];
+  piece: number;
+}
+
+/**
+ * Outline of a union of axis-aligned rectangles that touch along their sides:
+ * every side, minus the parts shared with a neighbouring rectangle.
+ */
+const outline = (rects: { rect: LocalRect; piece: number; entry?: Side; exit?: Side }[]): LocalEdge[] =>
+  rects.flatMap(({ rect, piece, entry, exit }) =>
+    (["minA", "maxA", "minC", "maxC"] as const).flatMap((side) => {
+      const [line, start, end] = sideLine(rect, side);
+      let intervals: [number, number][] = [[start, end]];
+      for (const other of rects) {
+        if (other.rect === rect) continue;
+        const [otherLine, otherStart, otherEnd] = sideLine(other.rect, OPPOSITE[side]);
+        if (Math.abs(otherLine - line) < 1e-9) intervals = subtractInterval(intervals, otherStart, otherEnd);
+      }
+      const role: LocalEdge["role"] = side === entry ? "entry" : side === exit ? "exit" : "side";
+      const alongC = side === "minA" || side === "maxA";
+      return intervals
+        .filter(([from, to]) => to - from > 1e-6)
+        .map(([from, to]) => ({
+          from: alongC ? { a: line, c: from } : { a: from, c: line },
+          to: alongC ? { a: line, c: to } : { a: to, c: line },
+          role,
+          piece,
+        }));
+    }),
+  );
+
+const rectLength = (rect: LocalRect, axis: LocalVec): number => (axis.c !== 0 ? rect.maxC - rect.minC : rect.maxA - rect.minA);
+const rectWidth = (rect: LocalRect, axis: LocalVec): number => (axis.c !== 0 ? rect.maxA - rect.minA : rect.maxC - rect.minC);
+
+/** Converts the item frame to plan coordinates. */
+export const stairFrame = (item: Pick<Furniture, "x" | "y" | "rotation">) => {
+  const direction = stairDirection(item.rotation);
+  const right = { x: -direction.y, y: direction.x };
+  const toPlan = (local: LocalVec): Vec2 => ({ x: item.x + right.x * local.a + direction.x * local.c, y: item.y + right.y * local.a + direction.y * local.c });
+  const toPlanVector = (local: LocalVec): Vec2 => ({ x: right.x * local.a + direction.x * local.c, y: right.y * local.a + direction.y * local.c });
+  return { toPlan, toPlanVector };
+};
+
+const boundsOf = (points: Vec2[]): Bounds => ({
+  minX: Math.min(...points.map((point) => point.x)),
+  minY: Math.min(...points.map((point) => point.y)),
+  maxX: Math.max(...points.map((point) => point.x)),
+  maxY: Math.max(...points.map((point) => point.y)),
+});
+
+const rectCorners = (rect: LocalRect): LocalVec[] => [
+  { a: rect.minA, c: rect.minC },
+  { a: rect.maxA, c: rect.minC },
+  { a: rect.maxA, c: rect.maxC },
+  { a: rect.minA, c: rect.maxC },
+];
+
+/**
+ * Geometry of a stairs item climbing `rise` meters: flights and landings with
+ * their heights, outlines and stairwell rectangles. Risers are equal; treads
+ * are shared between the flights in proportion to their length.
+ */
+export const buildStairShape = (item: Furniture, rise: number): StairShape => {
+  const type: StairType = isStairs(item.type) ? item.type : "stairs";
+  const layout = stairLayout(type, item.width, item.depth);
+  const { toPlan, toPlanVector } = stairFrame(item);
+  const steps = Math.max(3, Math.round(rise / TARGET_RISER));
+  const riser = rise / steps;
+
+  const flights = layout.pieces.filter((piece) => piece.kind === "flight");
+  const landings = layout.pieces.length - flights.length;
+  const lengths = flights.map((piece) => rectLength(piece.rect, piece.axis));
+  const total = lengths.reduce((sum, length) => sum + length, 0);
+  const available = steps - landings;
+  // Largest remainder: every flight gets at least one step and the total is exact.
+  const exact = lengths.map((length) => (available * length) / total);
+  const counts = exact.map((value) => Math.max(1, Math.floor(value)));
+  let missing = available - counts.reduce((sum, count) => sum + count, 0);
+  const order = exact.map((value, index) => ({ index, rest: value - Math.floor(value) })).sort((left, right) => right.rest - left.rest);
+  for (let index = 0; missing > 0; index = (index + 1) % order.length, missing -= 1) counts[order[index].index] += 1;
+  for (let index = order.length - 1; missing < 0; index = (index - 1 + order.length) % order.length) {
+    if (counts[order[index].index] > 1) {
+      counts[order[index].index] -= 1;
+      missing += 1;
+    }
+  }
+
+  let height = 0;
+  let flightIndex = 0;
+  const pieces: StairPiece[] = layout.pieces.map((piece) => {
+    const length = rectLength(piece.rect, piece.axis);
+    const width = rectWidth(piece.rect, piece.axis);
+    const center = { a: (piece.rect.minA + piece.rect.maxA) / 2, c: (piece.rect.minC + piece.rect.maxC) / 2 };
+    const startLocal = { a: center.a - (piece.axis.a * length) / 2, c: center.c - (piece.axis.c * length) / 2 };
+    const direction = toPlanVector(piece.axis);
+    const corners = rectCorners(piece.rect).map(toPlan) as StairPiece["corners"];
+    const pieceSteps = piece.kind === "flight" ? counts[flightIndex++] : 0;
+    const fromHeight = piece.kind === "flight" ? height : height + riser;
+    const toHeight = piece.kind === "flight" ? height + pieceSteps * riser : fromHeight;
+    height = toHeight;
+    return {
+      kind: piece.kind,
+      rect: piece.rect,
+      axis: piece.axis,
+      steps: pieceSteps,
+      fromHeight,
+      toHeight,
+      start: toPlan(startLocal),
+      direction,
+      across: { x: -direction.y, y: direction.x },
+      length,
+      width,
+      corners,
+      bounds: boundsOf(corners),
+    };
+  });
+
+  const first = layout.pieces[0];
+  const last = layout.pieces[layout.pieces.length - 1];
+  const tagged = layout.pieces.map((piece, index) => ({
+    rect: piece.rect,
+    piece: index,
+    entry: index === 0 ? entrySide(first.axis) : undefined,
+    exit: index === layout.pieces.length - 1 ? exitSide(last.axis) : undefined,
+  }));
+  const toEdge = (edge: LocalEdge): StairEdge => ({ start: toPlan(edge.from), end: toPlan(edge.to), localStart: edge.from, localEnd: edge.to, role: edge.role, piece: edge.piece });
+  const firstPiece = pieces[0];
+  const lastPiece = pieces[pieces.length - 1];
+  return {
     item,
-    lowerIndex,
-    upperIndex: lowerIndex + 1,
-    bottom,
-    direction,
-    across,
-    run: item.depth,
-    width: item.width,
+    type,
     rise,
-    steps: Math.max(3, Math.round(rise / TARGET_RISER)),
-    corners,
-    opening: {
-      minX: Math.min(...corners.map((corner) => corner.x)),
-      minY: Math.min(...corners.map((corner) => corner.y)),
-      maxX: Math.max(...corners.map((corner) => corner.x)),
-      maxY: Math.max(...corners.map((corner) => corner.y)),
-    },
+    riser,
+    steps,
+    flightWidth: layout.flightWidth,
+    pieces,
+    edges: outline(tagged).map(toEdge),
+    footprintEdges: outline([...tagged, ...layout.wells.map((rect) => ({ rect, piece: -1 }))]).map(toEdge),
+    openings: [...pieces.map((piece) => piece.bounds), ...layout.wells.map((rect) => boundsOf(rectCorners(rect).map(toPlan)))],
+    entry: { center: firstPiece.start, direction: firstPiece.direction },
+    exit: { center: vecAdd(lastPiece.start, vecScale(lastPiece.direction, lastPiece.length)), direction: lastPiece.direction },
   };
 };
 
 /** Every stairs item that has a level above it becomes a flight (floors are sorted by level). */
 export const buildStairFlights = (plan: Plan): StairFlight[] =>
   plan.floors.flatMap((floor, index) =>
-    index < plan.floors.length - 1 ? floor.furniture.filter((item) => item.type === "stairs").map((item) => createFlight(plan, item, index)) : [],
+    index < plan.floors.length - 1
+      ? floor.furniture
+          .filter((item) => isStairs(item.type))
+          .map((item) => ({ ...buildStairShape(item, floor.height + LEVEL_SLAB_THICKNESS), id: item.id, lowerIndex: index, upperIndex: index + 1 }))
+      : [],
   );
 
-/** Position along the flight: 0 at the bottom edge, 1 at the top edge. */
-export const flightProgress = (flight: StairFlight, point: Vec2): number => vecDot(vecSub(point, flight.bottom), flight.direction) / flight.run;
-
-const acrossOffset = (flight: StairFlight, point: Vec2): number => vecDot(vecSub(point, flight.bottom), flight.across);
-
-export const isOnFlight = (flight: StairFlight, point: Vec2): boolean => {
-  const t = flightProgress(flight, point);
-  return t >= 0 && t <= 1 && Math.abs(acrossOffset(flight, point)) <= flight.width / 2;
+/** Position of a point in the frame of a piece: `t` from 0 (entry edge) to 1 (far edge), `v` across from its centerline. */
+export const pieceCoordinates = (piece: StairPiece, point: Vec2): { t: number; v: number } => {
+  const offset = vecSub(point, piece.start);
+  return { t: vecDot(offset, piece.direction) / piece.length, v: vecDot(offset, piece.across) };
 };
 
-/** Height of the walking surface above the lower floor at `point`. */
-export const flightElevation = (flight: StairFlight, point: Vec2): number => clamp(flightProgress(flight, point), 0, 1) * flight.rise;
+/** Height of the walking surface of a piece at `point` (clamped to the piece). */
+export const pieceElevation = (piece: StairPiece, point: Vec2): number =>
+  piece.kind === "landing" ? piece.fromHeight : piece.fromHeight + clamp(pieceCoordinates(piece, point).t, 0, 1) * (piece.toHeight - piece.fromHeight);
 
-const edge = (start: Vec2, end: Vec2): SolidSegment => ({ start, end, halfThickness: RAIL_HALF_THICKNESS });
+export type StairLocation = { kind: "piece"; index: number } | { kind: "below" } | { kind: "above" } | { kind: "outside" };
 
-/** The two long sides (handrails) of a flight. */
-export const flightSideSolids = (flight: StairFlight): SolidSegment[] => {
-  const [bottomLeft, bottomRight, topRight, topLeft] = flight.corners;
-  return [edge(bottomLeft, topLeft), edge(bottomRight, topRight)];
+/**
+ * Where a point stands relative to a stair: on one of its pieces, past the
+ * entry edge (back on the lower floor), past the exit edge (on the upper
+ * floor) or elsewhere.
+ */
+export const locateOnStair = (stair: StairShape, point: Vec2): StairLocation => {
+  const index = stair.pieces.findIndex((piece) => {
+    const { t, v } = pieceCoordinates(piece, point);
+    const margin = LOCATE_EPSILON / piece.length;
+    return t >= -margin && t <= 1 + margin && Math.abs(v) <= piece.width / 2 + LOCATE_EPSILON;
+  });
+  const first = pieceCoordinates(stair.pieces[0], point);
+  const last = pieceCoordinates(stair.pieces[stair.pieces.length - 1], point);
+  const lastPiece = stair.pieces[stair.pieces.length - 1];
+  if (last.t > 1 && Math.abs(last.v) <= lastPiece.width / 2 + LOCATE_EPSILON) return { kind: "above" };
+  if (first.t < 0 && Math.abs(first.v) <= stair.pieces[0].width / 2 + LOCATE_EPSILON) return { kind: "below" };
+  return index >= 0 ? { kind: "piece", index } : { kind: "outside" };
 };
 
-/** On the lower floor the flight can only be entered from its bottom edge. */
-export const lowerFlightSolids = (flight: StairFlight): SolidSegment[] => {
-  const [, , topRight, topLeft] = flight.corners;
-  return [...flightSideSolids(flight), edge(topLeft, topRight)];
+/** Is the point on the stair's footprint (a piece or the well)? */
+export const isOnStair = (stair: StairShape, point: Vec2): boolean =>
+  stair.openings.some((bounds, index) => {
+    if (index < stair.pieces.length) {
+      const piece = stair.pieces[index];
+      const { t, v } = pieceCoordinates(piece, point);
+      return t >= 0 && t <= 1 && Math.abs(v) <= piece.width / 2;
+    }
+    return point.x >= bounds.minX && point.x <= bounds.maxX && point.y >= bounds.minY && point.y <= bounds.maxY;
+  });
+
+/** Height of the walking surface at `point`, on the piece it stands on (or the nearest end). */
+export const stairElevation = (stair: StairShape, point: Vec2, hint = 0): number => {
+  const location = locateOnStair(stair, point);
+  if (location.kind === "above") return stair.rise;
+  if (location.kind === "below") return 0;
+  const piece = stair.pieces[location.kind === "piece" ? location.index : clamp(hint, 0, stair.pieces.length - 1)];
+  return pieceElevation(piece, point);
 };
 
-/** On the upper floor the stairwell is guarded on every side except the arrival (top) edge. */
-export const upperFlightSolids = (flight: StairFlight): SolidSegment[] => {
-  const [bottomLeft, bottomRight] = flight.corners;
-  return [...flightSideSolids(flight), edge(bottomLeft, bottomRight)];
+/** Height of a stair edge point (in the item frame), on the piece the edge belongs to. */
+export const edgeElevation = (stair: StairShape, edge: StairEdge, point: Vec2): number => {
+  if (edge.piece < 0) return 0;
+  return pieceElevation(stair.pieces[edge.piece], point);
 };
+
+const solid = (edge: StairEdge): SolidSegment => ({ start: edge.start, end: edge.end, halfThickness: RAIL_HALF_THICKNESS });
+
+/** Rails around the walkable pieces, open at the entry and the exit. */
+export const stairSideSolids = (stair: StairShape): SolidSegment[] => stair.edges.filter((edge) => edge.role === "side").map(solid);
+
+/** On the lower floor the stair can only be entered from its entry edge. */
+export const lowerStairSolids = (stair: StairShape): SolidSegment[] => stair.footprintEdges.filter((edge) => edge.role !== "entry").map(solid);
+
+/** On the upper floor the stairwell is guarded on every side except the arrival. */
+export const upperStairSolids = (stair: StairShape): SolidSegment[] => stair.footprintEdges.filter((edge) => edge.role !== "exit").map(solid);
 
 /** Splits `rect` into the (up to four) rectangles left once `hole` is removed. */
 export const subtractRect = (rect: Bounds, hole: Bounds): Bounds[] => {
@@ -145,13 +427,18 @@ export const subtractRect = (rect: Bounds, hole: Bounds): Bounds[] => {
 export const subtractRects = (rect: Bounds, holes: Bounds[]): Bounds[] =>
   holes.reduce<Bounds[]>((pieces, hole) => pieces.flatMap((piece) => subtractRect(piece, hole)), [rect]);
 
+interface Frame {
+  start: Vec2;
+  direction: Vec2;
+  across: Vec2;
+}
+
 /**
- * Does a (thick) wall segment cross the flight rectangle shrunk by a margin?
- * Liang–Barsky clipping in the flight's frame, the rectangle being grown by
- * the wall's half thickness.
+ * Does a (thick) wall segment cross the area [from, to] × [-halfWidth, halfWidth]
+ * of a frame? Liang–Barsky clipping, the area being grown by the wall's half thickness.
  */
-const crossesFlightArea = (flight: StairFlight, wall: SolidSegment, from: number, to: number, halfWidth: number): boolean => {
-  const toLocal = (point: Vec2) => ({ u: vecDot(vecSub(point, flight.bottom), flight.direction), v: vecDot(vecSub(point, flight.bottom), flight.across) });
+const crossesArea = (frame: Frame, wall: SolidSegment, from: number, to: number, halfWidth: number): boolean => {
+  const toLocal = (point: Vec2) => ({ u: vecDot(vecSub(point, frame.start), frame.direction), v: vecDot(vecSub(point, frame.start), frame.across) });
   const start = toLocal(wall.start);
   const end = toLocal(wall.end);
   const grow = wall.halfThickness;
@@ -179,21 +466,25 @@ const crossesFlightArea = (flight: StairFlight, wall: SolidSegment, from: number
   return true;
 };
 
+/** Does a wall cut through one of the pieces (shrunk by a tolerance)? */
+const crossesStair = (stair: StairShape, walls: SolidSegment[]): boolean =>
+  stair.pieces.some((piece) => walls.some((wall) => crossesArea(piece, wall, EDGE_TOLERANCE, piece.length - EDGE_TOLERANCE, piece.width / 2 - EDGE_TOLERANCE)));
+
 const floorSolids = (floor: Floor): SolidSegment[] => buildSolidSegments(buildWallSegments(floor));
 
 const isInsideIndoorRoom = (floor: Floor, point: Vec2): boolean =>
   floor.rooms.some((room) => !isOutdoorRoom(room) && isPointInRoom(room, point));
 
 export interface StairCheck {
-  /** Name of the room reached at the top, when the flight lands in a room. */
+  /** Name of the room reached at the top, when the stair lands in a room. */
   arrivalRoom: string | null;
   issues: string[];
 }
 
 /**
  * Explains, in French, why a stairs item does not lead upstairs properly:
- * no level above, a wall in the way on either level, or an arrival that is
- * blocked or outside the house.
+ * no level above, a model too small for its flights, a wall in the way on
+ * either level, or an arrival that is blocked or outside the house.
  */
 export const checkStairs = (plan: Plan, floorIndex: number, item: Furniture): StairCheck => {
   const lower = plan.floors[floorIndex];
@@ -201,30 +492,32 @@ export const checkStairs = (plan: Plan, floorIndex: number, item: Furniture): St
   if (!upper) {
     return { arrivalRoom: null, issues: ["Aucun niveau au-dessus : cet escalier ne mène nulle part. Ajoutez un étage."] };
   }
-  const flight = createFlight(plan, item, floorIndex);
+  const stair = buildStairShape(item, lower.height + LEVEL_SLAB_THICKNESS);
   const issues: string[] = [];
-  const halfInner = flight.width / 2 - EDGE_TOLERANCE;
+  if (stair.pieces.some((piece) => piece.kind === "flight" && piece.length < MIN_FLIGHT_LENGTH)) {
+    issues.push("Escalier trop petit pour ce modèle : agrandissez sa largeur ou sa profondeur.");
+  }
 
-  if (floorSolids(lower).some((wall) => crossesFlightArea(flight, wall, EDGE_TOLERANCE, flight.run - EDGE_TOLERANCE, halfInner))) {
-    issues.push(`L'escalier traverse un mur (${lower.name}).`);
-  }
+  const lowerWalls = floorSolids(lower);
   const upperWalls = floorSolids(upper);
-  if (upperWalls.some((wall) => crossesFlightArea(flight, wall, EDGE_TOLERANCE, flight.run - EDGE_TOLERANCE, halfInner))) {
-    issues.push(`La trémie traverse un mur (${upper.name}).`);
-  }
+  if (crossesStair(stair, lowerWalls)) issues.push(`L'escalier traverse un mur (${lower.name}).`);
+  if (crossesStair(stair, upperWalls)) issues.push(`La trémie traverse un mur (${upper.name}).`);
 
   // The visitor must be able to step off at the top…
-  const arrival = vecAdd(flight.bottom, vecScale(flight.direction, flight.run + 0.45));
+  const lastPiece = stair.pieces[stair.pieces.length - 1];
+  const halfInner = lastPiece.width / 2 - EDGE_TOLERANCE;
+  const arrival = vecAdd(stair.exit.center, vecScale(stair.exit.direction, 0.45));
   const arrivalRoom = upper.rooms.find((room) => !isOutdoorRoom(room) && isPointInRoom(room, arrival)) ?? null;
   if (!arrivalRoom) {
     issues.push(`L'arrivée de l'escalier donne hors de l'${upper.name.toLowerCase()} ou sur l'extérieur.`);
-  } else if (upperWalls.some((wall) => crossesFlightArea(flight, wall, flight.run - 0.1, flight.run + 0.6, halfInner))) {
+  } else if (upperWalls.some((wall) => crossesArea(lastPiece, wall, lastPiece.length - 0.1, lastPiece.length + 0.6, halfInner))) {
     issues.push(`L'arrivée de l'escalier est bloquée par un mur (${upper.name}).`);
   }
 
   // …and to step on at the bottom.
-  const departure = vecAdd(flight.bottom, vecScale(flight.direction, -0.45));
-  if (!isInsideIndoorRoom(lower, departure) || floorSolids(lower).some((wall) => crossesFlightArea(flight, wall, -0.6, 0.1, halfInner))) {
+  const firstPiece = stair.pieces[0];
+  const departure = vecAdd(stair.entry.center, vecScale(stair.entry.direction, -0.45));
+  if (!isInsideIndoorRoom(lower, departure) || lowerWalls.some((wall) => crossesArea(firstPiece, wall, -0.6, 0.1, firstPiece.width / 2 - EDGE_TOLERANCE))) {
     issues.push(`Le départ de l'escalier est bloqué (${lower.name}).`);
   }
 
@@ -236,7 +529,7 @@ export const stairIssues = (plan: Plan): Map<string, string[]> => {
   const result = new Map<string, string[]>();
   plan.floors.forEach((floor, index) => {
     for (const item of floor.furniture) {
-      if (item.type !== "stairs") continue;
+      if (!isStairs(item.type)) continue;
       const { issues } = checkStairs(plan, index, item);
       if (issues.length > 0) result.set(item.id, issues);
     }

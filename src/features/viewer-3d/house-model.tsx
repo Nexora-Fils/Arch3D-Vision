@@ -14,12 +14,11 @@ import {
   vecAdd,
   vecScale,
   type Bounds,
-  type SolidSegment,
   type WallSegment,
 } from "@/domain/plan/geometry";
 import type { Floor, Lot, Material, Plan, Room } from "@/domain/plan/schema";
 import { toScene } from "@/features/viewer-3d/convert";
-import { distanceToWalls, buildStairFlights, subtractRects, type StairFlight } from "@/domain/plan/stairs";
+import { buildStairFlights, isStairs, subtractRects, type StairFlight } from "@/domain/plan/stairs";
 import { FurnitureMesh } from "@/features/viewer-3d/furniture-mesh";
 import { ScannedModel } from "@/features/viewer-3d/scanned-model";
 import { DoorUnit, WindowUnit, type JoineryStyle } from "@/features/viewer-3d/architecture/openings";
@@ -27,7 +26,7 @@ import { RoofAssembly } from "@/features/viewer-3d/architecture/roof-assembly";
 import { computePaths, FlowerBeds, Garden, Ground, Hedges, PathSlab } from "@/features/viewer-3d/landscape/garden";
 import { pickMaterial, useSceneMaterials, useTiledMaterial, type SceneMaterials } from "@/features/viewer-3d/scene-materials";
 import { photoForMaterial } from "@/features/viewer-3d/textures";
-import { GuardRail, StairFlightMesh } from "@/features/viewer-3d/stair-mesh";
+import { GuardRail, StairModel, StairwellGuards } from "@/features/viewer-3d/stair-mesh";
 import { buildWallGeometry } from "@/features/viewer-3d/wall-geometry";
 import type { TimeOfDay } from "@/store/viewer-store";
 
@@ -130,8 +129,8 @@ interface FloorModelProps {
 const FloorModel = ({ floor, flightsFrom, flightsTo, nextFloor, base, isTop, plan, materials, materialById, joinery, mode, isEvening, lightsEnabled }: FloorModelProps) => {
   const segments = useMemo(() => buildWallSegments(floor), [floor]);
   const walls = useMemo(() => buildSolidSegments(segments), [segments]);
-  const floorHoles = useMemo(() => flightsTo.map((flight) => flight.opening), [flightsTo]);
-  const ceilingHoles = useMemo(() => flightsFrom.map((flight) => flight.opening), [flightsFrom]);
+  const floorHoles = useMemo(() => flightsTo.flatMap((flight) => flight.openings), [flightsTo]);
+  const ceilingHoles = useMemo(() => flightsFrom.flatMap((flight) => flight.openings), [flightsFrom]);
   const flightByItem = useMemo(() => new Map(flightsFrom.map((flight) => [flight.item.id, flight])), [flightsFrom]);
   const indoorRooms = useMemo(() => floor.rooms.filter((room) => !isOutdoorRoom(room)), [floor.rooms]);
   const exteriorMaterial = pickMaterial(materials, plan.settings.exteriorMaterialId, materials.exterior);
@@ -183,15 +182,8 @@ const FloorModel = ({ floor, flightsFrom, flightsTo, nextFloor, base, isTop, pla
       })}
       {!isTop && nextFloor ? <TerraceRailings floor={floor} nextFloor={nextFloor} top={base + floor.height + LEVEL_SLAB_THICKNESS - 0.02} lot={plan.lot} materials={materials} /> : null}
       {floor.furniture.map((item) => {
-        const flight = flightByItem.get(item.id);
-        if (flight) {
-          const [bottomLeft, bottomRight, topRight, topLeft] = flight.corners;
-          const middle = (a: { x: number; y: number }, b: { x: number; y: number }) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-          const openSides = {
-            left: distanceToWalls(walls, middle(bottomLeft, topLeft)) > HANDRAIL_WALL_CLEARANCE,
-            right: distanceToWalls(walls, middle(bottomRight, topRight)) > HANDRAIL_WALL_CLEARANCE,
-          };
-          return <StairFlightMesh key={item.id} flight={flight} base={base} lot={plan.lot} materials={materials} openSides={openSides} />;
+        if (isStairs(item.type)) {
+          return <StairModel key={item.id} item={item} flight={flightByItem.get(item.id) ?? null} walls={walls} base={base} lot={plan.lot} materials={materials} />;
         }
         return (
           <FurnitureMesh
@@ -397,26 +389,6 @@ const SlabPiece = ({ piece, room, lot, bottom, thickness, material, underside, e
     <mesh position={[x, bottom + thickness / 2, z]} receiveShadow castShadow={castShadow} material={[edges ?? top, edges ?? top, top, below, edges ?? top, edges ?? top]}>
       <boxGeometry args={[width, thickness, depth]} />
     </mesh>
-  );
-};
-
-/** Distance from a wall below which a flight side or a stairwell edge needs no handrail (m). */
-const HANDRAIL_WALL_CLEARANCE = 0.25;
-
-/** Glass guards around a stairwell, on every edge except the arrival and the edges along a wall. */
-const StairwellGuards = ({ flight, walls, top, lot, materials }: { flight: StairFlight; walls: SolidSegment[]; top: number; lot: Lot; materials: SceneMaterials }) => {
-  const [bottomLeft, bottomRight, topRight, topLeft] = flight.corners;
-  const edges = [
-    { start: bottomLeft, end: topLeft },
-    { start: bottomRight, end: topRight },
-    { start: bottomLeft, end: bottomRight },
-  ].filter(({ start, end }) => distanceToWalls(walls, { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 }) > HANDRAIL_WALL_CLEARANCE);
-  return (
-    <group>
-      {edges.map((edge, index) => (
-        <GuardRail key={index} start={edge.start} end={edge.end} top={top} lot={lot} materials={materials} />
-      ))}
-    </group>
   );
 };
 
