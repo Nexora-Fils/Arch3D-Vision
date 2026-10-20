@@ -87,7 +87,7 @@ interface GuardRailProps {
 }
 
 /** Glass guard rail with a metal handrail and posts (terraces, stairwells). */
-export const GuardRail = ({ start, end, top, lot, materials, glass = materials.glass }: GuardRailProps) => {
+export const GuardRail = ({ start, end, top, lot, materials, glass = materials.railGlass }: GuardRailProps) => {
   const length = Math.hypot(end.x - start.x, end.y - start.y);
   const angle = Math.atan2(end.y - start.y, end.x - start.x);
   const [x, z] = toScene({ x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 }, lot);

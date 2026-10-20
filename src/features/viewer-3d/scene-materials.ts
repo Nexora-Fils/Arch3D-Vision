@@ -18,6 +18,8 @@ export interface SceneMaterials {
   terrace: MeshStandardMaterial;
   path: MeshStandardMaterial;
   glass: MeshStandardMaterial;
+  /** Glass of guard rails: seen from both sides, it keeps the physical 4 % reflectance on both faces. */
+  railGlass: MeshStandardMaterial;
   glassLit: MeshStandardMaterial;
   frame: MeshStandardMaterial;
   doorLeaf: MeshStandardMaterial;
@@ -75,18 +77,27 @@ export const createPhotoMaterial = (photo: PhotoSet | null, color: string, rough
     photo?.variation ?? null,
   );
 
-/** Share of the scene behind a window that the glass dims when seen head-on (slight tint). */
-const GLASS_MIN_OPACITY = 0.12;
+/** Head-on reflectance of glass seen from inside (physical, ≈ 4 %) and from outside. */
+const GLASS_REFLECTANCE_INSIDE = 0.04;
+/**
+ * Seen from outside in daylight, a window reads as a reflection of the sky
+ * because the room behind is much darker than outdoors. Image-based light is
+ * not occluded by walls here, so rooms are too bright: a higher reflectance
+ * restores that contrast and makes upper-floor windows readable.
+ */
+const GLASS_REFLECTANCE_OUTSIDE = 0.24;
+/** Cap on the glass color, below the bloom threshold: the sun reflected in a pane no longer glares. */
+const GLASS_MAX_RADIANCE = 3;
 
 /**
  * Window glass without a transmission pass (which re-renders the whole scene
- * every frame). Black albedo leaves only the specular reflection R·sky; the
- * opacity follows Fresnel (R ≈ 4 % head-on, 100 % at grazing angles) and the
- * color is divided by it, so the blend gives R·sky + (1 − R)·behind like real
- * glass: clear when facing it, a mirror at grazing angles, never washed out.
+ * every frame). Black albedo leaves only the specular reflection of the sky;
+ * it is rescaled to the wanted reflectance R (Fresnel, rising to 100 % at
+ * grazing angles) and blended with opacity R, which gives R·sky + (1 − R)·behind
+ * like real glass. Panes face outward, so front faces are seen from outside.
  * The low-quality profile keeps a cheap tinted transparency.
  */
-const createGlass = (quality: "low" | "high"): MeshStandardMaterial => {
+const createGlass = (quality: "low" | "high", outsideReflectance = GLASS_REFLECTANCE_OUTSIDE): MeshStandardMaterial => {
   if (quality !== "high") {
     return new MeshStandardMaterial({ color: "#cfe2f0", roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.25, side: DoubleSide, envMapIntensity: 0.6 });
   }
@@ -94,12 +105,16 @@ const createGlass = (quality: "low" | "high"): MeshStandardMaterial => {
   glass.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <opaque_fragment>",
-      `float glassFresnel = 0.04 + 0.96 * pow(1.0 - saturate(abs(dot(geometryNormal, geometryViewDir))), 5.0);
-      float glassAlpha = max(glassFresnel, ${GLASS_MIN_OPACITY.toFixed(2)});
-      gl_FragColor = vec4(outgoingLight / glassAlpha, glassAlpha);`,
+      `float glassGrazing = pow(1.0 - saturate(abs(dot(geometryNormal, geometryViewDir))), 5.0);
+      float glassF0 = gl_FrontFacing ? ${outsideReflectance.toFixed(2)} : ${GLASS_REFLECTANCE_INSIDE.toFixed(2)};
+      float glassReflectance = glassF0 + (1.0 - glassF0) * glassGrazing;
+      // three.js computed the reflection for the physical 4 %: rescale it to the wanted reflectance.
+      vec3 glassReflection = outgoingLight * glassReflectance / (0.04 + 0.96 * glassGrazing);
+      float glassAlpha = max(glassReflectance, 0.08);
+      gl_FragColor = vec4(min(glassReflection / glassAlpha, vec3(${GLASS_MAX_RADIANCE.toFixed(1)})), glassAlpha);`,
     );
   };
-  glass.customProgramCacheKey = () => "fresnel-glass";
+  glass.customProgramCacheKey = () => `fresnel-glass-${outsideReflectance}`;
   return glass;
 };
 
@@ -120,6 +135,7 @@ export const useSceneMaterials = (materials: Material[], frameColor = "#2b2f36",
       terrace: standard("#d6d2ca", 0.9, "patio"),
       path: standard("#c9c3b8", 0.9, "patio"),
       glass: createGlass(quality),
+      railGlass: createGlass(quality, GLASS_REFLECTANCE_INSIDE),
       // Lit from inside in the evening: seen only from outside (single-sided plane facing out).
       glassLit: standard("#ffd9a8", 0.1, undefined, { transparent: true, opacity: 0.6, metalness: 0.2, emissive: new Color("#ffb766"), emissiveIntensity: 1.6 }),
       frame: standard(frameColor, 0.42, undefined, { metalness: 0.3 }),
