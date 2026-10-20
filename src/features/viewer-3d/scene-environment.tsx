@@ -3,7 +3,7 @@
 import { Environment, Sky, SoftShadows, useEnvironment } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo } from "react";
-import { Vector3, type Texture } from "three";
+import { Vector3, type Texture, type WebGLProgramParametersWithUniforms } from "three";
 import { GroundedSkybox } from "three/examples/jsm/objects/GroundedSkybox.js";
 import type { TimeOfDay } from "@/store/viewer-store";
 
@@ -130,6 +130,14 @@ const PhotographicSky = ({ spec, interior }: { spec: SkySpec; interior: boolean 
   );
 };
 
+/**
+ * Brightest value the visible sky may reach. The photographed sun is tens of
+ * thousands of times brighter than the sky; seen directly (or through a
+ * window) it bloomed into a glare. Lighting is unaffected: it comes from the
+ * unclamped environment map and the directional sun.
+ */
+const SKY_MAX_RADIANCE = 2.4;
+
 /** The HDR photograph as a dome whose lower half is flattened into a ground at y = 0. */
 const GroundedSky = ({ texture, rotation, intensity }: { texture: Texture; rotation: number; intensity: number }) => {
   const skybox = useMemo(() => {
@@ -137,6 +145,9 @@ const GroundedSky = ({ texture, rotation, intensity }: { texture: Texture; rotat
     mesh.position.y = PHOTO_CAMERA_HEIGHT - 0.02;
     mesh.rotation.y = rotation;
     mesh.material.color.setScalar(intensity);
+    mesh.material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
+      shader.fragmentShader = shader.fragmentShader.replace("#include <opaque_fragment>", `outgoingLight = min(outgoingLight, vec3(${SKY_MAX_RADIANCE.toFixed(2)}));\n#include <opaque_fragment>`);
+    };
     // Drawn behind everything else, like a background.
     mesh.renderOrder = -1;
     return mesh;
