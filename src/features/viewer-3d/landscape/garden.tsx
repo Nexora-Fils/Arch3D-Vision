@@ -167,7 +167,8 @@ export const PathSlab = ({ path, lot, material, materials }: { path: PathRect; l
         <boxGeometry args={[path.depth, 0.03, path.width]} />
       </mesh>
       {[1, -1].map((side) => (
-        <MetricBox key={side} size={[path.depth, 0.06, kerb]} position={[0, 0.02, side * (path.width / 2 + kerb / 2)]} material={materials.kerb} castShadow />
+        // Nearly flush kerbs: their top (3.4 cm) stays under a pool's water level (3.5 cm) when a path runs past it.
+        <MetricBox key={side} size={[path.depth, 0.05, kerb]} position={[0, 0.009, side * (path.width / 2 + kerb / 2)]} material={materials.kerb} castShadow />
       ))}
     </group>
   );
