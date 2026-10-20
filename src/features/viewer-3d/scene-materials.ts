@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { Color, DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Texture } from "three";
+import { Color, DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Texture, type WebGLProgramParametersWithUniforms } from "three";
 import type { Material } from "@/domain/plan/schema";
 import { tintFor, usePhotoTextures, type PhotoKey, type PhotoSet } from "@/features/viewer-3d/photo-textures";
 import { applyTextureVariation, cloneWithVariation } from "@/features/viewer-3d/texture-variation";
@@ -75,31 +75,33 @@ export const createPhotoMaterial = (photo: PhotoSet | null, color: string, rough
     photo?.variation ?? null,
   );
 
-/** Opacity of window glass: the share of reflection blended over the scene behind it. */
-const GLASS_OPACITY = 0.28;
+/** Share of the scene behind a window that the glass dims when seen head-on (slight tint). */
+const GLASS_MIN_OPACITY = 0.12;
 
 /**
  * Window glass without a transmission pass (which re-renders the whole scene
- * every frame). Black albedo: only the specular term remains, i.e. Fresnel
- * reflections of the sky, boosted by 1 / opacity so that blending does not
- * weaken them; the interior stays visible through 72 % transparency.
+ * every frame). Black albedo leaves only the specular reflection R·sky; the
+ * opacity follows Fresnel (R ≈ 4 % head-on, 100 % at grazing angles) and the
+ * color is divided by it, so the blend gives R·sky + (1 − R)·behind like real
+ * glass: clear when facing it, a mirror at grazing angles, never washed out.
  * The low-quality profile keeps a cheap tinted transparency.
  */
-const createGlass = (quality: "low" | "high"): MeshStandardMaterial =>
-  quality === "high"
-    ? new MeshPhysicalMaterial({
-        color: "#000000",
-        metalness: 0,
-        roughness: 0.04,
-        ior: 1.52,
-        specularIntensity: 1,
-        transparent: true,
-        opacity: GLASS_OPACITY,
-        envMapIntensity: 1 / GLASS_OPACITY,
-        side: DoubleSide,
-        depthWrite: false,
-      })
-    : new MeshStandardMaterial({ color: "#cfe2f0", roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.25, side: DoubleSide, envMapIntensity: 0.6 });
+const createGlass = (quality: "low" | "high"): MeshStandardMaterial => {
+  if (quality !== "high") {
+    return new MeshStandardMaterial({ color: "#cfe2f0", roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.25, side: DoubleSide, envMapIntensity: 0.6 });
+  }
+  const glass = new MeshPhysicalMaterial({ color: "#000000", metalness: 0, roughness: 0.04, ior: 1.52, specularIntensity: 1, transparent: true, side: DoubleSide, depthWrite: false });
+  glass.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <opaque_fragment>",
+      `float glassFresnel = 0.04 + 0.96 * pow(1.0 - saturate(abs(dot(geometryNormal, geometryViewDir))), 5.0);
+      float glassAlpha = max(glassFresnel, ${GLASS_MIN_OPACITY.toFixed(2)});
+      gl_FragColor = vec4(outgoingLight / glassAlpha, glassAlpha);`,
+    );
+  };
+  glass.customProgramCacheKey = () => "fresnel-glass";
+  return glass;
+};
 
 /** Builds Three.js materials (photographic PBR textures) from the plan's library; disposed on change. */
 export const useSceneMaterials = (materials: Material[], frameColor = "#2b2f36", quality: "low" | "high" = "high"): SceneMaterials => {
