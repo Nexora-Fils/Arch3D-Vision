@@ -112,6 +112,8 @@ pnpm test        # Vitest : src/**/*.test.ts
 pnpm build
 ```
 
+La CI (`.github/workflows/ci.yml`) relance ces quatre commandes sur chaque PR vers `main`, puis `pnpm test:e2e` contre une base PostgreSQL neuve, migrée et seedée.
+
 Selon le changement :
 
 | Changement | Vérification supplémentaire |

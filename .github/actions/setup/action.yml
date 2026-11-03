@@ -1,0 +1,17 @@
+name: Setup
+description: Installs pnpm (packageManager version), Node.js and dependencies, then generates the Prisma client.
+
+runs:
+  using: composite
+  steps:
+    # No version: read from the packageManager field of package.json.
+    - uses: pnpm/action-setup@v6
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+      shell: bash
+    # src/generated/ is not versioned: typecheck and build need the client.
+    - run: pnpm db:generate
+      shell: bash

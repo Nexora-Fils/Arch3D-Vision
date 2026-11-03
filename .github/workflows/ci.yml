@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    env:
+      # The Prisma client requires the variable at import, but the build never needs a reachable
+      # database: the Prisma errors logged while prerendering are expected.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: homeplan3d
+          POSTGRES_USER: homeplan
+          POSTGRES_PASSWORD: homeplan
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U homeplan -d homeplan3d"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://homeplan:homeplan@localhost:5432/homeplan3d?schema=public
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: pnpm db:migrate:deploy
+      - run: pnpm db:seed
+      - run: pnpm build
+      - name: Start server
+        run: |
+          pnpm start > server.log 2>&1 &
+          timeout 60 bash -c 'until curl -sf -o /dev/null http://localhost:3000; do sleep 1; done'
+      - run: pnpm test:e2e
+      - name: Server logs
+        if: failure()
+        run: cat server.log
