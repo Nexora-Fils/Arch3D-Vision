@@ -2,7 +2,8 @@
 # Usage: scripts/smoke.sh [http://localhost:3000]  (serveur Next.js démarré, démo seedée)
 # End-to-end smoke test: pages render, API validates, PostgreSQL persists.
 BASE="${1:-http://localhost:3000}"
-DEMO_ID="demo-project-maison-familiale-moderne"
+# The seed keeps the id of an existing demo: look it up by its stable slug.
+DEMO_ID=$(curl -s "$BASE/api/projects" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).find((p) => p.slug === "maison-familiale-moderne")?.id')
 fail=0
 check() { # label expected actual
   if [ "$2" = "$3" ]; then echo "  ok   $1 ($3)"; else echo "  FAIL $1 (attendu $2, obtenu $3)"; fail=1; fi
