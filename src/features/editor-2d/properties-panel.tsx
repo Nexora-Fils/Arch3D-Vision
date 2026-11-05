@@ -14,7 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { floorArea, formatArea, formatMeters, habitableArea, LEVEL_SLAB_THICKNESS, roomArea, wallLength } from "@/domain/plan/geometry";
 import { DOOR_TYPE_LABELS, FURNITURE_PRESETS, FURNITURE_TYPE_LABELS, ROOM_TYPE_LABELS, WALL_SIDE_LABELS } from "@/domain/plan/labels";
-import { buildStairShape, checkStairs, isStairs, STAIR_TYPES, type StairType } from "@/domain/plan/stairs";
+import { buildStairShape, checkStairs, doorBlockedByStair, isStairs, STAIR_TYPES, type StairType } from "@/domain/plan/stairs";
 import { formatDimension } from "@/features/editor-2d/canvas/annotation-shape";
 import {
   type Annotation,
@@ -293,6 +293,9 @@ const OffsetSlider = ({ wall, width, offset, onChange, onCommit }: { wall: Wall;
 
 const DoorProperties = ({ door, wall, floorId }: { door: Door; wall: Wall; floorId: string }) => {
   const { updateDoor, commit } = usePlanStore.getState();
+  const plan = usePlanStore((state) => state.plan);
+  const floorIndex = plan?.floors.findIndex((floor) => floor.id === floorId) ?? -1;
+  const blockedByStair = plan && floorIndex >= 1 && doorBlockedByStair(plan, floorIndex, door);
   return (
     <>
       <PanelSection title="Porte">
@@ -328,6 +331,11 @@ const DoorProperties = ({ door, wall, floorId }: { door: Door; wall: Wall; floor
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
+        ) : null}
+        {blockedByStair ? (
+          <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+            Cette porte est bloquée par la trémie de l&apos;escalier sur la zone de passage de 0,9 m devant la porte.
+          </p>
         ) : null}
       </PanelSection>
       <DeleteButton label="Supprimer la porte" />

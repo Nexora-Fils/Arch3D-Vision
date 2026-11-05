@@ -5,15 +5,18 @@ import {
   isOutdoorRoom,
   isPointInRoom,
   LEVEL_SLAB_THICKNESS,
+  openingPlacement,
   projectOnSegment,
   vecAdd,
   vecDot,
+  vecNormalize,
+  vecPerp,
   vecScale,
   vecSub,
   type Bounds,
   type SolidSegment,
 } from "./geometry";
-import type { Floor, Furniture, FurnitureType, Plan, Vec2 } from "./schema";
+import type { Door, Floor, Furniture, FurnitureType, Plan, Vec2 } from "./schema";
 
 /** Furniture types that are stairs, one per model. */
 export const STAIR_TYPES = ["stairs", "stairs_quarter_left", "stairs_quarter_right", "stairs_half_turn"] as const satisfies readonly FurnitureType[];
@@ -475,6 +478,64 @@ const floorSolids = (floor: Floor): SolidSegment[] => buildSolidSegments(buildWa
 const isInsideIndoorRoom = (floor: Floor, point: Vec2): boolean =>
   floor.rooms.some((room) => !isOutdoorRoom(room) && isPointInRoom(room, point));
 
+const projectPolygon = (points: Vec2[], axis: Vec2): [number, number] => {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const point of points) {
+    const projection = vecDot(point, axis);
+    min = Math.min(min, projection);
+    max = Math.max(max, projection);
+  }
+  return [min, max];
+};
+
+const polygonIntersectsBounds = (polygon: Vec2[], bounds: Bounds): boolean => {
+  const rectangle = [
+    { x: bounds.minX, y: bounds.minY },
+    { x: bounds.maxX, y: bounds.minY },
+    { x: bounds.maxX, y: bounds.maxY },
+    { x: bounds.minX, y: bounds.maxY },
+  ];
+  const direction = vecPerp(vecSub(polygon[1], polygon[0]));
+  const axes = [
+    { x: 1, y: 0 },
+    { y: 1, x: 0 },
+    vecNormalize(vecSub(polygon[1], polygon[0])),
+    vecNormalize(direction),
+  ];
+
+  return axes.every((axis) => {
+    const [polygonMin, polygonMax] = projectPolygon(polygon, axis);
+    const [rectangleMin, rectangleMax] = projectPolygon(rectangle, axis);
+    return polygonMax > rectangleMin + 1e-6 && rectangleMax > polygonMin + 1e-6;
+  });
+};
+
+/** A 0.9 m deep passage centered on the door opening. */
+export const doorBlockedByStair = (plan: Plan, upperFloorIndex: number, door: Door): boolean => {
+  const upper = plan.floors[upperFloorIndex];
+  const lower = plan.floors[upperFloorIndex - 1];
+  if (!upper || !lower || upperFloorIndex < 1) return false;
+
+  const wall = upper.walls.find((item) => item.id === door.wallId);
+  if (!wall) return false;
+  const { center, direction, normal } = openingPlacement(wall, door);
+  const halfWidth = door.width / 2;
+  const halfDepth = 0.45;
+  const corridor = [
+    vecAdd(vecAdd(center, vecScale(direction, -halfWidth)), vecScale(normal, -halfDepth)),
+    vecAdd(vecAdd(center, vecScale(direction, halfWidth)), vecScale(normal, -halfDepth)),
+    vecAdd(vecAdd(center, vecScale(direction, halfWidth)), vecScale(normal, halfDepth)),
+    vecAdd(vecAdd(center, vecScale(direction, -halfWidth)), vecScale(normal, halfDepth)),
+  ];
+
+  return lower.furniture.some((item) => {
+    if (!isStairs(item.type)) return false;
+    const stair = buildStairShape(item, lower.height + LEVEL_SLAB_THICKNESS);
+    return stair.openings.some((opening) => polygonIntersectsBounds(corridor, opening));
+  });
+};
+
 export interface StairCheck {
   /** Name of the room reached at the top, when the stair lands in a room. */
   arrivalRoom: string | null;
@@ -502,6 +563,13 @@ export const checkStairs = (plan: Plan, floorIndex: number, item: Furniture): St
   const upperWalls = floorSolids(upper);
   if (crossesStair(stair, lowerWalls)) issues.push(`L'escalier traverse un mur (${lower.name}).`);
   if (crossesStair(stair, upperWalls)) issues.push(`La trémie traverse un mur (${upper.name}).`);
+
+  const blockedDoors = upper.doors.filter((door) => doorBlockedByStair(plan, floorIndex + 1, door));
+  if (blockedDoors.length === 1) {
+    issues.push(`Une porte de l'étage est bloquée par la trémie de l'escalier (${upper.name}).`);
+  } else if (blockedDoors.length > 1) {
+    issues.push(`${blockedDoors.length} portes de l'étage sont bloquées par la trémie de l'escalier (${upper.name}).`);
+  }
 
   // The visitor must be able to step off at the top…
   const lastPiece = stair.pieces[stair.pieces.length - 1];
