@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildDemoPlan } from "../demo";
 import { createRoomWalls, LEVEL_SLAB_THICKNESS, type Bounds } from "../geometry";
-import type { Floor, Furniture, Plan, Room } from "../schema";
+import type { Door, Floor, Furniture, Plan, Room, Wall } from "../schema";
 import { FURNITURE_PRESETS } from "../labels";
 import { buildStairFlights, buildStairShape, checkStairs, STAIR_TYPES, stairIssues, subtractRect, subtractRects, type StairType } from "../stairs";
 import { HOUSE_TEMPLATES, buildPlanFromSpec } from "../templates";
@@ -195,6 +195,33 @@ describe("climbing", () => {
 });
 
 describe("stairs checks", () => {
+  it("reports an upper-floor door whose 0.9 m passage crosses the stairwell", () => {
+    const plan = withStairs(stairs);
+    const upper = plan.floors[1];
+    const wall: Wall = {
+      id: "blocked-door-wall",
+      roomId: upper.rooms[0].id,
+      side: null,
+      start: { x: 2.5, y: 3 },
+      end: { x: 3.5, y: 3 },
+      thickness: 0.2,
+      height: upper.height,
+      materialId: null,
+    };
+    const door: Door = {
+      id: "blocked-door",
+      wallId: wall.id,
+      offset: 0.5,
+      width: 0.9,
+      height: 2.1,
+      type: "standard",
+      swing: "left",
+    };
+    plan.floors[1] = { ...upper, walls: [wall], doors: [door] };
+
+    expect(checkStairs(plan, 0, stairs).issues.join(" ")).toMatch(/porte.*étage|porte.*trémie/i);
+  });
+
   it("reports the original demo bug: stairs ending against the façade, under the bathroom", () => {
     const plan = buildDemoPlan();
     const ground = plan.floors[0];
