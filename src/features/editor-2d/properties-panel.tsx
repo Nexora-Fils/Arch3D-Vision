@@ -334,7 +334,7 @@ const DoorProperties = ({ door, wall, floorId }: { door: Door; wall: Wall; floor
         ) : null}
         {blockedByStair ? (
           <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-            Cette porte est bloquée par la trémie de l&apos;escalier sur la zone de passage de 0,9 m devant la porte.
+            Cette porte est bloquée par la trémie de l&apos;escalier sur le passage de 0,9 m devant la porte.
           </p>
         ) : null}
       </PanelSection>

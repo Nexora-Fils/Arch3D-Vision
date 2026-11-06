@@ -10,13 +10,12 @@ import {
   vecAdd,
   vecDot,
   vecNormalize,
-  vecPerp,
   vecScale,
   vecSub,
   type Bounds,
   type SolidSegment,
 } from "./geometry";
-import type { Door, Floor, Furniture, FurnitureType, Plan, Vec2 } from "./schema";
+import type { Door, Floor, Furniture, FurnitureType, Plan, Vec2, Wall } from "./schema";
 
 /** Furniture types that are stairs, one per model. */
 export const STAIR_TYPES = ["stairs", "stairs_quarter_left", "stairs_quarter_right", "stairs_half_turn"] as const satisfies readonly FurnitureType[];
@@ -496,13 +495,16 @@ const polygonIntersectsBounds = (polygon: Vec2[], bounds: Bounds): boolean => {
     { x: bounds.maxX, y: bounds.maxY },
     { x: bounds.minX, y: bounds.maxY },
   ];
-  const direction = vecPerp(vecSub(polygon[1], polygon[0]));
-  const axes = [
-    { x: 1, y: 0 },
-    { y: 1, x: 0 },
-    vecNormalize(vecSub(polygon[1], polygon[0])),
-    vecNormalize(direction),
-  ];
+  const axes = [{ x: 1, y: 0 }, { x: 0, y: 1 }];
+  for (let index = 0; index < polygon.length; index += 1) {
+    const start = polygon[index];
+    const end = polygon[(index + 1) % polygon.length];
+    const edge = vecSub(end, start);
+    const length = Math.hypot(edge.x, edge.y);
+    if (length > 1e-12) {
+      axes.push(vecNormalize({ x: -edge.y, y: edge.x }));
+    }
+  }
 
   return axes.every((axis) => {
     const [polygonMin, polygonMax] = projectPolygon(polygon, axis);
@@ -511,28 +513,44 @@ const polygonIntersectsBounds = (polygon: Vec2[], bounds: Bounds): boolean => {
   });
 };
 
-/** A 0.9 m deep passage centered on the door opening. */
+/** Passage depth required in front of a door, measured from the wall face (m). */
+export const DOOR_STAIR_PASSAGE_DEPTH = 0.9;
+
+export const doorPassagePolygons = (wall: Wall, door: Door): Vec2[][] => {
+  const { center, direction, normal } = openingPlacement(wall, door);
+  const halfWidth = door.width / 2;
+  const wallFace = wall.thickness / 2;
+
+  return [-1, 1].map((side) => {
+    const inner = wallFace;
+    const outer = wallFace + DOOR_STAIR_PASSAGE_DEPTH;
+    return [
+      vecAdd(vecAdd(center, vecScale(direction, -halfWidth)), vecScale(normal, side * inner)),
+      vecAdd(vecAdd(center, vecScale(direction, halfWidth)), vecScale(normal, side * inner)),
+      vecAdd(vecAdd(center, vecScale(direction, halfWidth)), vecScale(normal, side * outer)),
+      vecAdd(vecAdd(center, vecScale(direction, -halfWidth)), vecScale(normal, side * outer)),
+    ];
+  });
+};
+
+/** Test a door passage against one specific stair shape. */
+export const doorBlockedByStairShape = (upper: Floor, door: Door, stair: StairShape): boolean => {
+  const wall = upper.walls.find((item) => item.id === door.wallId);
+  if (!wall) return false;
+  const passages = doorPassagePolygons(wall, door);
+  return passages.some((passage) => stair.openings.some((opening) => polygonIntersectsBounds(passage, opening)));
+};
+
+/** Test a door passage against every stair on the floor below. */
 export const doorBlockedByStair = (plan: Plan, upperFloorIndex: number, door: Door): boolean => {
   const upper = plan.floors[upperFloorIndex];
   const lower = plan.floors[upperFloorIndex - 1];
   if (!upper || !lower || upperFloorIndex < 1) return false;
 
-  const wall = upper.walls.find((item) => item.id === door.wallId);
-  if (!wall) return false;
-  const { center, direction, normal } = openingPlacement(wall, door);
-  const halfWidth = door.width / 2;
-  const halfDepth = 0.45;
-  const corridor = [
-    vecAdd(vecAdd(center, vecScale(direction, -halfWidth)), vecScale(normal, -halfDepth)),
-    vecAdd(vecAdd(center, vecScale(direction, halfWidth)), vecScale(normal, -halfDepth)),
-    vecAdd(vecAdd(center, vecScale(direction, halfWidth)), vecScale(normal, halfDepth)),
-    vecAdd(vecAdd(center, vecScale(direction, -halfWidth)), vecScale(normal, halfDepth)),
-  ];
-
   return lower.furniture.some((item) => {
     if (!isStairs(item.type)) return false;
     const stair = buildStairShape(item, lower.height + LEVEL_SLAB_THICKNESS);
-    return stair.openings.some((opening) => polygonIntersectsBounds(corridor, opening));
+    return doorBlockedByStairShape(upper, door, stair);
   });
 };
 
@@ -564,7 +582,7 @@ export const checkStairs = (plan: Plan, floorIndex: number, item: Furniture): St
   if (crossesStair(stair, lowerWalls)) issues.push(`L'escalier traverse un mur (${lower.name}).`);
   if (crossesStair(stair, upperWalls)) issues.push(`La trémie traverse un mur (${upper.name}).`);
 
-  const blockedDoors = upper.doors.filter((door) => doorBlockedByStair(plan, floorIndex + 1, door));
+  const blockedDoors = upper.doors.filter((door) => doorBlockedByStairShape(upper, door, stair));
   if (blockedDoors.length === 1) {
     issues.push(`Une porte de l'étage est bloquée par la trémie de l'escalier (${upper.name}).`);
   } else if (blockedDoors.length > 1) {
