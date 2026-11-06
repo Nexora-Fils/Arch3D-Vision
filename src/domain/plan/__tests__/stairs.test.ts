@@ -3,7 +3,7 @@ import { buildDemoPlan } from "../demo";
 import { createRoomWalls, LEVEL_SLAB_THICKNESS, type Bounds } from "../geometry";
 import type { Door, Floor, Furniture, Plan, Room, Wall } from "../schema";
 import { FURNITURE_PRESETS } from "../labels";
-import { buildStairFlights, buildStairShape, checkStairs, STAIR_TYPES, stairIssues, subtractRect, subtractRects, type StairType } from "../stairs";
+import { buildStairFlights, buildStairShape, checkStairs, DOOR_STAIR_PASSAGE_DEPTH, doorBlockedByStairShape, STAIR_TYPES, stairIssues, subtractRect, subtractRects, type StairType } from "../stairs";
 import { HOUSE_TEMPLATES, buildPlanFromSpec } from "../templates";
 import { createWalkWorld, moveVisitor, spawnVisitor, visibleFloorIndex, visitorElevation, type VisitorState } from "../walk";
 
@@ -56,6 +56,29 @@ const withStairs = (item: Furniture): Plan => {
   const plan = twoLevels();
   plan.floors[0] = { ...plan.floors[0], furniture: [item] };
   return plan;
+};
+
+const verticalDoor = (upper: Floor, wallX: number, doorY = 4, id = "blocked-door"): { wall: Wall; door: Door } => {
+  const wall: Wall = {
+    id: `${id}-wall`,
+    roomId: upper.rooms[0].id,
+    side: null,
+    start: { x: wallX, y: doorY + 1 },
+    end: { x: wallX, y: doorY - 1 },
+    thickness: 0.2,
+    height: upper.height,
+    materialId: null,
+  };
+  const door: Door = {
+    id,
+    wallId: wall.id,
+    offset: 1,
+    width: 0.9,
+    height: 2.1,
+    type: "standard",
+    swing: "left",
+  };
+  return { wall, door };
 };
 
 /** Walks through a list of waypoints, each leg in small steps. */
@@ -195,31 +218,60 @@ describe("climbing", () => {
 });
 
 describe("stairs checks", () => {
-  it("reports an upper-floor door whose 0.9 m passage crosses the stairwell", () => {
+  it("reports a door when its 0.9 m passage crosses a straight stairwell and not beyond it", () => {
     const plan = withStairs(stairs);
     const upper = plan.floors[1];
-    const wall: Wall = {
-      id: "blocked-door-wall",
-      roomId: upper.rooms[0].id,
-      side: null,
-      start: { x: 2.5, y: 3 },
-      end: { x: 3.5, y: 3 },
-      thickness: 0.2,
-      height: upper.height,
-      materialId: null,
-    };
-    const door: Door = {
-      id: "blocked-door",
-      wallId: wall.id,
-      offset: 0.5,
-      width: 0.9,
-      height: 2.1,
-      type: "standard",
-      swing: "left",
-    };
+    const { wall, door } = verticalDoor(upper, 2);
     plan.floors[1] = { ...upper, walls: [wall], doors: [door] };
 
-    expect(checkStairs(plan, 0, stairs).issues.join(" ")).toMatch(/porte.*étage|porte.*trémie/i);
+    expect(checkStairs(plan, 0, stairs).issues).toContain("Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).");
+
+    const distant = verticalDoor(upper, 1.5, 4, "distant-door");
+    plan.floors[1] = { ...upper, walls: [distant.wall], doors: [distant.door] };
+    expect(checkStairs(plan, 0, stairs).issues).not.toContain("Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).");
+    expect(DOOR_STAIR_PASSAGE_DEPTH).toBe(0.9);
+  });
+
+  it("reports only the stair whose opening blocks the door", () => {
+    const plan = withStairs(stairs);
+    plan.floors[0].furniture = [
+      { ...stairs, id: "stair-a", x: 3 },
+      { ...stairs, id: "stair-b", x: 5 },
+    ];
+    const upper = plan.floors[1];
+    const { wall, door } = verticalDoor(upper, 2.1);
+    plan.floors[1] = { ...upper, walls: [wall], doors: [door] };
+
+    expect(checkStairs(plan, 0, plan.floors[0].furniture[0]).issues).toContain("Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).");
+    expect(checkStairs(plan, 0, plan.floors[0].furniture[1]).issues).not.toContain("Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).");
+  });
+
+  it.each(["stairs_quarter_left", "stairs_quarter_right", "stairs_half_turn"] as StairType[])("detects a blocked door for the turning stair « %s »", (type) => {
+    const item = model(type);
+    const stair = buildStairShape(item, 2.95);
+    const opening = stair.openings[0];
+    const wallX = opening.minX - 0.5;
+    const doorY = (opening.minY + opening.maxY) / 2;
+    const upper = withStairs(item).floors[1];
+    const { wall, door } = verticalDoor(upper, wallX, doorY, "turning-door");
+    upper.walls = [wall];
+    upper.doors = [door];
+
+    expect(doorBlockedByStairShape(upper, door, stair)).toBe(true);
+  });
+
+  it("reports two blocked doors with an exact plural message", () => {
+    const plan = withStairs(stairs);
+    const upper = plan.floors[1];
+    const first = verticalDoor(upper, 2.1, 4, "door-1");
+    const second = verticalDoor(upper, 2.1, 2, "door-2");
+    plan.floors[1] = {
+      ...upper,
+      walls: [first.wall, second.wall],
+      doors: [first.door, second.door],
+    };
+
+    expect(checkStairs(plan, 0, stairs).issues).toContain("2 portes de l'étage sont bloquées par la trémie de l'escalier (Étage).");
   });
 
   it("reports the original demo bug: stairs ending against the façade, under the bathroom", () => {
