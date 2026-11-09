@@ -1,6 +1,6 @@
 "use client";
 
-import { AppWindow, Armchair, DoorOpen, Footprints, MousePointer2, Ruler, Square, SquareDashed, Trash, Type, type LucideIcon } from "lucide-react";
+import { AppWindow, Armchair, DoorOpen, Eye, EyeOff, Footprints, MousePointer2, Ruler, Square, SquareDashed, Trash, Type, type LucideIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FURNITURE_TYPE_LABELS } from "@/domain/plan/labels";
 import { FURNITURE_TYPES } from "@/domain/plan/schema";
@@ -8,6 +8,8 @@ import { isStairs } from "@/domain/plan/stairs";
 import { useDeleteSelection } from "@/features/editor-2d/use-delete-selection";
 import { cn } from "@/lib/utils";
 import { useEditorStore, type EditorTool } from "@/store/editor-store";
+import { usePlanStore } from "@/store/plan-store";
+import { floorBelow } from "@/domain/plan/geometry";
 
 interface ToolDefinition {
   tool: EditorTool;
@@ -37,6 +39,12 @@ export const EditorToolbar = () => {
   const selection = useEditorStore((state) => state.selection);
   const furnitureType = useEditorStore((state) => state.furnitureType);
   const setFurnitureType = useEditorStore((state) => state.setFurnitureType);
+  const activeFloorId = useEditorStore((state) => state.activeFloorId);
+  const showLowerFloor = useEditorStore((state) => state.showLowerFloor);
+  const toggleLowerFloor = useEditorStore((state) => state.toggleLowerFloor);
+  const floors = usePlanStore((state) => state.plan?.floors ?? []);
+  const activeFloor = floors.find((floor) => floor.id === activeFloorId);
+  const hasLowerFloor = activeFloor ? floorBelow(floors, activeFloor.level) !== null : false;
   const deleteSelection = useDeleteSelection();
 
   return (
@@ -77,6 +85,18 @@ export const EditorToolbar = () => {
         </PopoverContent>
       </Popover>
       <span className="mx-1 my-1 hidden h-px bg-white/10 md:block" />
+      {hasLowerFloor ? (
+        <button
+          type="button"
+          onClick={toggleLowerFloor}
+          aria-pressed={showLowerFloor}
+          title={showLowerFloor ? "Masquer le niveau inférieur" : "Afficher le niveau inférieur"}
+          className={cn(itemClass, "w-auto", showLowerFloor && "bg-electric text-white hover:bg-electric")}
+        >
+          {showLowerFloor ? <Eye className="size-4 shrink-0" aria-hidden /> : <EyeOff className="size-4 shrink-0" aria-hidden />}
+          Calque inférieur
+        </button>
+      ) : null}
       <button type="button" onClick={deleteSelection} disabled={!selection} title="Supprimer (⌫)" className={cn(itemClass, "w-auto")}>
         <Trash className="size-4 shrink-0" aria-hidden />
         Supprimer

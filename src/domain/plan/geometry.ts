@@ -454,6 +454,14 @@ export interface Bounds {
   maxY: number;
 }
 
+/** Returns the closest existing floor below the given level. */
+export const floorBelow = (floors: Floor[], level: number): Floor | null =>
+  floors.reduce<Floor | null>(
+    (closest, candidate) =>
+      candidate.level < level && (!closest || candidate.level > closest.level) ? candidate : closest,
+    null,
+  );
+
 export const floorBounds = (floor: Floor, options: { indoorOnly?: boolean } = {}): Bounds | null => {
   const points: Vec2[] = [];
   for (const room of floor.rooms) {
@@ -472,6 +480,55 @@ export const floorBounds = (floor: Floor, options: { indoorOnly?: boolean } = {}
       maxY: Math.max(bounds.maxY, point.y),
     }),
     { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
+  );
+};
+
+/** Bounds of a floor's indoor rooms and walls. */
+export const indoorBounds = (floor: Floor): Bounds | null =>
+  floorBounds({ ...floor, rooms: floor.rooms.filter((room) => !isOutdoorRoom(room)) }, { indoorOnly: true });
+
+const isRoomCoveredBy = (room: Room, coveringRooms: Room[]): boolean => {
+  const maxX = room.x + room.width;
+  const maxY = room.y + room.depth;
+  const xCoordinates = [room.x, maxX];
+  const yCoordinates = [room.y, maxY];
+
+  for (const candidate of coveringRooms) {
+    const candidateMaxX = candidate.x + candidate.width;
+    const candidateMaxY = candidate.y + candidate.depth;
+    if (candidateMaxX <= room.x || candidate.x >= maxX || candidateMaxY <= room.y || candidate.y >= maxY) continue;
+    xCoordinates.push(Math.max(room.x, candidate.x), Math.min(maxX, candidateMaxX));
+    yCoordinates.push(Math.max(room.y, candidate.y), Math.min(maxY, candidateMaxY));
+  }
+
+  const uniqueSorted = (coordinates: number[]) =>
+    coordinates.sort((a, b) => a - b).filter((value, index, values) => index === 0 || Math.abs(value - values[index - 1]) > EPSILON);
+  const xs = uniqueSorted(xCoordinates);
+  const ys = uniqueSorted(yCoordinates);
+
+  for (let xIndex = 0; xIndex < xs.length - 1; xIndex += 1) {
+    for (let yIndex = 0; yIndex < ys.length - 1; yIndex += 1) {
+      const point = { x: (xs[xIndex] + xs[xIndex + 1]) / 2, y: (ys[yIndex] + ys[yIndex + 1]) / 2 };
+      if (!coveringRooms.some((candidate) => isPointInRoom(candidate, point))) return false;
+    }
+  }
+  return true;
+};
+
+/** Rooms on an upper floor that extend beyond the footprint of the level below. */
+export const roomsOutsideFloorFootprint = (floor: Floor, lowerFloor: Floor): Room[] => {
+  const rooms = floor.rooms.filter((room) => !isOutdoorRoom(room));
+  const lowerRooms = lowerFloor.rooms.filter((room) => !isOutdoorRoom(room));
+  if (lowerRooms.length > 0) return rooms.filter((room) => !isRoomCoveredBy(room, lowerRooms));
+
+  const bounds = indoorBounds(lowerFloor);
+  if (!bounds) return [];
+  return rooms.filter(
+    (room) =>
+      room.x < bounds.minX - EPSILON ||
+      room.y < bounds.minY - EPSILON ||
+      room.x + room.width > bounds.maxX + EPSILON ||
+      room.y + room.depth > bounds.maxY + EPSILON,
   );
 };
 
