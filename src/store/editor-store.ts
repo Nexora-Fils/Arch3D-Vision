@@ -24,6 +24,7 @@ interface EditorState {
   gridStep: number;
   showGrid: boolean;
   showDimensions: boolean;
+  showLowerFloor: boolean;
   zoom: number;
   pan: Vec2;
   /** Incremented to ask the canvas to fit the lot in view. */
@@ -36,6 +37,7 @@ interface EditorState {
   setGridStep: (step: number) => void;
   toggleGrid: () => void;
   toggleDimensions: () => void;
+  toggleLowerFloor: () => void;
   setView: (view: { zoom?: number; pan?: Vec2 }) => void;
   requestFit: () => void;
 }
@@ -48,6 +50,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
   gridStep: 0.1,
   showGrid: true,
   showDimensions: true,
+  showLowerFloor: true,
   zoom: 1,
   pan: { x: 40, y: 40 },
   fitRequest: 0,
@@ -59,6 +62,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
   setGridStep: (gridStep) => set({ gridStep }),
   toggleGrid: () => set((state) => ({ showGrid: !state.showGrid })),
   toggleDimensions: () => set((state) => ({ showDimensions: !state.showDimensions })),
+  toggleLowerFloor: () => set((state) => ({ showLowerFloor: !state.showLowerFloor })),
   setView: ({ zoom, pan }) =>
     set((state) => ({
       zoom: zoom === undefined ? state.zoom : Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom)),

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createId } from "@/domain/plan/ids";
 import { floorNameForLevel } from "@/domain/plan/factory";
-import { clampOpeningOffset, createRoomWalls, isOutdoorRoom, syncRoomWalls, translateWall } from "@/domain/plan/geometry";
+import { buildWallSegments, clampOpeningOffset, createRoomWalls, isOutdoorRoom, syncRoomWalls, translateWall } from "@/domain/plan/geometry";
 import { applyStylePreset, type StylePresetKey } from "@/domain/plan/style-presets";
 import type {
   Annotation,
@@ -47,7 +47,7 @@ interface PlanStoreState {
   updateProject: (patch: Partial<Pick<Plan, "name" | "description">> & { lot?: Partial<Lot> }, options?: MutationOptions) => void;
   updateSettings: (patch: Partial<PlanSettings>, options?: MutationOptions) => void;
 
-  addFloor: () => Floor | null;
+  addFloor: (copyExteriorWalls?: boolean) => Floor | null;
   updateFloor: (floorId: string, patch: Partial<Pick<Floor, "name" | "height">>, options?: MutationOptions) => void;
   removeFloor: (floorId: string) => void;
 
@@ -175,17 +175,31 @@ export const usePlanStore = create<PlanStoreState>()((set, get) => {
 
     updateSettings: (patch, options) => mutate((plan) => ({ ...plan, settings: { ...plan.settings, ...patch } }), options),
 
-    addFloor: () => {
+    addFloor: (copyExteriorWalls = false) => {
       const plan = requirePlan();
       if (!plan) return null;
       const level = Math.max(...plan.floors.map((floor) => floor.level)) + 1;
+      const lowerFloor = plan.floors.reduce<Floor | null>(
+        (closest, candidate) =>
+          candidate.level < level && (!closest || candidate.level > closest.level) ? candidate : closest,
+        null,
+      );
+      const sourceFloor = plan.floors.find((candidate) => candidate.level === 0) ?? lowerFloor;
+      const exteriorWallIds =
+        copyExteriorWalls && sourceFloor
+          ? new Set(buildWallSegments(sourceFloor).filter((segment) => segment.exteriorSide !== 0).flatMap((segment) => segment.sourceWallIds))
+          : new Set<string>();
       const floor: Floor = {
         id: createId(),
         name: floorNameForLevel(level),
         level,
         height: plan.settings.defaultWallHeight,
         rooms: [],
-        walls: [],
+        walls: sourceFloor
+          ? sourceFloor.walls
+              .filter((wall) => exteriorWallIds.has(wall.id))
+              .map((wall) => ({ ...wall, id: createId(), roomId: null, side: null }))
+          : [],
         doors: [],
         windows: [],
         furniture: [],

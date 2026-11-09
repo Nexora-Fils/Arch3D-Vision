@@ -28,6 +28,7 @@ import { usePlanStore } from "@/store/plan-store";
 
 export const ProjectSettings = () => {
   const plan = usePlanStore((state) => state.plan);
+  const [copyExteriorWalls, setCopyExteriorWalls] = useState(false);
   const { updateProject, updateSettings, updateFloor, addFloor, removeFloor, commit } = usePlanStore.getState();
   if (!plan) return null;
 
@@ -92,7 +93,11 @@ export const ProjectSettings = () => {
                 </Button>
               </div>
             ))}
-            <Button variant="outline" className="w-fit" onClick={() => addFloor()}>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input type="checkbox" checked={copyExteriorWalls} onChange={(event) => setCopyExteriorWalls(event.target.checked)} className="accent-[#2563eb]" />
+              Reprendre les murs extérieurs du rez-de-chaussée
+            </label>
+            <Button variant="outline" className="w-fit" onClick={() => addFloor(copyExteriorWalls)}>
               <Plus data-icon="inline-start" />
               Ajouter un étage
             </Button>

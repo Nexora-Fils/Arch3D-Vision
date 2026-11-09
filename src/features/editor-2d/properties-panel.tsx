@@ -1,6 +1,7 @@
 "use client";
 
-import { Plus, Trash, X } from "lucide-react";
+import { AlertTriangle, Plus, Trash, X } from "lucide-react";
+import { useState } from "react";
 import { MaterialSelect } from "@/components/material-select";
 import { MaterialSwatches } from "@/components/material-swatches";
 import { NumberField } from "@/components/number-field";
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { floorArea, formatArea, formatMeters, habitableArea, LEVEL_SLAB_THICKNESS, roomArea, wallLength } from "@/domain/plan/geometry";
+import { floorArea, floorBelow, formatArea, formatMeters, habitableArea, LEVEL_SLAB_THICKNESS, roomArea, roomsOutsideFloorFootprint, wallLength } from "@/domain/plan/geometry";
 import { DOOR_TYPE_LABELS, FURNITURE_PRESETS, FURNITURE_TYPE_LABELS, ROOM_TYPE_LABELS, WALL_SIDE_LABELS } from "@/domain/plan/labels";
 import { buildStairShape, checkStairs, doorBlockedByStair, isStairs, STAIR_TYPES, type StairType } from "@/domain/plan/stairs";
 import { formatDimension } from "@/features/editor-2d/canvas/annotation-shape";
@@ -58,7 +59,10 @@ const DeleteButton = ({ label }: { label: string }) => {
 
 export const PropertiesPanel = ({ floor }: PropertiesPanelProps) => {
   const selection = useEditorStore((state) => state.selection);
-  const materials = usePlanStore((state) => state.plan?.materials ?? []);
+  const plan = usePlanStore((state) => state.plan);
+  const materials = plan?.materials ?? [];
+  const lowerFloor = plan ? floorBelow(plan.floors, floor) : null;
+  const roomsOutside = lowerFloor ? roomsOutsideFloorFootprint(floor, lowerFloor) : [];
 
   let content: React.ReactNode;
   if (selection?.kind === "room") {
@@ -96,6 +100,14 @@ export const PropertiesPanel = ({ floor }: PropertiesPanelProps) => {
       <ScrollArea className="min-h-0 flex-1">
         <div className="flex flex-col gap-5 p-4">
           <FloorsBlock activeFloorId={floor.id} />
+          {roomsOutside.length > 0 && lowerFloor ? (
+            <div role="alert" className="flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <span>
+                {roomsOutside.map((room) => room.name).join(", ")} dépasse{roomsOutside.length > 1 ? "nt" : ""} l&apos;emprise de {lowerFloor.name}.
+              </span>
+            </div>
+          ) : null}
           <Separator />
           {content ?? <FloorOverview floor={floor} materialsCount={materials.length} />}
         </div>
@@ -108,8 +120,9 @@ export const PropertiesPanel = ({ floor }: PropertiesPanelProps) => {
 const FloorsBlock = ({ activeFloorId }: { activeFloorId: string }) => {
   const floors = usePlanStore((state) => state.plan?.floors ?? []);
   const { setActiveFloor } = useEditorStore.getState();
+  const [copyExteriorWalls, setCopyExteriorWalls] = useState(false);
   const handleAdd = () => {
-    const floor = usePlanStore.getState().addFloor();
+    const floor = usePlanStore.getState().addFloor(copyExteriorWalls);
     if (floor) setActiveFloor(floor.id);
   };
   return (
@@ -127,6 +140,10 @@ const FloorsBlock = ({ activeFloorId }: { activeFloorId: string }) => {
             {floor.name}
           </Button>
         ))}
+        <label className="flex items-start gap-2 px-2 py-1 text-xs text-muted-foreground">
+          <input type="checkbox" checked={copyExteriorWalls} onChange={(event) => setCopyExteriorWalls(event.target.checked)} className="mt-0.5 accent-[#2563eb]" />
+          Reprendre les murs extérieurs du rez-de-chaussée
+        </label>
         <Button variant="ghost" size="sm" className="justify-start text-muted-foreground" onClick={handleAdd}>
           <Plus data-icon="inline-start" />
           Ajouter un étage

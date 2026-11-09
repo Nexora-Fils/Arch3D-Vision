@@ -3,9 +3,9 @@
 import type { KonvaEventObject } from "konva/lib/Node";
 import type { Stage as KonvaStage } from "konva/lib/Stage";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Layer, Stage } from "react-konva";
+import { Group, Layer, Stage } from "react-konva";
 import { toast } from "sonner";
-import { findWallAt, floorBounds, isOutdoorRoom, pointAlongWall, snapToGrid } from "@/domain/plan/geometry";
+import { findWallAt, floorBelow, floorBounds, isOutdoorRoom, pointAlongWall, snapToGrid } from "@/domain/plan/geometry";
 import { FURNITURE_PRESETS, ROOM_TYPE_LABELS } from "@/domain/plan/labels";
 import type { Floor, Vec2 } from "@/domain/plan/schema";
 import { Minus, Plus } from "lucide-react";
@@ -18,7 +18,7 @@ import { GridLayer } from "@/features/editor-2d/canvas/grid-layer";
 import { DoorShape, WindowShape } from "@/features/editor-2d/canvas/opening-shape";
 import { RoomLabel, RoomShape } from "@/features/editor-2d/canvas/room-shape";
 import { WallShape } from "@/features/editor-2d/canvas/wall-shape";
-import { alignToAxis, snapPoint } from "@/features/editor-2d/canvas-utils";
+import { alignAndSnapWallEndpoint, alignToAxis, snapPoint, snapPointToWalls } from "@/features/editor-2d/canvas-utils";
 import { patternScaleFor, usePlanImages } from "@/features/editor-2d/use-plan-images";
 import { photoForMaterial } from "@/features/viewer-3d/textures";
 import { EXPORT_PLAN_EVENT } from "@/features/project/project-top-bar";
@@ -55,6 +55,7 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
   const gridStep = useEditorStore((state) => state.gridStep);
   const showGrid = useEditorStore((state) => state.showGrid);
   const showDimensions = useEditorStore((state) => state.showDimensions);
+  const showLowerFloor = useEditorStore((state) => state.showLowerFloor);
   const selection = useEditorStore((state) => state.selection);
   const furnitureType = useEditorStore((state) => state.furnitureType);
   const fitRequest = useEditorStore((state) => state.fitRequest);
@@ -63,6 +64,10 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
   const materials = usePlanStore((state) => state.plan?.materials ?? []);
   const settings = usePlanStore((state) => state.plan?.settings);
   const plan = usePlanStore((state) => state.plan);
+  const lowerFloor = useMemo(() => (plan ? floorBelow(plan.floors, floor) : null), [floor, plan]);
+  const lowerFloorBounds = lowerFloor
+    ? floorBounds({ ...lowerFloor, rooms: lowerFloor.rooms.filter((room) => !isOutdoorRoom(room)) }, { indoorOnly: true })
+    : null;
   // Stairwells cut in this floor by the flights coming from the level below, and stairs that lead nowhere.
   const stairwells = useMemo(() => {
     if (!plan) return [];
@@ -170,8 +175,17 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
 
   const snappedPointer = (): Vec2 | null => {
     const point = pointerInMeters();
-    return point ? snapPoint(point, gridStep) : null;
+    if (!point) return null;
+    const snapped = snapPoint(point, gridStep);
+    const tolerance = Math.min(0.25, Math.max(gridStep / 2, 10 / scale));
+    return tool === "wall" && showLowerFloor && lowerFloor
+      ? snapPointToWalls(snapped, lowerFloor.walls, tolerance)
+      : snapped;
   };
+  const alignWallEndpoint = (start: Vec2, end: Vec2): Vec2 =>
+    showLowerFloor && lowerFloor
+      ? alignAndSnapWallEndpoint(start, end, lowerFloor.walls, Math.min(0.25, Math.max(gridStep / 2, 10 / scale)))
+      : alignToAxis(start, end);
 
   const isBackgroundTarget = (event: KonvaEventObject<PointerEvent>) =>
     event.target === event.target.getStage() || event.target.name() === "background";
@@ -240,7 +254,7 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
         setDraft({ wall: { start: point, end: null } });
         return;
       }
-      const end = alignToAxis(current.start, point);
+      const end = alignWallEndpoint(current.start, point);
       if (Math.hypot(end.x - current.start.x, end.y - current.start.y) >= MIN_WALL_LENGTH) {
         const wall = store.addWall(floor.id, {
           roomId: null,
@@ -309,7 +323,7 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
     }
     if (tool === "wall" && draft.wall) {
       const point = snappedPointer();
-      if (point) setDraft({ wall: { start: draft.wall.start, end: alignToAxis(draft.wall.start, point) } });
+      if (point) setDraft({ wall: { start: draft.wall.start, end: alignWallEndpoint(draft.wall.start, point) } });
       return;
     }
     if (tool === "dimension" && draft.dimension) {
@@ -398,6 +412,42 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
             <GridLayer lot={lot} scale={scale} showGrid={showGrid} viewport={{ pan, size }} grassImage={images.grass ?? null} />
           </Layer>
           <Layer>
+            {showLowerFloor && lowerFloor ? (
+              <Group opacity={0.28} listening={false}>
+                {lowerFloor.rooms.map((room) => (
+                  <RoomShape
+                    key={`underlay-room-${room.id}`}
+                    room={room}
+                    floorId={lowerFloor.id}
+                    gridStep={gridStep}
+                    isSelected={false}
+                    isInteractive={false}
+                    showDimensions={false}
+                    floorColor={materialColor(room.floorMaterialId)}
+                    floorPattern={floorPatternFor(room.floorMaterialId)}
+                  />
+                ))}
+                {lowerFloor.walls.map((wall) => (
+                  <WallShape
+                    key={`underlay-wall-${wall.id}`}
+                    wall={wall}
+                    floorId={lowerFloor.id}
+                    gridStep={gridStep}
+                    isSelected={false}
+                    isInteractive={false}
+                  />
+                ))}
+                {lowerFloor.rooms.map((room) => (
+                  <RoomLabel key={`underlay-label-${room.id}`} room={room} showDimensions={showDimensions} typeLabel={ROOM_TYPE_LABELS[room.type]} />
+                ))}
+                {showDimensions && lowerFloorBounds ? (
+                  <>
+                    <DimensionLine start={{ x: lowerFloorBounds.minX, y: lowerFloorBounds.minY - 0.9 }} end={{ x: lowerFloorBounds.maxX, y: lowerFloorBounds.minY - 0.9 }} />
+                    <DimensionLine start={{ x: lowerFloorBounds.minX - 0.9, y: lowerFloorBounds.maxY }} end={{ x: lowerFloorBounds.minX - 0.9, y: lowerFloorBounds.minY }} />
+                  </>
+                ) : null}
+              </Group>
+            ) : null}
             {floor.rooms.map((room) => (
               <RoomShape
                 key={room.id}
@@ -419,6 +469,8 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
                 gridStep={gridStep}
                 isSelected={selection?.kind === "wall" && selection.id === wall.id}
                 isInteractive={tool === "select"}
+                snapWalls={showLowerFloor ? lowerFloor?.walls : undefined}
+                snapTolerance={Math.min(0.25, Math.max(gridStep / 2, 10 / scale))}
               />
             ))}
             {floor.doors.map((door) => {
