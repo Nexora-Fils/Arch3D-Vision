@@ -14,6 +14,7 @@ import { useSaveShortcut } from "@/features/project/project-top-bar";
 import { CustomizePanel } from "@/features/viewer-3d/customize-panel";
 import { MaterialsPanel } from "@/features/viewer-3d/materials-panel";
 import { useThumbnailCapture } from "@/features/viewer-3d/use-thumbnail-capture";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { selectIsDirty, usePlanStore } from "@/store/plan-store";
 import { CAMERA_PRESETS, useViewerStore, type CameraPreset } from "@/store/viewer-store";
@@ -69,8 +70,10 @@ export const HouseViewer = () => {
   const timeOfDay = useViewerStore((state) => state.timeOfDay);
   const autoRotate = useViewerStore((state) => state.autoRotate);
   const { toggleAutoRotate, toggleRoof, toggleTimeOfDay, requestCamera, setShowRoof, setHiddenFloors } = useViewerStore.getState();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const [mode, setMode] = useState<ViewMode>("exterior");
-  const [isPanelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState<boolean | null>(null);
+  const isPanelOpen = panelOpen ?? isDesktop;
   const [isOptionsOpen, setOptionsOpen] = useState(false);
   const sceneRef = useRef<HTMLDivElement>(null);
   const save = useSaveShortcut();
@@ -190,11 +193,24 @@ export const HouseViewer = () => {
 
       {/* Materials panel, right. */}
       <div className={cn("dark absolute top-3 right-3 w-64 overflow-hidden rounded-xl", glass)}>
-        <button type="button" onClick={() => setPanelOpen((value) => !value)} aria-expanded={isPanelOpen} className="flex w-full items-center justify-between border-b border-white/10 px-3 py-2.5 text-sm font-semibold">
+        <button type="button" onClick={() => setPanelOpen((value) => !(value ?? isDesktop))} aria-expanded={isPanelOpen} aria-controls="materials-panel-content" className="flex w-full items-center justify-between border-b border-white/10 px-3 py-2.5 text-sm font-semibold">
           Matériaux
-          <span className="text-xs font-normal text-white/50">{isPanelOpen ? "Réduire" : "Afficher"}</span>
+          <span className="text-xs font-normal text-white/50">
+            {panelOpen === null ? (
+              <>
+                <span className="md:hidden">Afficher</span>
+                <span className="hidden md:inline">Réduire</span>
+              </>
+            ) : isPanelOpen ? (
+              "Réduire"
+            ) : (
+              "Afficher"
+            )}
+          </span>
         </button>
-        {isPanelOpen ? <MaterialsPanel plan={plan} /> : null}
+        <div id="materials-panel-content" className={cn(panelOpen === null ? "hidden md:block" : panelOpen ? "block" : "hidden")}>
+          <MaterialsPanel plan={plan} />
+        </div>
       </div>
 
       {/* Advanced options drawer. */}

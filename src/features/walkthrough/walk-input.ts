@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore, type RefObject } from "react";
+import { useCallback, useEffect, useState, type RefObject } from "react";
 import type { Vec2 } from "@/domain/plan/schema";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 
 export interface TeleportTarget {
   position: Vec2;
@@ -50,12 +51,6 @@ const createReader = (state: WalkInputState): WalkInput => ({
 });
 
 const COARSE_POINTER_QUERY = "(pointer: coarse)";
-const subscribeToPointerType = (onChange: () => void) => {
-  const query = window.matchMedia(COARSE_POINTER_QUERY);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-};
-const readIsTouchDevice = () => window.matchMedia(COARSE_POINTER_QUERY).matches;
 
 const LOOK_SENSITIVITY_TOUCH = 2.2;
 
@@ -91,7 +86,7 @@ export const useWalkInput = (containerRef: RefObject<HTMLDivElement | null>) => 
     };
   });
   const [isLocked, setLocked] = useState(false);
-  const isTouchDevice = useSyncExternalStore(subscribeToPointerType, readIsTouchDevice, () => false);
+  const isTouchDevice = useMediaQuery(COARSE_POINTER_QUERY);
 
   useEffect(() => {
     const input = inputState;
