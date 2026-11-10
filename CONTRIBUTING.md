@@ -39,6 +39,7 @@ Bon à savoir :
 | Visite | `src/features/walkthrough/` | Vue à la première personne : contrôleur, clavier et joystick tactile, minicarte. Collisions et escaliers calculés par `src/domain/plan/walk.ts` |
 | Modèles détaillés | `src/features/detailed-houses/` | Maquettes GLB figées décrites dans `catalog.ts`, système indépendant du plan |
 | Persistance | `prisma/`, `src/lib/projects/`, `src/app/api/projects/` | Schéma et migrations, dépôt (`repository.ts`), Server Actions, API REST validée par Zod |
+| Authentification | `src/lib/auth/`, `src/app/api/auth/`, `src/proxy.ts` | Comptes, sessions en base, règle d'accès aux projets (`access.ts`), redirection des pages privées |
 | Routes | `src/app/` | `(marketing)` pages publiques, `(app)` tableau de bord et galerie, `(workspace)` écrans plein écran d'un projet. L'accueil est `src/app/page.tsx` |
 | Écrans | `src/features/<écran>/` | Composants propres à un écran (`dashboard`, `landing`, `templates`, `settings`, `materials`). `project/` fournit le projet courant aux écrans du workspace |
 | Composants partagés | `src/components/` | Composants transverses ; primitives shadcn/ui dans `ui/` |
@@ -49,7 +50,8 @@ Règles d'architecture :
 - **Les types viennent des schémas Zod** (`src/domain/plan/schema.ts`, via `z.infer`). Un nouveau champ s'ajoute d'abord au schéma ; s'il a sa propre colonne, aussi à `prisma/schema.prisma` (avec une migration) et à `repository.ts`.
 - **La logique va dans le domaine.** Un calcul (surface, collision, volée d'escalier) s'écrit en fonction pure, testable sans navigateur ; les composants l'affichent.
 - Konva et WebGL ne tournent pas côté serveur : chargez leurs canevas avec `dynamic(..., { ssr: false })`, comme dans `plan-editor.tsx`.
-- Prisma est réservé au serveur : passez par `src/lib/projects/repository.ts`.
+- Prisma est réservé au serveur : passez par `src/lib/projects/repository.ts` (ou `src/lib/auth/` pour les comptes).
+- **Tout accès à un projet est autorisé côté serveur** : `authorizeProject` dans les routes d'API et les Server Actions, `projectAccessVerdict` dans les pages. Le proxy ne vérifie que la présence du cookie.
 - Les deux systèmes 3D restent indépendants : un modèle détaillé n'a pas de plan et ne passe pas par le moteur procédural.
 
 ## Conventions de code
@@ -118,7 +120,7 @@ Selon le changement :
 
 | Changement | Vérification supplémentaire |
 |---|---|
-| API, persistance ou pages | `pnpm test:e2e` avec le serveur lancé et la démo seedée. Le script modifie la démo puis la restaure ; autre port : `pnpm test:e2e http://localhost:3001` |
+| API, persistance ou pages | `pnpm test:e2e` avec le serveur lancé et la démo seedée. Le script crée deux comptes de test (`e2e-owner@homeplan.test`, `e2e-other@homeplan.test`) et un projet qu'il supprime à la fin ; la démo n'est jamais modifiée. Autre port : `pnpm test:e2e http://localhost:3001`. Démo seedée avec un ancien identifiant : `DEMO_ID=demo-project-maison-familiale-moderne pnpm test:e2e` |
 | Schéma Prisma | Migration nommée (`pnpm db:migrate --name <short-name>`), dossier `prisma/migrations/` committé avec le schéma |
 | Logique de domaine | Tests Vitest dans le `__tests__/` du module, cas limites compris |
 | 3D, visite ou éditeur 2D | Vérification à la main dans le navigateur (la 3D n'est pas testée automatiquement) : Jour et Soir, extérieur et visite, fluidité |

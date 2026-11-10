@@ -58,7 +58,10 @@ src/store/                      Zustand : plan + annuler/rétablir, état de l'�
 src/lib/prisma.ts               client Prisma (adaptateur pg), côté serveur uniquement
 src/lib/projects/repository.ts  lecture/écriture des plans (transaction de remplacement)
 src/lib/projects/actions.ts     Server Actions (création, suppression, démo)
+src/lib/auth/                   comptes, sessions en base, règle d'accès aux projets
+src/proxy.ts                    redirection des pages privées vers la connexion
 src/app/api/projects/           API REST validée par Zod (GET/POST, GET/PUT/DELETE)
+src/app/api/auth/               inscription et connexion (POST)
 src/features/editor-2d/         éditeur React Konva
 src/features/viewer-3d/         moteur procédural React Three Fiber : la maison générée à partir du plan
   architecture/                 bibliothèque de composants paramétrables : toitures, menuiseries, volets, tableaux
@@ -81,28 +84,36 @@ src/features/walkthrough/       visite à la première personne (collisions, tac
 - Géométrie en colonnes `Float` (mètres), paramètres de projet en `Json` validé par Zod (`settings`), colonne `polygon` réservée aux pièces non rectangulaires.
 - Identifiants UUID générés côté client : un élément garde son identité à chaque sauvegarde.
 - Sauvegarde = remplacement transactionnel du plan complet (`replaceProjectPlan`).
-- `Project.ownerId` nullable : prêt pour l'authentification.
+- `User` et `Session` pour les comptes ; `Project.ownerId` désigne le propriétaire, `null` pour la vitrine publique (la démo).
 
 ## Écrans
 
 | Route | Contenu |
 |---|---|
 | `/` | Landing : photo d'architecture (licence Unsplash), « Voir la vidéo » (enregistrement réel de la vue 3D), six fonctionnalités, parcours plan → 3D → visite et vitrine en rendus réels de l'application, bandeau d'appel à l'action, version mobile |
-| `/dashboard`, `/projects` | « Bonjour, prénom ! », projets récents (vignette = capture du rendu 3D réel enregistrée en base), modèles disponibles ; barre latérale avec « Mon compte », barre d'onglets mobile |
+| `/dashboard`, `/projects` | « Bonjour, prénom ! », projets du compte connecté (vignette = capture du rendu 3D réel enregistrée en base), modèles disponibles ; barre latérale avec « Mon compte », barre d'onglets mobile |
 | `/templates` | Deux sections clairement séparées. « Plans modifiables » : cinq maisons générées à partir de leur plan (contemporaine, traditionnelle, minimaliste, familiale, petite), avec rendu réel, style, surface habitable, chambres, salles de bain, niveaux, terrain et garage calculés depuis le plan ; chaque carte crée un projet indépendant. « Modèles détaillés » : trois maquettes GLB sous licence CC BY 4.0, avec rendu réel, niveaux, emprise et hauteur mesurés, attribution |
 | `/templates/detailed/[key]` | Vue 3D plein écran d'un modèle détaillé (orbite, Jour / Soir), mêmes éclairage et post-traitement que les maisons générées, attribution et licence |
-| `/settings` | État de l'application : base de données (version, compteurs), pile technique |
+| `/settings` | État de l'application : base de données (version, compteurs), pile technique ; Mon compte : nom, e-mail, déconnexion |
 | `/projects/[id]/editor` | Éditeur 2D : Sélection, Mur, Pièce, Porte, Fenêtre, Escalier, Texte, Cotation, Meuble, Supprimer ; cotes générales, échelle graphique, sols et gazon texturés, panneau Propriétés ; barre Annuler / Rétablir / Enregistrer / Exporter (PNG) / Aperçu 3D / Visite intérieure |
 | `/projects/[id]/view` | Vue 3D plein écran : panneau Matériaux (Murs, Sols, Toiture, Bois, Métal, Pierre), modes Extérieur / Intérieur (coupe) / Vue aérienne / Visite, Jour / Soir, points de vue, tour automatique, téléchargement, partage, options avancées |
 | `/projects/[id]/walk` | Visite plein écran : pièce courante, étages, touches Z / S / Q / D, rotation, joystick tactile, minicarte cliquable, Jour / Soir, plein écran, Quitter la visite |
 | `/a-propos` | Présentation du projet |
 | `/projects/[id]/settings` | Paramètres du projet, bibliothèque de matériaux, suppression |
-| `/tarifs`, `/connexion`, `/inscription` | Pages de présentation ; l'authentification n'est pas encore implémentée |
+| `/connexion`, `/inscription` | Connexion et création de compte, retour à la page demandée (`?next=`) |
+| `/tarifs` | Page de présentation |
 
-## Annotations et profil
+## Annotations
 
-- Chaque étage stocke ses annotations (textes libres et cotes mesurées) dans la colonne `Floor.annotations` (JSON validé par Zod, migration `floor_annotations`).
-- Sans authentification, le prénom et l'e-mail affichés (« Bonjour, … », « Mon compte ») sont saisis dans `/settings` et conservés dans deux cookies `httpOnly`.
+Chaque étage stocke ses annotations (textes libres et cotes mesurées) dans la colonne `Floor.annotations` (JSON validé par Zod, migration `floor_annotations`).
+
+## Comptes et propriété des projets
+
+- Inscription et connexion : `/inscription`, `/connexion`, et pour l'API `POST /api/auth/signup`, `POST /api/auth/login`. Aucune dépendance : mot de passe haché par scrypt (`node:crypto`), session en base (table `Session`, seul le SHA-256 du jeton est stocké), cookie `hp_session` httpOnly, SameSite Lax, Secure en production, valable 30 jours.
+- Pages privées (`/dashboard`, `/projects`, `/projects/new`, `/settings`) : sans cookie, `src/proxy.ts` redirige vers `/connexion?next=…`. La session est ensuite vérifiée en base par chaque page, Server Action et route d'API.
+- Règle d'accès (`src/lib/auth/access.ts`) : un projet appartient au compte qui l'a créé. Un projet sans propriétaire (la démo seedée) est lisible par tous et modifiable par personne : « Utiliser ce modèle » en crée une copie personnelle.
+- API : 401 sans session valide, 403 sur le projet d'un autre compte ou sur la démo, 404 si le projet n'existe pas. Les corps de requête doivent être envoyés en `application/json`, ce qu'un formulaire d'un autre site ne peut pas faire (protection CSRF).
+- Le nom et l'e-mail affichés (« Bonjour, … », « Mon compte ») sont ceux du compte, modifiables dans `/settings`.
 
 ## Projet de démonstration
 
@@ -140,5 +151,6 @@ Deux systèmes indépendants : le moteur procédural (`src/features/viewer-3d/`)
 - Arbres et haies procéduraux (cartes de feuilles, houppiers bosselés, haies ondulées) : crédibles à distance d'orbite, moins détaillés de très près qu'un arbre scanné.
 - Villa Aalsmeer : exportée « non éclairée » (KHR_materials_unlit) et sans normales ; ses matériaux sont convertis à l'affichage en PBR éclairé avec un ombrage plat par facette (géométrie inchangée, adaptation mentionnée dans l'attribution). Ses textures contiennent un éclairage précalculé : le rendu reste un peu clair et peu contrasté.
 - Toiture calculée sur le rectangle englobant de l'étage supérieur ; l'acrotère remplace le débord quand le débord d'un toit plat est inférieur à 20 cm.
-- Pas d'authentification : tous les projets sont visibles par tous.
+- Comptes : pas de réinitialisation du mot de passe, pas de vérification de l'e-mail, pas de limite de tentatives de connexion.
+- Les projets créés avant l'authentification n'ont pas de propriétaire : lisibles par lien, non modifiables et absents des tableaux de bord. Pour les rattacher à un compte : `UPDATE "Project" SET "ownerId" = (SELECT id FROM "User" WHERE email = 'vous@exemple.fr') WHERE "ownerId" IS NULL AND slug IS NULL;`
 - La 3D n'est pas testée automatiquement (WebGL) ; les tests couvrent la géométrie, le schéma, le projet de démonstration et la marche dans les escaliers (montée, descente, garde-corps).
