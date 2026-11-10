@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Database, LockOpen } from "lucide-react";
+import { Database, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SignOutForm } from "@/features/auth/sign-out-form";
 import { ProfileForm } from "@/features/settings/profile-form";
-import { getProfile } from "@/lib/profile/profile";
+import { requireUser } from "@/lib/auth/session";
 import { getDatabaseStatus } from "@/lib/projects/repository";
 import packageJson from "../../../../package.json";
 
@@ -36,10 +38,10 @@ export default function AppSettingsPage() {
         <Card id="mon-compte">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <LockOpen className="size-4 text-electric" aria-hidden />
+              <UserRound className="size-4 text-electric" aria-hidden />
               Mon compte
             </CardTitle>
-            <CardDescription>Le prototype fonctionne sans authentification ; chaque projet prévoit déjà un propriétaire.</CardDescription>
+            <CardDescription>Nom affiché et adresse e-mail de connexion. Vos projets ne sont visibles que par vous.</CardDescription>
           </CardHeader>
           <CardContent>
             <Suspense fallback={<Skeleton className="h-40" />}>
@@ -85,4 +87,13 @@ const DatabaseStatus = async () => {
   );
 };
 
-const ProfileSection = async () => <ProfileForm profile={await getProfile()} />;
+const ProfileSection = async () => {
+  const { name, email } = await requireUser("/settings");
+  return (
+    <div className="grid gap-4">
+      <ProfileForm profile={{ name, email }} />
+      <Separator />
+      <SignOutForm />
+    </div>
+  );
+};

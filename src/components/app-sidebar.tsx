@@ -31,9 +31,23 @@ const useIsActive = () => {
   return (href: string) => pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
 };
 
+interface AppSidebarProps {
+  /** Null for a visitor without account (public pages such as /templates). */
+  profile: SidebarProfile | null;
+  /** The session is still loading: neither the account nor the sign-in link is known yet. */
+  isProfilePending?: boolean;
+}
+
+const accountLink = (profile: SidebarProfile | null, isProfilePending: boolean) => {
+  if (profile) return { href: "/settings#mon-compte", title: profile.name, subtitle: profile.email };
+  if (isProfilePending) return { href: "/settings#mon-compte", title: "Mon compte", subtitle: "" };
+  return { href: "/connexion", title: "Se connecter", subtitle: "Accéder à mes projets" };
+};
+
 /** Dark navigation (mockup): sidebar with « Mon compte » on desktop, bottom tab bar on mobile. */
-export const AppSidebar = ({ profile }: { profile: SidebarProfile | null }) => {
+export const AppSidebar = ({ profile, isProfilePending = false }: AppSidebarProps) => {
   const isActive = useIsActive();
+  const account = accountLink(profile, isProfilePending);
   return (
     <>
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-6 bg-[#0d1830] p-4 text-white md:flex">
@@ -51,13 +65,13 @@ export const AppSidebar = ({ profile }: { profile: SidebarProfile | null }) => {
             </Link>
           ))}
         </nav>
-        <Link href="/settings#mon-compte" className="mt-auto flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
+        <Link href={account.href} className="mt-auto flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-electric text-sm font-semibold">
-            {profile?.name ? profile.initials : <UserRound className="size-4" aria-hidden />}
+            {profile ? profile.initials : <UserRound className="size-4" aria-hidden />}
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-sm font-medium">{profile?.name || "Mon compte"}</span>
-            <span className="block truncate text-xs text-white/55">{profile?.email || "Renseigner mon profil"}</span>
+            <span className="block truncate text-sm font-medium">{account.title}</span>
+            <span className="block min-h-4 truncate text-xs text-white/55">{account.subtitle}</span>
           </span>
         </Link>
       </aside>

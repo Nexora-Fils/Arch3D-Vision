@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { Prisma } from "@/generated/prisma/client";
+import { EmailTakenError, ForbiddenError, UnauthorizedError } from "@/lib/auth/errors";
 import { ProjectNotFoundError } from "@/lib/projects/repository";
 
 export interface ApiError {
@@ -19,6 +20,15 @@ export const handleRouteError = (error: unknown) => {
   if (error instanceof ZodError) {
     return jsonError(400, "Données invalides", formatZodIssues(error));
   }
+  if (error instanceof UnauthorizedError) {
+    return jsonError(401, error.message);
+  }
+  if (error instanceof ForbiddenError) {
+    return jsonError(403, error.message);
+  }
+  if (error instanceof EmailTakenError) {
+    return jsonError(409, error.message, [{ path: "email", message: error.message }]);
+  }
   if (error instanceof ProjectNotFoundError) {
     return jsonError(404, error.message);
   }
@@ -32,7 +42,9 @@ export const handleRouteError = (error: unknown) => {
   return jsonError(500, "Erreur interne du serveur");
 };
 
+/** JSON only: a cross-site HTML form cannot send application/json, which keeps cookie-authenticated routes out of CSRF reach. */
 export const readJsonBody = async (request: Request): Promise<unknown> => {
+  if (!request.headers.get("content-type")?.startsWith("application/json")) return null;
   try {
     return await request.json();
   } catch {

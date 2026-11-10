@@ -263,8 +263,9 @@ const sanitizePlan = (plan: Plan): Plan => ({
   }),
 });
 
-export const listProjects = async (options: { limit?: number } = {}): Promise<ProjectSummary[]> => {
+export const listProjects = async (options: { ownerId: string; limit?: number }): Promise<ProjectSummary[]> => {
   const rows = await prisma.project.findMany({
+    where: { ownerId: options.ownerId },
     orderBy: { updatedAt: "desc" },
     take: options.limit,
     include: {
@@ -328,16 +329,21 @@ export const getProjectPlan = async (id: string): Promise<Plan | null> => {
   return row ? toPlan(row) : null;
 };
 
-export const getProjectWithMeta = async (id: string): Promise<{ plan: Plan; updatedAt: Date } | null> => {
+export const getProjectWithMeta = async (id: string): Promise<{ plan: Plan; updatedAt: Date; ownerId: string | null } | null> => {
   const row = await prisma.project.findUnique({ where: { id }, ...projectWithPlan });
-  return row ? { plan: toPlan(row), updatedAt: row.updatedAt } : null;
+  return row ? { plan: toPlan(row), updatedAt: row.updatedAt, ownerId: row.ownerId } : null;
 };
 
-export const createProject = async (input: Plan): Promise<Plan> => {
+export const findProjectOwner = async (id: string): Promise<{ ownerId: string | null } | null> =>
+  prisma.project.findUnique({ where: { id }, select: { ownerId: true } });
+
+/** `ownerId` null makes a public showcase: readable by everyone, writable by nobody. */
+export const createProject = async (input: Plan, ownerId: string | null): Promise<Plan> => {
   const plan = sanitizePlan(input);
   const row = await prisma.project.create({
     data: {
       id: plan.id,
+      ownerId,
       name: plan.name,
       description: plan.description,
       slug: plan.slug,
@@ -393,8 +399,8 @@ export const deleteProject = async (id: string): Promise<void> => {
 };
 
 /**
- * Creates the project once per slug. Running the seed twice never duplicates
- * it; `reset` rewrites the stored plan from the builder.
+ * Creates the project once per slug, without owner (public showcase). Running
+ * the seed twice never duplicates it; `reset` rewrites the stored plan from the builder.
  */
 export const ensureProjectBySlug = async (
   plan: Plan,
@@ -403,7 +409,7 @@ export const ensureProjectBySlug = async (
   if (!plan.slug) throw new Error("Un slug est requis pour un projet idempotent");
   const existing = await prisma.project.findUnique({ where: { slug: plan.slug }, select: { id: true } });
   if (!existing) {
-    return { plan: await createProject(plan), created: true, reset: false };
+    return { plan: await createProject(plan, null), created: true, reset: false };
   }
   if (options.reset) {
     await replaceProjectPlan({ ...plan, id: existing.id });

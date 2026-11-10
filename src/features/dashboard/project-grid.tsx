@@ -1,14 +1,16 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProjectCard } from "@/features/dashboard/project-card";
+import { requireUser } from "@/lib/auth/session";
 import { listProjects } from "@/lib/projects/repository";
 
 interface ProjectGridProps {
   limit?: number;
 }
 
-/** Server component: reads PostgreSQL and renders project cards. */
+/** Server component: reads the signed-in user's projects from PostgreSQL and renders their cards. */
 export const ProjectGrid = async ({ limit }: ProjectGridProps) => {
-  const projects = await listProjects({ limit });
+  const user = await requireUser();
+  const projects = await listProjects({ ownerId: user.id, limit });
   if (projects.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-background p-12 text-center">
