@@ -7,6 +7,8 @@ import { buildDemoPlan } from "@/domain/plan/demo";
 import { createEmptyPlan } from "@/domain/plan/factory";
 import { buildTemplatePlan, findTemplate } from "@/domain/plan/templates";
 import { createProjectInputSchema } from "@/domain/plan/schema";
+import { authorizeProject } from "@/lib/auth/authorize";
+import { requireUser } from "@/lib/auth/session";
 import { createProject, deleteProject, ensureProjectBySlug, listProjects } from "@/lib/projects/repository";
 
 export interface CreateProjectFormState {
@@ -21,6 +23,7 @@ export const createProjectAction = async (
   _previous: CreateProjectFormState,
   formData: FormData,
 ): Promise<CreateProjectFormState> => {
+  const user = await requireUser("/projects/new");
   const values = formValues(formData);
   const parsed = createProjectInputSchema.safeParse(values);
   if (!parsed.success) {
@@ -36,7 +39,7 @@ export const createProjectAction = async (
 
   let projectId: string;
   try {
-    const plan = await createProject(createEmptyPlan(parsed.data));
+    const plan = await createProject(createEmptyPlan(parsed.data), user.id);
     projectId = plan.id;
   } catch (error) {
     console.error(error);
@@ -49,6 +52,7 @@ export const createProjectAction = async (
 
 export const deleteProjectAction = async (projectId: string): Promise<{ error?: string }> => {
   try {
+    await authorizeProject(projectId, "write");
     await deleteProject(projectId);
   } catch (error) {
     console.error(error);
@@ -72,11 +76,12 @@ export const openDemoProjectAction = async (target: ProjectScreen = "editor"): P
 export const createFromTemplateAction = async (templateKey: string): Promise<void> => {
   const template = findTemplate(templateKey);
   if (!template) throw new Error("Modèle inconnu");
+  const user = await requireUser("/templates");
   const source = buildTemplatePlan(template.key);
-  const existing = await listProjects();
+  const existing = await listProjects({ ownerId: user.id });
   const siblings = existing.filter((project) => project.name === template.name || project.name.startsWith(`${template.name} (`)).length;
   const name = siblings === 0 ? template.name : `${template.name} (${siblings + 1})`;
-  const plan = await createProject(clonePlan(source, { name }));
+  const plan = await createProject(clonePlan(source, { name }), user.id);
   revalidatePath("/dashboard");
   revalidatePath("/projects");
   redirect(`/projects/${plan.id}/editor`);

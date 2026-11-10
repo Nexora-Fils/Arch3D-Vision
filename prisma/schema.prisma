@@ -10,8 +10,8 @@
 //   lives in Json columns validated with Zod before any write.
 // - IDs are UUIDs generated client-side so a plan keeps its ids across saves
 //   (the editor's undo history and 3D scene stay consistent).
-// - `ownerId` on Project is nullable: it prepares the model for authentication
-//   without forcing it on the prototype.
+// - Every project belongs to a user. A project without owner is a public
+//   showcase (the seeded demo): readable by everyone, writable by nobody.
 
 generator client {
   provider = "prisma-client"
@@ -22,13 +22,39 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id           String   @id @default(uuid())
+  // Login identifier, stored trimmed and lower-cased.
+  email        String   @unique
+  name         String
+  // scrypt hash with its salt and parameters (src/lib/auth/password.ts).
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions Session[]
+  projects Project[]
+}
+
+model Session {
+  // SHA-256 of the token held by the cookie: the table alone cannot open a session.
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 model Project {
   id          String   @id @default(uuid())
   name        String
   description String?
   slug        String?  @unique
-  // Reserved for authentication: filled once users exist.
+  // Null for public showcases (the seeded demo).
   ownerId     String?
+  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   lotWidth    Float
   lotDepth    Float
   // Roof type, default wall height/thickness, material defaults (Zod validated).

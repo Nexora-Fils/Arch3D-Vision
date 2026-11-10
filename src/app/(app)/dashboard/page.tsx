@@ -8,13 +8,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { HOUSE_TEMPLATES } from "@/domain/plan/templates";
 import { ProjectGrid, ProjectGridSkeleton } from "@/features/dashboard/project-grid";
 import { TEMPLATE_IMAGES } from "@/features/templates/template-images";
+import { requireUser } from "@/lib/auth/session";
 import { createFromTemplateAction } from "@/lib/projects/actions";
-import { getProfile } from "@/lib/profile/profile";
 
 export const metadata: Metadata = { title: "Accueil" };
 
 const Greeting = async () => {
-  const { name } = await getProfile();
+  const { name } = await requireUser("/dashboard");
   const firstName = name.split(/\s+/)[0];
   return <h1 className="text-2xl font-semibold tracking-tight text-midnight">{firstName ? `Bonjour, ${firstName} !` : "Bonjour !"}</h1>;
 };

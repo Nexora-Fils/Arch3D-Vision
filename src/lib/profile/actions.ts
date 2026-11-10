@@ -1,18 +1,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
-import { PROFILE_COOKIES, profileSchema } from "@/lib/profile/profile";
+import { updateAccount } from "@/lib/auth/accounts";
+import { EmailTakenError } from "@/lib/auth/errors";
+import { accountSchema } from "@/lib/auth/schema";
+import { requireUser } from "@/lib/auth/session";
 
 export interface ProfileFormState {
   errors?: Partial<Record<"name" | "email", string>>;
   saved?: boolean;
 }
 
-const ONE_YEAR = 60 * 60 * 24 * 365;
-
 export const saveProfileAction = async (_previous: ProfileFormState, formData: FormData): Promise<ProfileFormState> => {
-  const parsed = profileSchema.safeParse({ name: String(formData.get("name") ?? ""), email: String(formData.get("email") ?? "") });
+  const user = await requireUser("/settings");
+  const parsed = accountSchema.safeParse({ name: String(formData.get("name") ?? ""), email: String(formData.get("email") ?? "") });
   if (!parsed.success) {
     const errors: ProfileFormState["errors"] = {};
     for (const issue of parsed.error.issues) {
@@ -21,10 +22,12 @@ export const saveProfileAction = async (_previous: ProfileFormState, formData: F
     }
     return { errors };
   }
-  const store = await cookies();
-  const options = { httpOnly: true, sameSite: "lax" as const, path: "/", maxAge: ONE_YEAR };
-  store.set(PROFILE_COOKIES.name, parsed.data.name, options);
-  store.set(PROFILE_COOKIES.email, parsed.data.email, options);
+  try {
+    await updateAccount(user.id, parsed.data);
+  } catch (error) {
+    if (error instanceof EmailTakenError) return { errors: { email: error.message } };
+    throw error;
+  }
   revalidatePath("/", "layout");
   return { saved: true };
 };

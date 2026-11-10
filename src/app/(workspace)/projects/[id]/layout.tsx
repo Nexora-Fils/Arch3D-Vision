@@ -1,8 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProjectProvider } from "@/features/project/project-provider";
 import { ProjectFrame } from "@/features/project/project-frame";
+import { projectAccessVerdict } from "@/lib/auth/access";
+import { loginPath } from "@/lib/auth/next-path";
+import { getCurrentUser } from "@/lib/auth/session";
 import { getProjectWithMeta } from "@/lib/projects/repository";
 
 interface ProjectLayoutProps {
@@ -22,8 +25,11 @@ export default function ProjectLayout({ children, params }: ProjectLayoutProps) 
 
 const ProjectLoader = async ({ children, params }: ProjectLayoutProps) => {
   const { id } = await params;
-  const record = await getProjectWithMeta(id);
-  if (!record) notFound();
+  const [record, user] = await Promise.all([getProjectWithMeta(id), getCurrentUser()]);
+  const verdict = projectAccessVerdict(record, user?.id ?? null, "read");
+  if (verdict === "unauthenticated") redirect(loginPath(`/projects/${id}`));
+  // Another account's project answers like an unknown one: its existence is not revealed.
+  if (!record || verdict !== "allowed") notFound();
   return (
     <ProjectProvider plan={record.plan} updatedAt={record.updatedAt.toISOString()}>
       <ProjectFrame>{children}</ProjectFrame>

@@ -18,7 +18,7 @@ const run = async () => {
     const exists = await prisma.project.findUnique({ where: { id: plan.id }, select: { id: true } });
     if (exists) await deleteProject(plan.id);
     if (mode === "create") {
-      const created = await createProject(plan);
+      const created = await createProject(plan, null);
       console.log(`créé      ${template.key.padEnd(14)} ${created.id}`);
     } else {
       console.log(`supprimé  ${template.key.padEnd(14)} ${plan.id}`);
