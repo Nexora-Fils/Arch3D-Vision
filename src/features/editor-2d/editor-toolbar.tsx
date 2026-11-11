@@ -44,7 +44,7 @@ export const EditorToolbar = () => {
   const toggleLowerFloor = useEditorStore((state) => state.toggleLowerFloor);
   const floors = usePlanStore((state) => state.plan?.floors ?? []);
   const activeFloor = floors.find((floor) => floor.id === activeFloorId);
-  const hasLowerFloor = activeFloor ? floorBelow(floors, activeFloor) !== null : false;
+  const hasLowerFloor = activeFloor ? floorBelow(floors, activeFloor.level) !== null : false;
   const deleteSelection = useDeleteSelection();
 
   return (

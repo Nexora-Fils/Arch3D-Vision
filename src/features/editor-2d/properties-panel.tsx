@@ -61,7 +61,7 @@ export const PropertiesPanel = ({ floor }: PropertiesPanelProps) => {
   const selection = useEditorStore((state) => state.selection);
   const plan = usePlanStore((state) => state.plan);
   const materials = plan?.materials ?? [];
-  const lowerFloor = plan ? floorBelow(plan.floors, floor) : null;
+  const lowerFloor = plan ? floorBelow(plan.floors, floor.level) : null;
   const roomsOutside = lowerFloor ? roomsOutsideFloorFootprint(floor, lowerFloor) : [];
 
   let content: React.ReactNode;

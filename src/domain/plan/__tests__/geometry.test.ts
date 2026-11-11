@@ -4,8 +4,10 @@ import {
   buildWallSegments,
   clampOpeningOffset,
   createRoomWalls,
+  floorBelow,
   findRoomAt,
   findWallAt,
+  indoorBounds,
   resolveCollisions,
   roomsOutsideFloorFootprint,
   roomArea,
@@ -73,6 +75,25 @@ describe("rooms", () => {
     const lower = floorWith([room("left", 0, 0, 2, 4), room("right", 2, 0, 2, 4)]);
     const upper = floorWith([room("upper", 0, 0, 4, 4)]);
     expect(roomsOutsideFloorFootprint(upper, lower)).toEqual([]);
+  });
+
+  it("finds the nearest lower floor by level", () => {
+    const first = { ...floorWith([]), id: "first", level: 0 };
+    const second = { ...floorWith([]), id: "second", level: 1 };
+    const third = { ...floorWith([]), id: "third", level: 3 };
+    expect(floorBelow([first, second, third], 2)?.id).toBe("second");
+    expect(floorBelow([first, second, third], 0)).toBeNull();
+  });
+
+  it("calculates indoor bounds without including outdoor rooms", () => {
+    const floor = floorWith(
+      [
+        room("indoor", 1, 2, 4, 3),
+        { ...room("terrace", 8, 9, 6, 5), type: "terrace" },
+      ],
+      { walls: [] },
+    );
+    expect(indoorBounds(floor)).toEqual({ minX: 1, minY: 2, maxX: 5, maxY: 5 });
   });
 });
 

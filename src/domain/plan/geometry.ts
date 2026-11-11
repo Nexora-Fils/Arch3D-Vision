@@ -454,11 +454,11 @@ export interface Bounds {
   maxY: number;
 }
 
-/** Returns the closest existing level below the given floor. */
-export const floorBelow = (floors: Floor[], floor: Floor): Floor | null =>
+/** Returns the closest existing floor below the given level. */
+export const floorBelow = (floors: Floor[], level: number): Floor | null =>
   floors.reduce<Floor | null>(
     (closest, candidate) =>
-      candidate.level < floor.level && (!closest || candidate.level > closest.level) ? candidate : closest,
+      candidate.level < level && (!closest || candidate.level > closest.level) ? candidate : closest,
     null,
   );
 
@@ -482,6 +482,10 @@ export const floorBounds = (floor: Floor, options: { indoorOnly?: boolean } = {}
     { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
   );
 };
+
+/** Bounds of a floor's indoor rooms and walls. */
+export const indoorBounds = (floor: Floor): Bounds | null =>
+  floorBounds({ ...floor, rooms: floor.rooms.filter((room) => !isOutdoorRoom(room)) }, { indoorOnly: true });
 
 const isRoomCoveredBy = (room: Room, coveringRooms: Room[]): boolean => {
   const maxX = room.x + room.width;
@@ -517,7 +521,7 @@ export const roomsOutsideFloorFootprint = (floor: Floor, lowerFloor: Floor): Roo
   const lowerRooms = lowerFloor.rooms.filter((room) => !isOutdoorRoom(room));
   if (lowerRooms.length > 0) return rooms.filter((room) => !isRoomCoveredBy(room, lowerRooms));
 
-  const bounds = floorBounds(lowerFloor, { indoorOnly: true });
+  const bounds = indoorBounds(lowerFloor);
   if (!bounds) return [];
   return rooms.filter(
     (room) =>

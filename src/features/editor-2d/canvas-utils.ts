@@ -1,4 +1,4 @@
-import { projectOnSegment, snapToGrid } from "@/domain/plan/geometry";
+import { pointAlongWall, projectOnSegment, snapToGrid } from "@/domain/plan/geometry";
 import type { Vec2, Wall } from "@/domain/plan/schema";
 
 /** Rounds a plan point to the editor grid. */
@@ -11,20 +11,9 @@ export const snapPoint = (point: Vec2, step: number): Vec2 => ({
 export const snapPointToWalls = (point: Vec2, walls: Wall[], tolerance: number): Vec2 => {
   let closest: { point: Vec2; distance: number } | null = null;
   for (const wall of walls) {
-    const dx = wall.end.x - wall.start.x;
-    const dy = wall.end.y - wall.start.y;
-    const length = Math.hypot(dx, dy);
-    if (length === 0) continue;
     const { offset, distance } = projectOnSegment(wall, point);
     if (distance <= tolerance && (!closest || distance < closest.distance)) {
-      const ratio = offset / length;
-      closest = {
-        point: {
-          x: wall.start.x + dx * ratio,
-          y: wall.start.y + dy * ratio,
-        },
-        distance,
-      };
+      closest = { point: pointAlongWall(wall, offset), distance };
     }
   }
   return closest?.point ?? point;

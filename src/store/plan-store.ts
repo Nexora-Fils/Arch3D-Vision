@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createId } from "@/domain/plan/ids";
 import { floorNameForLevel } from "@/domain/plan/factory";
-import { buildWallSegments, clampOpeningOffset, createRoomWalls, isOutdoorRoom, syncRoomWalls, translateWall } from "@/domain/plan/geometry";
+import { buildWallSegments, clampOpeningOffset, createRoomWalls, floorBelow, isOutdoorRoom, syncRoomWalls, translateWall } from "@/domain/plan/geometry";
 import { applyStylePreset, type StylePresetKey } from "@/domain/plan/style-presets";
 import type {
   Annotation,
@@ -179,11 +179,7 @@ export const usePlanStore = create<PlanStoreState>()((set, get) => {
       const plan = requirePlan();
       if (!plan) return null;
       const level = Math.max(...plan.floors.map((floor) => floor.level)) + 1;
-      const lowerFloor = plan.floors.reduce<Floor | null>(
-        (closest, candidate) =>
-          candidate.level < level && (!closest || candidate.level > closest.level) ? candidate : closest,
-        null,
-      );
+      const lowerFloor = floorBelow(plan.floors, level);
       const sourceFloor = plan.floors.find((candidate) => candidate.level === 0) ?? lowerFloor;
       const exteriorWallIds =
         copyExteriorWalls && sourceFloor

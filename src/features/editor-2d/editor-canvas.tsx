@@ -5,7 +5,7 @@ import type { Stage as KonvaStage } from "konva/lib/Stage";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Group, Layer, Stage } from "react-konva";
 import { toast } from "sonner";
-import { findWallAt, floorBelow, floorBounds, isOutdoorRoom, pointAlongWall, snapToGrid } from "@/domain/plan/geometry";
+import { findWallAt, floorBelow, indoorBounds, pointAlongWall, snapToGrid } from "@/domain/plan/geometry";
 import { FURNITURE_PRESETS, ROOM_TYPE_LABELS } from "@/domain/plan/labels";
 import type { Floor, Vec2 } from "@/domain/plan/schema";
 import { Minus, Plus } from "lucide-react";
@@ -64,10 +64,8 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
   const materials = usePlanStore((state) => state.plan?.materials ?? []);
   const settings = usePlanStore((state) => state.plan?.settings);
   const plan = usePlanStore((state) => state.plan);
-  const lowerFloor = useMemo(() => (plan ? floorBelow(plan.floors, floor) : null), [floor, plan]);
-  const lowerFloorBounds = lowerFloor
-    ? floorBounds({ ...lowerFloor, rooms: lowerFloor.rooms.filter((room) => !isOutdoorRoom(room)) }, { indoorOnly: true })
-    : null;
+  const lowerFloor = useMemo(() => (plan ? floorBelow(plan.floors, floor.level) : null), [floor.level, plan]);
+  const lowerFloorBounds = lowerFloor ? indoorBounds(lowerFloor) : null;
   // Stairwells cut in this floor by the flights coming from the level below, and stairs that lead nowhere.
   const stairwells = useMemo(() => {
     if (!plan) return [];
@@ -79,6 +77,7 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
   const showGridToggle = useEditorStore((state) => state.toggleGrid);
   const images = usePlanImages();
   const scale = pixelsPerMeter(zoom);
+  const snapTolerance = Math.min(0.25, Math.max(gridStep / 2, 10 / scale));
   const isPanning = tool === "pan" || isSpaceHeld;
 
   // --- Stage sizing -------------------------------------------------------
@@ -177,14 +176,13 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
     const point = pointerInMeters();
     if (!point) return null;
     const snapped = snapPoint(point, gridStep);
-    const tolerance = Math.min(0.25, Math.max(gridStep / 2, 10 / scale));
     return tool === "wall" && showLowerFloor && lowerFloor
-      ? snapPointToWalls(snapped, lowerFloor.walls, tolerance)
+      ? snapPointToWalls(snapped, lowerFloor.walls, snapTolerance)
       : snapped;
   };
   const alignWallEndpoint = (start: Vec2, end: Vec2): Vec2 =>
     showLowerFloor && lowerFloor
-      ? alignAndSnapWallEndpoint(start, end, lowerFloor.walls, Math.min(0.25, Math.max(gridStep / 2, 10 / scale)))
+      ? alignAndSnapWallEndpoint(start, end, lowerFloor.walls, snapTolerance)
       : alignToAxis(start, end);
 
   const isBackgroundTarget = (event: KonvaEventObject<PointerEvent>) =>
@@ -383,7 +381,18 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
     const image = images[key];
     return image ? { image, scale: patternScaleFor(key) } : undefined;
   };
-  const houseBounds = floorBounds({ ...floor, rooms: floor.rooms.filter((room) => !isOutdoorRoom(room)) }, { indoorOnly: true });
+  const renderFurniture = (item: Floor["furniture"][number]) => (
+    <FurnitureShape
+      key={item.id}
+      item={item}
+      floorId={floor.id}
+      gridStep={gridStep}
+      isSelected={selection?.kind === "furniture" && selection.id === item.id}
+      isInteractive={tool === "select"}
+      hasIssue={issues.has(item.id)}
+    />
+  );
+  const houseBounds = indoorBounds(floor);
   const scaleBarMeters = scale >= 40 ? 5 : scale >= 15 ? 10 : 20;
   const zoomBy = (factor: number) => setView({ zoom: zoom * factor });
 
@@ -470,7 +479,7 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
                 isSelected={selection?.kind === "wall" && selection.id === wall.id}
                 isInteractive={tool === "select"}
                 snapWalls={showLowerFloor ? lowerFloor?.walls : undefined}
-                snapTolerance={Math.min(0.25, Math.max(gridStep / 2, 10 / scale))}
+                snapTolerance={snapTolerance}
               />
             ))}
             {floor.doors.map((door) => {
