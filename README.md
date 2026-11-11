@@ -1,4 +1,4 @@
-# HomePlan 3D
+# Arch3D Vision
 
 Application web de conception architecturale : dessinez le plan d'une maison en 2D, générez sa représentation 3D et visitez-la de l'intérieur. Les projets sont enregistrés dans PostgreSQL.
 

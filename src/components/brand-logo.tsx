@@ -1,5 +1,5 @@
+import Image from "next/image";
 import Link from "next/link";
-import { House } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BrandLogoProps {
@@ -9,12 +9,14 @@ interface BrandLogoProps {
 }
 
 export const BrandLogo = ({ href = "/", className, inverted = false }: BrandLogoProps) => (
-  <Link href={href} className={cn("flex items-center gap-2 font-semibold tracking-tight", className)}>
-    <span className="flex size-8 items-center justify-center rounded-lg bg-electric text-electric-foreground">
-      <House className="size-4" aria-hidden />
-    </span>
-    <span className={inverted ? "text-white" : "text-midnight"}>
-      HomePlan <span className="text-electric">3D</span>
-    </span>
+  <Link href={href} aria-label="Arch3D Vision" className={cn("flex items-center gap-2", className)}>
+    <Image src="/brand-mark.png" alt="" width={32} height={32} className="size-8 shrink-0" />
+    <Image
+      src={inverted ? "/brand-wordmark-inverted.png" : "/brand-wordmark.png"}
+      alt=""
+      width={132}
+      height={14}
+      className="h-auto w-[132px]"
+    />
   </Link>
 );
