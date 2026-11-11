@@ -116,7 +116,7 @@ export default function LandingPage() {
 
         {/* Why */}
         <section id="fonctionnalites" className="mx-auto w-full max-w-7xl px-4 py-16 md:px-8">
-          <h2 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">Pourquoi choisir HomePlan 3D ?</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-midnight md:text-3xl">Pourquoi choisir Arch3D Vision ?</h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ icon: Icon, title, description, tone }) => (
               <div key={title} className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
@@ -135,7 +135,7 @@ export default function LandingPage() {
           <div className="grid gap-8 rounded-3xl bg-white p-6 shadow-sm md:p-8 lg:grid-cols-[1fr_1.15fr]">
             <div className="flex flex-col gap-6">
               <div>
-                <h2 className="text-2xl font-bold tracking-tight text-midnight">Découvrez la puissance de HomePlan 3D</h2>
+                <h2 className="text-2xl font-bold tracking-tight text-midnight">Découvrez la puissance d&apos;Arch3D Vision</h2>
                 <p className="mt-2 text-slate-500">
                   Passez facilement du plan 2D à la maison 3D, puis entrez à l&apos;intérieur <strong className="text-midnight">pour</strong> une expérience complète et immersive.
                 </p>

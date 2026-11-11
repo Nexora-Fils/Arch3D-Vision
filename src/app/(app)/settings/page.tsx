@@ -52,7 +52,7 @@ export default function AppSettingsPage() {
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Application</CardTitle>
-            <CardDescription>HomePlan 3D version {packageJson.version}</CardDescription>
+            <CardDescription>Arch3D Vision version {packageJson.version}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-1.5">
             {["Next.js", "React", "TypeScript", "Tailwind CSS", "shadcn/ui", "Prisma", "PostgreSQL", "React Three Fiber", "React Konva", "Zustand", "Zod"].map((name) => (
