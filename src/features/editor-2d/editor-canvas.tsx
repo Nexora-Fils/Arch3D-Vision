@@ -511,17 +511,7 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
             {stairwells.map((flight) => (
               <StairwellOutline key={flight.id} flight={flight} />
             ))}
-            {floor.furniture.map((item) => (
-              <FurnitureShape
-                key={item.id}
-                item={item}
-                floorId={floor.id}
-                gridStep={gridStep}
-                isSelected={selection?.kind === "furniture" && selection.id === item.id}
-                isInteractive={tool === "select"}
-                hasIssue={issues.has(item.id)}
-              />
-            ))}
+            {floor.furniture.map(renderFurniture)}
             {floor.annotations.map((annotation) => (
               <AnnotationShape
                 key={annotation.id}
