@@ -1,5 +1,9 @@
 # Licences des images
 
+## Identité visuelle
+
+`public/brand-mark.png`, `public/brand-wordmark.png` et `public/brand-wordmark-inverted.png` sont des déclinaisons générées localement à partir du logo généré avec Gemini pour le ticket ARCH3D-30 (pièce jointe d'origine nommée `Gemini_Generated_Image_…`). Le fichier source reçu était horodaté le 2026-11-03 ; la date exacte de génération n'est pas disponible dans les métadonnées fournies. `src/app/icon.svg` reprend son symbole et `src/app/apple-icon.png` en est une déclinaison pour les appareils Apple. Ces éléments sont réservés à l'identité visuelle du projet ; aucune licence libre distincte n'est revendiquée.
+
 ## Photos
 
 | Fichier | Auteur | Source | Licence |
@@ -8,7 +12,7 @@
 
 ## Rendus de l'application
 
-Tous les autres fichiers de ce dossier (`*.jpg`, `templates/*.jpg`) sont des captures du rendu 3D ou des écrans de HomePlan 3D, générées localement. Aucune ressource distante n'est chargée à l'exécution.
+Tous les autres fichiers de ce dossier (`*.jpg`, `templates/*.jpg`) sont des captures du rendu 3D ou des écrans d'Arch3D Vision, générées localement. Aucune ressource distante n'est chargée à l'exécution.
 
 ## Environnements HDR (éclairage par image)
 
@@ -35,7 +39,7 @@ Licence [CC0](https://polyhaven.com/license) (Poly Haven), convertis en GLB avec
 
 ## Vidéo et rendus de l'application
 
-`public/videos/homeplan-3d-demo.mp4`, `src/assets/images/showcase-*.jpg`, `templates/*.jpg`, `editor.jpg`, `view.jpg`, `walk.jpg` : enregistrements et captures du rendu temps réel de HomePlan 3D, générés localement.
+`public/videos/homeplan-3d-demo.mp4`, `src/assets/images/showcase-*.jpg`, `templates/*.jpg`, `editor.jpg`, `view.jpg`, `walk.jpg` : enregistrements et captures du rendu temps réel d'Arch3D Vision, générés localement.
 
 ## Modèles détaillés de maisons (`public/models/houses/`)
 
