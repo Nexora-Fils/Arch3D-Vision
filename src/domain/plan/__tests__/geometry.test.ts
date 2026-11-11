@@ -4,9 +4,12 @@ import {
   buildWallSegments,
   clampOpeningOffset,
   createRoomWalls,
+  floorBelow,
   findRoomAt,
   findWallAt,
+  indoorBounds,
   resolveCollisions,
+  roomsOutsideFloorFootprint,
   roomArea,
   syncRoomWalls,
 } from "../geometry";
@@ -60,6 +63,37 @@ describe("rooms", () => {
     const floor = floorWith([room("a", 0, 0, 4, 4), room("b", 4, 0, 4, 4)]);
     expect(findRoomAt(floor, { x: 5, y: 1 })?.id).toBe("b");
     expect(findRoomAt(floor, { x: 9, y: 1 })).toBeUndefined();
+  });
+
+  it("finds rooms that extend beyond the footprint below, including gaps between rooms", () => {
+    const lower = floorWith([room("left", 0, 0, 2, 4), room("right", 3, 0, 2, 4)]);
+    const upper = floorWith([room("aligned", 0, 0, 2, 4), room("overhang", 1, 0, 3, 4)]);
+    expect(roomsOutsideFloorFootprint(upper, lower).map((item) => item.id)).toEqual(["overhang"]);
+  });
+
+  it("accepts a room covered by multiple adjacent rooms below", () => {
+    const lower = floorWith([room("left", 0, 0, 2, 4), room("right", 2, 0, 2, 4)]);
+    const upper = floorWith([room("upper", 0, 0, 4, 4)]);
+    expect(roomsOutsideFloorFootprint(upper, lower)).toEqual([]);
+  });
+
+  it("finds the nearest lower floor by level", () => {
+    const first = { ...floorWith([]), id: "first", level: 0 };
+    const second = { ...floorWith([]), id: "second", level: 1 };
+    const third = { ...floorWith([]), id: "third", level: 3 };
+    expect(floorBelow([first, second, third], 2)?.id).toBe("second");
+    expect(floorBelow([first, second, third], 0)).toBeNull();
+  });
+
+  it("calculates indoor bounds without including outdoor rooms", () => {
+    const floor = floorWith(
+      [
+        room("indoor", 1, 2, 4, 3),
+        { ...room("terrace", 8, 9, 6, 5), type: "terrace" },
+      ],
+      { walls: [] },
+    );
+    expect(indoorBounds(floor)).toEqual({ minX: 1, minY: 2, maxX: 5, maxY: 5 });
   });
 });
 

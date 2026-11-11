@@ -4,7 +4,7 @@ import type { KonvaEventObject } from "konva/lib/Node";
 import { Circle, Group, Line } from "react-konva";
 import { snapToGrid } from "@/domain/plan/geometry";
 import type { Vec2, Wall } from "@/domain/plan/schema";
-import { SELECTION_COLOR, WALL_COLOR } from "@/features/editor-2d/canvas-utils";
+import { SELECTION_COLOR, snapPointToWalls, WALL_COLOR } from "@/features/editor-2d/canvas-utils";
 import { useEditorStore } from "@/store/editor-store";
 import { usePlanStore } from "@/store/plan-store";
 
@@ -14,9 +14,11 @@ interface WallShapeProps {
   gridStep: number;
   isSelected: boolean;
   isInteractive: boolean;
+  snapWalls?: Wall[];
+  snapTolerance?: number;
 }
 
-export const WallShape = ({ wall, floorId, gridStep, isSelected, isInteractive }: WallShapeProps) => {
+export const WallShape = ({ wall, floorId, gridStep, isSelected, isInteractive, snapWalls, snapTolerance = 0.2 }: WallShapeProps) => {
   const { updateWall, commit } = usePlanStore.getState();
   const { select } = useEditorStore.getState();
   const isFreeWall = wall.roomId === null;
@@ -28,7 +30,8 @@ export const WallShape = ({ wall, floorId, gridStep, isSelected, isInteractive }
 
   const handleEndpointDrag = (key: "start" | "end") => (event: KonvaEventObject<DragEvent>) => {
     const node = event.target;
-    const point: Vec2 = { x: snapToGrid(node.x(), gridStep), y: snapToGrid(node.y(), gridStep) };
+    const gridPoint: Vec2 = { x: snapToGrid(node.x(), gridStep), y: snapToGrid(node.y(), gridStep) };
+    const point = snapWalls?.length ? snapPointToWalls(gridPoint, snapWalls, snapTolerance) : gridPoint;
     node.position(point);
     updateWall(floorId, wall.id, { [key]: point }, { transient: true });
   };
