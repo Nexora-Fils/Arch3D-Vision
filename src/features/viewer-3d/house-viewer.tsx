@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Camera, Download, RotateCw, Eye, EyeOff, Footprints, House, LayoutGrid, LoaderCircle, Moon, Mountain, Save, Settings, Share2, SlidersHorizontal, Sofa, Sun, X } from "lucide-react";
@@ -106,7 +107,7 @@ export const HouseViewer = () => {
     const url = `${window.location.origin}/projects/${plan.id}/view`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: plan.name, text: "Découvrez ma maison sur HomePlan 3D", url });
+        await navigator.share({ title: plan.name, text: "Découvrez ma maison sur Arch3D Vision", url });
         return;
       }
       await navigator.clipboard.writeText(url);
@@ -131,8 +132,8 @@ export const HouseViewer = () => {
 
       {/* Project chip, top left. */}
       <div className={cn("absolute top-3 left-3 flex items-center gap-1 rounded-xl p-1 pr-2", glass)}>
-        <Link href="/dashboard" aria-label="Tableau de bord" className="flex size-8 items-center justify-center rounded-lg bg-electric">
-          <House className="size-4" />
+        <Link href="/dashboard" aria-label="Tableau de bord" className="flex size-8 items-center justify-center rounded-lg bg-white">
+          <Image src="/brand-mark.png" alt="" width={28} height={28} className="size-7" />
         </Link>
         <span className="max-w-52 truncate px-2 text-sm font-semibold">{plan.name}</span>
         {isDirty ? (
