@@ -43,6 +43,7 @@ Bon à savoir :
 | Routes | `src/app/` | `(marketing)` pages publiques, `(app)` tableau de bord et galerie, `(workspace)` écrans plein écran d'un projet. L'accueil est `src/app/page.tsx` |
 | Écrans | `src/features/<écran>/` | Composants propres à un écran (`dashboard`, `landing`, `templates`, `settings`, `materials`). `project/` fournit le projet courant aux écrans du workspace |
 | Composants partagés | `src/components/` | Composants transverses ; primitives shadcn/ui dans `ui/` |
+| Hooks partagés | `src/lib/hooks/` | Hooks React réutilisables entre fonctionnalités |
 
 Règles d'architecture :
 
