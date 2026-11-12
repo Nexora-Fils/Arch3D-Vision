@@ -62,12 +62,27 @@ export const FurnitureShape = ({ item, floorId, gridStep, isSelected, isInteract
         fill={stairType ? "rgba(248, 250, 252, 0.01)" : item.color}
         opacity={stairType ? 1 : 0.7}
         cornerRadius={0.06}
-        stroke={isSelected ? SELECTION_COLOR : stairType ? undefined : "rgba(30, 41, 59, 0.45)"}
+        stroke={isSelected && !stairType ? SELECTION_COLOR : stairType ? undefined : "rgba(30, 41, 59, 0.45)"}
         strokeWidth={isSelected ? 2.5 : 1}
         strokeScaleEnabled={false}
       />
       {stairType ? (
-        <StairSymbol item={{ ...item, type: stairType }} hasIssue={hasIssue} />
+        <>
+          <StairSymbol item={{ ...item, type: stairType }} hasIssue={hasIssue} />
+          {isSelected ? (
+            <Rect
+              x={-item.width / 2}
+              y={-item.depth / 2}
+              width={item.width}
+              height={item.depth}
+              fill="rgba(0, 0, 0, 0)"
+              stroke={SELECTION_COLOR}
+              strokeWidth={2.5}
+              strokeScaleEnabled={false}
+              listening={false}
+            />
+          ) : null}
+        </>
       ) : item.width > 0.9 && item.depth > 0.5 ? (
         <Text x={-item.width / 2} y={-0.09} width={item.width} align="center" text={label} fontSize={0.16} fill="#1e293b" opacity={0.65} listening={false} />
       ) : null}

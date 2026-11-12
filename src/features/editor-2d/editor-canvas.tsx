@@ -9,7 +9,7 @@ import { findWallAt, floorBounds, isOutdoorRoom, pointAlongWall, snapToGrid } fr
 import { FURNITURE_PRESETS, ROOM_TYPE_LABELS } from "@/domain/plan/labels";
 import type { Floor, Vec2 } from "@/domain/plan/schema";
 import { Minus, Plus } from "lucide-react";
-import { buildStairFlights, stairIssues } from "@/domain/plan/stairs";
+import { buildStairFlights, isStairs, stairIssues } from "@/domain/plan/stairs";
 import { AnnotationShape, DimensionLine } from "@/features/editor-2d/canvas/annotation-shape";
 import { StairwellOutline } from "@/features/editor-2d/canvas/stairwell-outline";
 import { DraftRoom, DraftWall, WallHoverMarker } from "@/features/editor-2d/canvas/draft-shapes";
@@ -369,6 +369,17 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
     const image = images[key];
     return image ? { image, scale: patternScaleFor(key) } : undefined;
   };
+  const renderFurniture = (item: Floor["furniture"][number]) => (
+    <FurnitureShape
+      key={item.id}
+      item={item}
+      floorId={floor.id}
+      gridStep={gridStep}
+      isSelected={selection?.kind === "furniture" && selection.id === item.id}
+      isInteractive={tool === "select"}
+      hasIssue={issues.has(item.id)}
+    />
+  );
   const houseBounds = floorBounds({ ...floor, rooms: floor.rooms.filter((room) => !isOutdoorRoom(room)) }, { indoorOnly: true });
   const scaleBarMeters = scale >= 40 ? 5 : scale >= 15 ? 10 : 20;
   const zoomBy = (factor: number) => setView({ zoom: zoom * factor });
@@ -450,17 +461,11 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
             {stairwells.map((flight) => (
               <StairwellOutline key={flight.id} flight={flight} />
             ))}
-            {floor.furniture.map((item) => (
-              <FurnitureShape
-                key={item.id}
-                item={item}
-                floorId={floor.id}
-                gridStep={gridStep}
-                isSelected={selection?.kind === "furniture" && selection.id === item.id}
-                isInteractive={tool === "select"}
-                hasIssue={issues.has(item.id)}
-              />
+            {floor.furniture.filter((item) => !isStairs(item.type)).map(renderFurniture)}
+            {floor.rooms.map((room) => (
+              <RoomLabel key={`label-${room.id}`} room={room} showDimensions={showDimensions} typeLabel={ROOM_TYPE_LABELS[room.type]} />
             ))}
+            {floor.furniture.filter((item) => isStairs(item.type)).map(renderFurniture)}
             {floor.annotations.map((annotation) => (
               <AnnotationShape
                 key={annotation.id}
@@ -478,9 +483,6 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
               </>
             ) : null}
             {draft.dimension?.end ? <DimensionLine start={draft.dimension.start} end={draft.dimension.end} color="#2563eb" /> : null}
-            {floor.rooms.map((room) => (
-              <RoomLabel key={`label-${room.id}`} room={room} showDimensions={showDimensions} typeLabel={ROOM_TYPE_LABELS[room.type]} />
-            ))}
             {draft.room ? <DraftRoom start={draft.room.start} end={draft.room.end} /> : null}
             {draft.wall ? <DraftWall start={draft.wall.start} end={draft.wall.end} thickness={settings?.defaultWallThickness ?? 0.15} /> : null}
             {draft.hover ? <WallHoverMarker point={draft.hover} kind={tool === "door" ? "door" : "window"} /> : null}
