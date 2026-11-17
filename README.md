@@ -6,6 +6,8 @@ Application web de conception architecturale : dessinez le plan d'une maison en 
 
 ## Démarrage rapide
 
+Prérequis : Node.js 24 (fixé dans `.nvmrc` : `nvm use`) et pnpm 10.15.0 (fixé par `packageManager` dans `package.json` : `corepack enable`).
+
 ```bash
 pnpm install                 # dépendances (pnpm uniquement)
 cp .env.example .env         # puis changez POSTGRES_PASSWORD et DATABASE_URL

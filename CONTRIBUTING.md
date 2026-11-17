@@ -6,7 +6,7 @@ Ce guide s'adresse aux développeurs qui rejoignent le projet. Le [README](READM
 
 Prérequis :
 
-- Node.js 20.9 ou plus récent (minimum requis par Next.js 16) ;
+- Node.js 24 (version fixée dans `.nvmrc` et `engines` : `nvm use`) ;
 - pnpm 10 (`corepack enable` active la version fixée dans `package.json`) ;
 - Docker Desktop, pour PostgreSQL.
 
