@@ -7,9 +7,9 @@ export const metadata: Metadata = { title: "À propos" };
 export default function AboutPage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      <h1 className="text-3xl font-semibold tracking-tight text-midnight">À propos de HomePlan 3D</h1>
+      <h1 className="text-3xl font-semibold tracking-tight text-midnight">À propos d&apos;Arch3D Vision</h1>
       <p className="text-muted-foreground">
-        HomePlan 3D permet à chacun de dessiner le plan de sa maison, de la voir immédiatement en 3D et de la visiter pièce par pièce avant le début des travaux.
+        Arch3D Vision permet à chacun de dessiner le plan de sa maison, de la voir immédiatement en 3D et de la visiter pièce par pièce avant le début des travaux.
       </p>
       <p className="text-muted-foreground">
         Le plan, la maquette 3D et la visite partagent un seul modèle en mètres : chaque mur, ouverture, matériau et meuble modifié dans l&apos;éditeur se retrouve à l&apos;identique dans la maison 3D. Vos projets sont enregistrés dans votre base de données PostgreSQL.

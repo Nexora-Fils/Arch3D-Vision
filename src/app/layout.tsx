@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "HomePlan 3D",
-    template: "%s · HomePlan 3D",
+    default: "Arch3D Vision",
+    template: "%s · Arch3D Vision",
   },
   description: "Dessinez le plan de votre maison en 2D, générez-la en 3D et visitez-la de l'intérieur.",
 };

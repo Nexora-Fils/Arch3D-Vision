@@ -1,4 +1,4 @@
-# Contribuer à HomePlan 3D
+# Contribuer à Arch3D Vision
 
 Ce guide s'adresse aux développeurs qui rejoignent le projet. Le [README](README.md) décrit le produit, les écrans et le rendu 3D ; ce document décrit comment travailler dans le dépôt.
 

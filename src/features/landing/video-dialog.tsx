@@ -15,7 +15,7 @@ export const VideoDialog = () => (
       </button>
     </DialogTrigger>
     <DialogContent className="max-w-4xl overflow-hidden p-0 sm:max-w-4xl">
-      <DialogTitle className="sr-only">Démonstration de HomePlan 3D</DialogTitle>
+      <DialogTitle className="sr-only">Démonstration d&apos;Arch3D Vision</DialogTitle>
       <DialogDescription className="sr-only">Enregistrement de la vue 3D de la maison de démonstration.</DialogDescription>
       <video src="/videos/homeplan-3d-demo.mp4" controls autoPlay muted playsInline className="aspect-video w-full bg-black" />
     </DialogContent>
