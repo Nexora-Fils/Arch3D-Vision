@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { createId } from "@/domain/plan/ids";
 import { floorNameForLevel } from "@/domain/plan/factory";
 import {
-  buildWallSegments,
   clampOpeningOffset,
   createRoomWalls,
   floorBelow,
@@ -10,6 +9,7 @@ import {
   syncRoomWalls,
   translateWall,
 } from "@/domain/plan/geometry";
+import { buildWallSegments } from "@/domain/plan/wall-segments";
 import { applyStylePreset, type StylePresetKey } from "@/domain/plan/style-presets";
 import type {
   Annotation,

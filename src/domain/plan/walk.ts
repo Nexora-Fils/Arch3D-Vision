@@ -1,12 +1,5 @@
-import {
-  buildSolidSegments,
-  buildWallSegments,
-  floorBaseHeight,
-  resolveCollisions,
-  vecAdd,
-  vecScale,
-  type SolidSegment,
-} from "./geometry";
+import { floorBaseHeight, vecAdd, vecScale } from "./geometry";
+import { buildSolidSegments, buildWallSegments, resolveCollisions, type SolidSegment } from "./wall-segments";
 import type { Plan, Vec2 } from "./schema";
 import {
   buildStairFlights,

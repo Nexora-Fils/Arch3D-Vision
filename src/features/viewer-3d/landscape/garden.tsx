@@ -14,7 +14,8 @@ import {
   type BufferGeometry,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { buildWallSegments, vecAdd, vecScale, type Bounds } from "@/domain/plan/geometry";
+import { vecAdd, vecScale, type Bounds } from "@/domain/plan/geometry";
+import { buildWallSegments } from "@/domain/plan/wall-segments";
 import type { Floor, Lot } from "@/domain/plan/schema";
 import { MetricBox } from "@/features/viewer-3d/architecture/parts";
 import { useMergedBoxes, type BoxPart } from "@/features/viewer-3d/architecture/merged-boxes";

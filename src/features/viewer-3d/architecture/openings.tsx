@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { PlaneGeometry, type BufferGeometry, type MeshStandardMaterial } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import type { WallOpening } from "@/domain/plan/geometry";
+import type { WallOpening } from "@/domain/plan/wall-segments";
 import { useMergedBoxes, type BoxPart } from "@/features/viewer-3d/architecture/merged-boxes";
 import type { SceneMaterials } from "@/features/viewer-3d/scene-materials";
 

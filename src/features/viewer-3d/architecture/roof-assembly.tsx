@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo } from "react";
 import { CylinderGeometry, type MeshStandardMaterial } from "three";
-import { buildWallSegments, floorBounds, isOutdoorRoom, isPointInRoom, type Bounds } from "@/domain/plan/geometry";
+import { floorBounds, isOutdoorRoom, isPointInRoom, type Bounds } from "@/domain/plan/geometry";
+import { buildWallSegments } from "@/domain/plan/wall-segments";
 import type { Floor, Lot, PlanSettings } from "@/domain/plan/schema";
 import { AlongSegment, MetricBox, segmentLength, type Segment } from "@/features/viewer-3d/architecture/parts";
 import { toScene } from "@/features/viewer-3d/convert";

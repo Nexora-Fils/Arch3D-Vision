@@ -1,6 +1,4 @@
 import {
-  buildSolidSegments,
-  buildWallSegments,
   clamp,
   isOutdoorRoom,
   isPointInRoom,
@@ -13,8 +11,8 @@ import {
   vecScale,
   vecSub,
   type Bounds,
-  type SolidSegment,
 } from "./geometry";
+import { buildSolidSegments, buildWallSegments, type SolidSegment } from "./wall-segments";
 import type { Door, Floor, Furniture, FurnitureType, Plan, Vec2, Wall } from "./schema";
 
 /** Furniture types that are stairs, one per model. */

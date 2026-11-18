@@ -3,8 +3,6 @@
 import { useEffect, useMemo } from "react";
 import type { MeshStandardMaterial } from "three";
 import {
-  buildSolidSegments,
-  buildWallSegments,
   floorBaseHeight,
   floorBounds,
   LEVEL_SLAB_THICKNESS,
@@ -14,8 +12,8 @@ import {
   vecAdd,
   vecScale,
   type Bounds,
-  type WallSegment,
 } from "@/domain/plan/geometry";
+import { buildSolidSegments, buildWallSegments, type WallSegment } from "@/domain/plan/wall-segments";
 import type { Floor, Lot, Material, Plan, Room } from "@/domain/plan/schema";
 import { toScene } from "@/features/viewer-3d/convert";
 import { buildStairFlights, isStairs, subtractRects, type StairFlight } from "@/domain/plan/stairs";

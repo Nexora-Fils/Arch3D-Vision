@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildDemoPlan } from "../demo";
-import { buildWallSegments, floorArea, isOutdoorRoom, wallLength } from "../geometry";
+import { floorArea, isOutdoorRoom, wallLength } from "../geometry";
+import { buildWallSegments } from "../wall-segments";
 import { planSchema } from "../schema";
 
 describe("demo project", () => {

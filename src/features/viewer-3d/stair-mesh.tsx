@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import type { MeshStandardMaterial } from "three";
-import type { SolidSegment } from "@/domain/plan/geometry";
+import type { SolidSegment } from "@/domain/plan/wall-segments";
 import type { Furniture, Lot, Vec2 } from "@/domain/plan/schema";
 import {
   buildStairShape,
