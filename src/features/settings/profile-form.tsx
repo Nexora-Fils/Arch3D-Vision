@@ -15,12 +15,29 @@ export const ProfileForm = ({ profile }: { profile: Account }) => {
     <form action={formAction} className="grid gap-4">
       <div className="grid gap-1.5">
         <Label htmlFor="profile-name">Prénom et nom</Label>
-        <Input id="profile-name" name="name" defaultValue={profile.name} required maxLength={60} placeholder="Dieudonné Martin" aria-invalid={Boolean(state.errors?.name)} />
+        <Input
+          id="profile-name"
+          name="name"
+          defaultValue={profile.name}
+          required
+          maxLength={60}
+          placeholder="Dieudonné Martin"
+          aria-invalid={Boolean(state.errors?.name)}
+        />
         <FieldError message={state.errors?.name} />
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor="profile-email">E-mail</Label>
-        <Input id="profile-email" name="email" type="email" defaultValue={profile.email} required maxLength={120} placeholder="vous@exemple.fr" aria-invalid={Boolean(state.errors?.email)} />
+        <Input
+          id="profile-email"
+          name="email"
+          type="email"
+          defaultValue={profile.email}
+          required
+          maxLength={120}
+          placeholder="vous@exemple.fr"
+          aria-invalid={Boolean(state.errors?.email)}
+        />
         <FieldError message={state.errors?.email} />
       </div>
       <div className="flex items-center gap-3">

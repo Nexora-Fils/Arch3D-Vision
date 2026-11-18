@@ -27,8 +27,18 @@ export const WalkCanvas = ({ plan, floorId, start, input, onFloorChange }: WalkC
   const timeOfDay = useViewerStore((state) => state.timeOfDay);
   const quality = resolveQuality(useViewerStore((state) => state.quality));
   return (
-    <Canvas shadows="percentage" dpr={quality === "high" ? [1, 1.5] : [1, 1]} camera={{ fov: 72, near: 0.05, far: 600 }} gl={{ antialias: quality !== "high", powerPreference: "high-performance" }}>
-      <SceneEnvironment timeOfDay={timeOfDay} quality={quality} shadowSize={Math.max(plan.lot.width, plan.lot.depth)} interior />
+    <Canvas
+      shadows="percentage"
+      dpr={quality === "high" ? [1, 1.5] : [1, 1]}
+      camera={{ fov: 72, near: 0.05, far: 600 }}
+      gl={{ antialias: quality !== "high", powerPreference: "high-performance" }}
+    >
+      <SceneEnvironment
+        timeOfDay={timeOfDay}
+        quality={quality}
+        shadowSize={Math.max(plan.lot.width, plan.lot.depth)}
+        interior
+      />
       <Suspense fallback={null}>
         <HouseModel plan={plan} showRoof mode="walk" timeOfDay={timeOfDay} quality={quality} walkFloorId={floorId} />
       </Suspense>

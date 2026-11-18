@@ -43,11 +43,24 @@ export const ProjectSettings = () => {
           <CardContent className="grid gap-4">
             <div className="grid gap-1.5">
               <Label htmlFor="project-name">Nom</Label>
-              <Input id="project-name" value={plan.name} maxLength={120} onChange={(event) => updateProject({ name: event.target.value }, { transient: true })} onBlur={commit} />
+              <Input
+                id="project-name"
+                value={plan.name}
+                maxLength={120}
+                onChange={(event) => updateProject({ name: event.target.value }, { transient: true })}
+                onBlur={commit}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="project-description">Description</Label>
-              <Textarea id="project-description" rows={4} value={plan.description ?? ""} maxLength={2000} onChange={(event) => updateProject({ description: event.target.value || null }, { transient: true })} onBlur={commit} />
+              <Textarea
+                id="project-description"
+                rows={4}
+                value={plan.description ?? ""}
+                maxLength={2000}
+                onChange={(event) => updateProject({ description: event.target.value || null }, { transient: true })}
+                onBlur={commit}
+              />
             </div>
           </CardContent>
         </Card>
@@ -58,10 +71,42 @@ export const ProjectSettings = () => {
             <CardDescription>Surface du terrain : {formatArea(plan.lot.width * plan.lot.depth)}.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <NumberField label="Largeur du terrain" unit="m" min={1} max={500} step={0.5} value={plan.lot.width} onChange={(width) => updateProject({ lot: { width } })} />
-            <NumberField label="Profondeur du terrain" unit="m" min={1} max={500} step={0.5} value={plan.lot.depth} onChange={(depth) => updateProject({ lot: { depth } })} />
-            <NumberField label="Hauteur des nouveaux murs" unit="m" min={2} max={6} step={0.05} value={plan.settings.defaultWallHeight} onChange={(defaultWallHeight) => updateSettings({ defaultWallHeight })} />
-            <NumberField label="Épaisseur des nouveaux murs" unit="m" min={0.05} max={1} step={0.01} value={plan.settings.defaultWallThickness} onChange={(defaultWallThickness) => updateSettings({ defaultWallThickness })} />
+            <NumberField
+              label="Largeur du terrain"
+              unit="m"
+              min={1}
+              max={500}
+              step={0.5}
+              value={plan.lot.width}
+              onChange={(width) => updateProject({ lot: { width } })}
+            />
+            <NumberField
+              label="Profondeur du terrain"
+              unit="m"
+              min={1}
+              max={500}
+              step={0.5}
+              value={plan.lot.depth}
+              onChange={(depth) => updateProject({ lot: { depth } })}
+            />
+            <NumberField
+              label="Hauteur des nouveaux murs"
+              unit="m"
+              min={2}
+              max={6}
+              step={0.05}
+              value={plan.settings.defaultWallHeight}
+              onChange={(defaultWallHeight) => updateSettings({ defaultWallHeight })}
+            />
+            <NumberField
+              label="Épaisseur des nouveaux murs"
+              unit="m"
+              min={0.05}
+              max={1}
+              step={0.01}
+              value={plan.settings.defaultWallThickness}
+              onChange={(defaultWallThickness) => updateSettings({ defaultWallThickness })}
+            />
           </CardContent>
         </Card>
 
@@ -85,16 +130,40 @@ export const ProjectSettings = () => {
               <div key={floor.id} className="grid grid-cols-[1fr_auto_auto] items-end gap-2">
                 <div className="grid gap-1.5">
                   <Label className="text-xs text-muted-foreground">Nom (niveau {floor.level})</Label>
-                  <Input value={floor.name} onChange={(event) => updateFloor(floor.id, { name: event.target.value }, { transient: true })} onBlur={commit} />
+                  <Input
+                    value={floor.name}
+                    onChange={(event) => updateFloor(floor.id, { name: event.target.value }, { transient: true })}
+                    onBlur={commit}
+                  />
                 </div>
-                <NumberField label="Hauteur" unit="m" min={2} max={6} step={0.05} value={floor.height} onChange={(height) => updateFloor(floor.id, { height })} className="w-28" />
-                <Button variant="ghost" size="icon" disabled={plan.floors.length <= 1} onClick={() => removeFloor(floor.id)} aria-label={`Supprimer ${floor.name}`}>
+                <NumberField
+                  label="Hauteur"
+                  unit="m"
+                  min={2}
+                  max={6}
+                  step={0.05}
+                  value={floor.height}
+                  onChange={(height) => updateFloor(floor.id, { height })}
+                  className="w-28"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={plan.floors.length <= 1}
+                  onClick={() => removeFloor(floor.id)}
+                  aria-label={`Supprimer ${floor.name}`}
+                >
                   <Trash />
                 </Button>
               </div>
             ))}
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <input type="checkbox" checked={copyExteriorWalls} onChange={(event) => setCopyExteriorWalls(event.target.checked)} className="accent-[#2563eb]" />
+              <input
+                type="checkbox"
+                checked={copyExteriorWalls}
+                onChange={(event) => setCopyExteriorWalls(event.target.checked)}
+                className="accent-[#2563eb]"
+              />
               Reprendre les murs extérieurs du rez-de-chaussée
             </label>
             <Button variant="outline" className="w-fit" onClick={() => addFloor(copyExteriorWalls)}>

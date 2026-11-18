@@ -34,9 +34,27 @@ interface SkySpec {
  * projected on the ground around the lot, so the horizon is a real landscape.
  */
 const SKIES: Record<TimeOfDay, SkySpec> = {
-  day: { file: "/hdri/je_gray_park_2k.hdr", sunInImage: [0.772, 0.295, 0.563], sunAzimuth: 1.75, sunColor: "#fff1de", sunIntensity: 2.4, environmentIntensity: 0.9, skyIntensity: 1, exposure: 1 },
+  day: {
+    file: "/hdri/je_gray_park_2k.hdr",
+    sunInImage: [0.772, 0.295, 0.563],
+    sunAzimuth: 1.75,
+    sunColor: "#fff1de",
+    sunIntensity: 2.4,
+    environmentIntensity: 0.9,
+    skyIntensity: 1,
+    exposure: 1,
+  },
   // Dusk: the sun has just set; its glow faces the default camera (house against the light, lit windows).
-  evening: { file: "/hdri/sunset_fairway_2k.hdr", sunInImage: [0.888, 0.118, 0.445], sunAzimuth: 3.9, sunColor: "#ffb07a", sunIntensity: 0.55, environmentIntensity: 1, skyIntensity: 1, exposure: 0.85 },
+  evening: {
+    file: "/hdri/sunset_fairway_2k.hdr",
+    sunInImage: [0.888, 0.118, 0.445],
+    sunAzimuth: 3.9,
+    sunColor: "#ffb07a",
+    sunIntensity: 0.55,
+    environmentIntensity: 1,
+    skyIntensity: 1,
+    exposure: 0.85,
+  },
 };
 
 /**
@@ -60,7 +78,11 @@ const skyRotation = (spec: SkySpec): number => Math.atan2(spec.sunInImage[2], sp
 const sunDirection = (spec: SkySpec): Vector3 => {
   const [x, y, z] = spec.sunInImage;
   const angle = skyRotation(spec);
-  return new Vector3(x * Math.cos(angle) + z * Math.sin(angle), y, -x * Math.sin(angle) + z * Math.cos(angle)).normalize();
+  return new Vector3(
+    x * Math.cos(angle) + z * Math.sin(angle),
+    y,
+    -x * Math.sin(angle) + z * Math.cos(angle),
+  ).normalize();
 };
 
 /**
@@ -68,7 +90,12 @@ const sunDirection = (spec: SkySpec): Vector3 => {
  * with the sun of the photograph. The low-quality profile falls back to a
  * procedural sky and hard shadows.
  */
-export const SceneEnvironment = ({ timeOfDay, shadowSize = 40, quality = "high", interior = false }: SceneEnvironmentProps) => {
+export const SceneEnvironment = ({
+  timeOfDay,
+  shadowSize = 40,
+  quality = "high",
+  interior = false,
+}: SceneEnvironmentProps) => {
   const getState = useThree((state) => state.get);
   const spec = SKIES[timeOfDay];
   const sun = useMemo(() => sunDirection(spec).multiplyScalar(80), [spec]);
@@ -92,7 +119,14 @@ export const SceneEnvironment = ({ timeOfDay, shadowSize = 40, quality = "high",
         </Suspense>
       ) : (
         <>
-          <Sky sunPosition={sun.toArray()} turbidity={timeOfDay === "evening" ? 10 : 4} rayleigh={timeOfDay === "evening" ? 4 : 1.4} mieCoefficient={0.005} mieDirectionalG={0.8} distance={450000} />
+          <Sky
+            sunPosition={sun.toArray()}
+            turbidity={timeOfDay === "evening" ? 10 : 4}
+            rayleigh={timeOfDay === "evening" ? 4 : 1.4}
+            mieCoefficient={0.005}
+            mieDirectionalG={0.8}
+            distance={450000}
+          />
           <hemisphereLight args={["#e9eef5", "#8a8f74", 1]} />
           <ambientLight intensity={0.5} color="#fff5e8" />
         </>
@@ -122,7 +156,11 @@ const PhotographicSky = ({ spec, interior }: { spec: SkySpec; interior: boolean 
   const rotation = skyRotation(spec);
   return (
     <>
-      <Environment map={texture} environmentIntensity={spec.environmentIntensity * (interior ? 1.15 : 1)} environmentRotation={[0, rotation, 0]} />
+      <Environment
+        map={texture}
+        environmentIntensity={spec.environmentIntensity * (interior ? 1.15 : 1)}
+        environmentRotation={[0, rotation, 0]}
+      />
       <GroundedSky texture={texture} rotation={rotation} intensity={spec.skyIntensity} />
       {/* Indoors, light bounces off floors and walls onto the ceilings: a warm light from below stands in for it. */}
       {interior ? <hemisphereLight args={["#f4f1ea", "#efe6d8", 2]} /> : null}
@@ -146,7 +184,10 @@ const GroundedSky = ({ texture, rotation, intensity }: { texture: Texture; rotat
     mesh.rotation.y = rotation;
     mesh.material.color.setScalar(intensity);
     mesh.material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
-      shader.fragmentShader = shader.fragmentShader.replace("#include <opaque_fragment>", `outgoingLight = min(outgoingLight, vec3(${SKY_MAX_RADIANCE.toFixed(2)}));\n#include <opaque_fragment>`);
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <opaque_fragment>",
+        `outgoingLight = min(outgoingLight, vec3(${SKY_MAX_RADIANCE.toFixed(2)}));\n#include <opaque_fragment>`,
+      );
     };
     // Drawn behind everything else, like a background.
     mesh.renderOrder = -1;

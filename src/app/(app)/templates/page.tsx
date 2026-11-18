@@ -17,7 +17,8 @@ export default function TemplatesPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-midnight">Modèles de maisons</h1>
           <p className="text-sm text-muted-foreground">
-            Plans modifiables : la maison 3D est générée à partir du plan 2D. Chaque modèle crée un projet indépendant que vous pouvez adapter pièce par pièce, puis visiter.
+            Plans modifiables : la maison 3D est générée à partir du plan 2D. Chaque modèle crée un projet indépendant
+            que vous pouvez adapter pièce par pièce, puis visiter.
           </p>
         </div>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -26,7 +27,9 @@ export default function TemplatesPage() {
           ))}
           <Card className="flex flex-col items-center justify-center border-dashed p-8 text-center">
             <CardTitle>Page blanche</CardTitle>
-            <CardDescription className="mt-2 max-w-xs">Définissez votre terrain et dessinez chaque pièce dans l&apos;éditeur 2D.</CardDescription>
+            <CardDescription className="mt-2 max-w-xs">
+              Définissez votre terrain et dessinez chaque pièce dans l&apos;éditeur 2D.
+            </CardDescription>
             <Button asChild className="mt-6" variant="outline">
               <Link href="/projects/new">
                 <Plus data-icon="inline-start" />
@@ -40,7 +43,8 @@ export default function TemplatesPage() {
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-midnight">Modèles détaillés</h2>
           <p className="text-sm text-muted-foreground">
-            Maquettes 3D publiées par des artistes sur Sketchfab sous licence CC BY 4.0, à explorer en 3D. Ce sont des scènes figées : elles ne sont pas générées par l&apos;éditeur et ne se modifient pas.
+            Maquettes 3D publiées par des artistes sur Sketchfab sous licence CC BY 4.0, à explorer en 3D. Ce sont des
+            scènes figées : elles ne sont pas générées par l&apos;éditeur et ne se modifient pas.
           </p>
         </div>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">

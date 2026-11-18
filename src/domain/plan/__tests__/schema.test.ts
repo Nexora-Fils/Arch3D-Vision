@@ -9,9 +9,16 @@ describe("schemas", () => {
   });
 
   it("coerces form values when creating a project", () => {
-    const parsed = createProjectInputSchema.parse({ name: " Ma maison ", lotWidth: "20", lotDepth: "15", wallHeight: "2.7" });
+    const parsed = createProjectInputSchema.parse({
+      name: " Ma maison ",
+      lotWidth: "20",
+      lotDepth: "15",
+      wallHeight: "2.7",
+    });
     expect(parsed).toEqual({ name: "Ma maison", lotWidth: 20, lotDepth: 15, wallHeight: 2.7 });
-    expect(createProjectInputSchema.safeParse({ name: "", lotWidth: 20, lotDepth: 15, wallHeight: 2.7 }).success).toBe(false);
+    expect(createProjectInputSchema.safeParse({ name: "", lotWidth: 20, lotDepth: 15, wallHeight: 2.7 }).success).toBe(
+      false,
+    );
   });
 
   it("builds an empty plan that satisfies the plan schema", () => {

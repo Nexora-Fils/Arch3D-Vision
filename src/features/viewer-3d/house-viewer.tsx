@@ -4,10 +4,35 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { Camera, Download, RotateCw, Eye, EyeOff, Footprints, House, LayoutGrid, LoaderCircle, Moon, Mountain, Save, Settings, Share2, SlidersHorizontal, Sofa, Sun, X } from "lucide-react";
+import {
+  Camera,
+  Download,
+  RotateCw,
+  Eye,
+  EyeOff,
+  Footprints,
+  House,
+  LayoutGrid,
+  LoaderCircle,
+  Moon,
+  Mountain,
+  Save,
+  Settings,
+  Share2,
+  SlidersHorizontal,
+  Sofa,
+  Sun,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -50,11 +75,24 @@ const RailButton = ({ label, onClick, href, isActive, children }: RailButtonProp
   <Tooltip>
     <TooltipTrigger asChild>
       {href ? (
-        <Link href={href} aria-label={label} className="flex size-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white">
+        <Link
+          href={href}
+          aria-label={label}
+          className="flex size-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white"
+        >
           {children}
         </Link>
       ) : (
-        <button type="button" onClick={onClick} aria-label={label} aria-pressed={isActive} className={cn("flex size-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white", isActive && "bg-electric text-white hover:bg-electric")}>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          aria-pressed={isActive}
+          className={cn(
+            "flex size-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white",
+            isActive && "bg-electric text-white hover:bg-electric",
+          )}
+        >
           {children}
         </button>
       )}
@@ -70,7 +108,8 @@ export const HouseViewer = () => {
   const showRoof = useViewerStore((state) => state.showRoof);
   const timeOfDay = useViewerStore((state) => state.timeOfDay);
   const autoRotate = useViewerStore((state) => state.autoRotate);
-  const { toggleAutoRotate, toggleRoof, toggleTimeOfDay, requestCamera, setShowRoof, setHiddenFloors } = useViewerStore.getState();
+  const { toggleAutoRotate, toggleRoof, toggleTimeOfDay, requestCamera, setShowRoof, setHiddenFloors } =
+    useViewerStore.getState();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [mode, setMode] = useState<ViewMode>("exterior");
   const [panelOpen, setPanelOpen] = useState<boolean | null>(null);
@@ -135,13 +174,21 @@ export const HouseViewer = () => {
 
       {/* Project chip, top left. */}
       <div className={cn("absolute top-3 left-3 flex items-center gap-1 rounded-xl p-1 pr-2", glass)}>
-        <Link href="/dashboard" aria-label="Tableau de bord" className="flex size-8 items-center justify-center rounded-lg bg-white">
+        <Link
+          href="/dashboard"
+          aria-label="Tableau de bord"
+          className="flex size-8 items-center justify-center rounded-lg bg-white"
+        >
           <Image src="/brand-mark.png" alt="" width={28} height={28} className="size-7" />
         </Link>
         <span className="max-w-52 truncate px-2 text-sm font-semibold">{plan.name}</span>
         {isDirty ? (
           <Button size="xs" onClick={() => void save()} disabled={isSaving}>
-            {isSaving ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : <Save data-icon="inline-start" />}
+            {isSaving ? (
+              <LoaderCircle className="animate-spin" data-icon="inline-start" />
+            ) : (
+              <Save data-icon="inline-start" />
+            )}
             Enregistrer
           </Button>
         ) : null}
@@ -159,7 +206,11 @@ export const HouseViewer = () => {
           <Tooltip>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
-                <button type="button" aria-label="Points de vue" className="flex size-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white">
+                <button
+                  type="button"
+                  aria-label="Points de vue"
+                  className="flex size-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white"
+                >
                   <Camera className="size-4" />
                 </button>
               </DropdownMenuTrigger>
@@ -175,7 +226,11 @@ export const HouseViewer = () => {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        <RailButton label={autoRotate ? "Arrêter le tour automatique" : "Tour automatique"} onClick={toggleAutoRotate} isActive={autoRotate}>
+        <RailButton
+          label={autoRotate ? "Arrêter le tour automatique" : "Tour automatique"}
+          onClick={toggleAutoRotate}
+          isActive={autoRotate}
+        >
           <RotateCw className="size-4" />
         </RailButton>
         <RailButton label="Télécharger l'image" onClick={handleDownload}>
@@ -194,7 +249,13 @@ export const HouseViewer = () => {
 
       {/* Materials panel, right. */}
       <div className={cn("dark absolute top-3 right-3 w-64 overflow-hidden rounded-xl", glass)}>
-        <button type="button" onClick={() => setPanelOpen((value) => !(value ?? isDesktop))} aria-expanded={isPanelOpen} aria-controls="materials-panel-content" className="flex w-full items-center justify-between border-b border-white/10 px-3 py-2.5 text-sm font-semibold">
+        <button
+          type="button"
+          onClick={() => setPanelOpen((value) => !(value ?? isDesktop))}
+          aria-expanded={isPanelOpen}
+          aria-controls="materials-panel-content"
+          className="flex w-full items-center justify-between border-b border-white/10 px-3 py-2.5 text-sm font-semibold"
+        >
           Matériaux
           <span className="text-xs font-normal text-white/50">
             {panelOpen === null ? (
@@ -209,17 +270,30 @@ export const HouseViewer = () => {
             )}
           </span>
         </button>
-        <div id="materials-panel-content" className={cn(panelOpen === null ? "hidden md:block" : panelOpen ? "block" : "hidden")}>
+        <div
+          id="materials-panel-content"
+          className={cn(panelOpen === null ? "hidden md:block" : panelOpen ? "block" : "hidden")}
+        >
           <MaterialsPanel plan={plan} />
         </div>
       </div>
 
       {/* Advanced options drawer. */}
       {isOptionsOpen ? (
-        <div className={cn("dark absolute top-16 left-16 flex max-h-[calc(100%-9rem)] w-80 flex-col overflow-hidden rounded-xl", glass)}>
+        <div
+          className={cn(
+            "dark absolute top-16 left-16 flex max-h-[calc(100%-9rem)] w-80 flex-col overflow-hidden rounded-xl",
+            glass,
+          )}
+        >
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5">
             <span className="text-sm font-semibold">Options avancées</span>
-            <button type="button" onClick={() => setOptionsOpen(false)} aria-label="Fermer" className="rounded-md p-1 text-white/60 hover:bg-white/10 hover:text-white">
+            <button
+              type="button"
+              onClick={() => setOptionsOpen(false)}
+              aria-label="Fermer"
+              className="rounded-md p-1 text-white/60 hover:bg-white/10 hover:text-white"
+            >
               <X className="size-4" />
             </button>
           </div>
@@ -235,7 +309,11 @@ export const HouseViewer = () => {
       <div className={cn("absolute bottom-3 left-3 flex items-center gap-1 rounded-xl p-1", glass)}>
         {modes.map(({ key, label, icon: Icon }) =>
           key === "walk" ? (
-            <Link key={key} href={`/projects/${plan.id}/walk`} className="flex h-9 items-center gap-2 rounded-lg px-3 text-sm text-white/80 hover:bg-white/10 hover:text-white">
+            <Link
+              key={key}
+              href={`/projects/${plan.id}/walk`}
+              className="flex h-9 items-center gap-2 rounded-lg px-3 text-sm text-white/80 hover:bg-white/10 hover:text-white"
+            >
               <Icon className="size-4" />
               <span className="hidden sm:inline">{label}</span>
             </Link>
@@ -245,7 +323,10 @@ export const HouseViewer = () => {
               type="button"
               onClick={() => applyMode(key)}
               aria-pressed={mode === key}
-              className={cn("flex h-9 items-center gap-2 rounded-lg px-3 text-sm text-white/80 hover:bg-white/10 hover:text-white", mode === key && "bg-electric text-white hover:bg-electric")}
+              className={cn(
+                "flex h-9 items-center gap-2 rounded-lg px-3 text-sm text-white/80 hover:bg-white/10 hover:text-white",
+                mode === key && "bg-electric text-white hover:bg-electric",
+              )}
             >
               <Icon className="size-4" />
               <span className="hidden sm:inline">{label}</span>
@@ -255,7 +336,11 @@ export const HouseViewer = () => {
       </div>
 
       {/* Day / evening, bottom right. */}
-      <div className={cn("absolute right-3 bottom-3 flex items-center gap-1 rounded-xl p-1", glass)} role="group" aria-label="Moment de la journée">
+      <div
+        className={cn("absolute right-3 bottom-3 flex items-center gap-1 rounded-xl p-1", glass)}
+        role="group"
+        aria-label="Moment de la journée"
+      >
         <span className="flex size-9 items-center justify-center text-amber-300">
           <Sun className="size-4" />
         </span>
@@ -265,14 +350,16 @@ export const HouseViewer = () => {
             type="button"
             onClick={() => timeOfDay !== value && toggleTimeOfDay()}
             aria-pressed={timeOfDay === value}
-            className={cn("flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-white/80 hover:bg-white/10 hover:text-white", timeOfDay === value && "bg-electric text-white hover:bg-electric")}
+            className={cn(
+              "flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-white/80 hover:bg-white/10 hover:text-white",
+              timeOfDay === value && "bg-electric text-white hover:bg-electric",
+            )}
           >
             {value === "day" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
             {value === "day" ? "Jour" : "Soir"}
           </button>
         ))}
       </div>
-
     </div>
   );
 };

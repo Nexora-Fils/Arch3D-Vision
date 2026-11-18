@@ -18,15 +18,23 @@ const main = async () => {
   const demo = buildDemoPlan();
   const result = await ensureProjectBySlug(demo, { reset });
   const status = result.created ? "créé" : result.reset ? "réinitialisé" : "déjà présent (aucune modification)";
-  const area = demo.floors.reduce((sum, floor) => sum + floorArea({ ...floor, rooms: floor.rooms.filter((room) => !isOutdoorRoom(room)) }), 0);
+  const area = demo.floors.reduce(
+    (sum, floor) => sum + floorArea({ ...floor, rooms: floor.rooms.filter((room) => !isOutdoorRoom(room)) }),
+    0,
+  );
   console.log(`Projet « ${demo.name} » : ${status}`);
   console.log(`  id            : ${result.plan.id}`);
   console.log(`  terrain       : ${demo.lot.width} × ${demo.lot.depth} m = ${demo.lot.width * demo.lot.depth} m²`);
   const roomCount = demo.floors.reduce((sum, floor) => sum + floor.rooms.length, 0);
   console.log(`  surface pièces: ${area.toFixed(2)} m² (${roomCount} pièces sur ${demo.floors.length} niveaux)`);
-  console.log(`  habitable     : ${formatArea(habitableArea(demo.floors.flatMap((floor) => floor.rooms)))} (garage et extérieurs exclus)`);
+  console.log(
+    `  habitable     : ${formatArea(habitableArea(demo.floors.flatMap((floor) => floor.rooms)))} (garage et extérieurs exclus)`,
+  );
   if (!result.created && !reset) {
-    const { count } = await prisma.project.updateMany({ where: { id: result.plan.id, description: { in: LEGACY_DEMO_DESCRIPTIONS } }, data: { description: demo.description } });
+    const { count } = await prisma.project.updateMany({
+      where: { id: result.plan.id, description: { in: LEGACY_DEMO_DESCRIPTIONS } },
+      data: { description: demo.description },
+    });
     if (count > 0) console.log("  description   : ancienne surface (192 m²) remplacée par la surface habitable");
   }
   if (!result.created && !reset) {

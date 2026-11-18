@@ -19,7 +19,8 @@ const TOOL_KEYS: Record<string, EditorTool> = {
 };
 
 const isTypingTarget = (target: EventTarget | null): boolean =>
-  target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+  target instanceof HTMLElement &&
+  (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 
 export const useEditorShortcuts = () => {
   const deleteSelection = useDeleteSelection();

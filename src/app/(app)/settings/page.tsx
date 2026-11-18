@@ -18,7 +18,9 @@ export default function AppSettingsPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-midnight">Paramètres</h1>
-        <p className="text-sm text-muted-foreground">État de l&apos;application. Les réglages d&apos;une maison se trouvent dans son onglet Paramètres.</p>
+        <p className="text-sm text-muted-foreground">
+          État de l&apos;application. Les réglages d&apos;une maison se trouvent dans son onglet Paramètres.
+        </p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -41,7 +43,9 @@ export default function AppSettingsPage() {
               <UserRound className="size-4 text-electric" aria-hidden />
               Mon compte
             </CardTitle>
-            <CardDescription>Nom affiché et adresse e-mail de connexion. Vos projets ne sont visibles que par vous.</CardDescription>
+            <CardDescription>
+              Nom affiché et adresse e-mail de connexion. Vos projets ne sont visibles que par vous.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Suspense fallback={<Skeleton className="h-40" />}>
@@ -55,7 +59,19 @@ export default function AppSettingsPage() {
             <CardDescription>Arch3D Vision version {packageJson.version}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-1.5">
-            {["Next.js", "React", "TypeScript", "Tailwind CSS", "shadcn/ui", "Prisma", "PostgreSQL", "React Three Fiber", "React Konva", "Zustand", "Zod"].map((name) => (
+            {[
+              "Next.js",
+              "React",
+              "TypeScript",
+              "Tailwind CSS",
+              "shadcn/ui",
+              "Prisma",
+              "PostgreSQL",
+              "React Three Fiber",
+              "React Konva",
+              "Zustand",
+              "Zod",
+            ].map((name) => (
               <Badge key={name} variant="secondary">
                 {name}
               </Badge>

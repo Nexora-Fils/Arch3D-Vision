@@ -3,14 +3,42 @@ import { buildDemoPlan } from "../demo";
 import { createRoomWalls, LEVEL_SLAB_THICKNESS, type Bounds } from "../geometry";
 import type { Door, Floor, Furniture, Plan, Room, Wall } from "../schema";
 import { FURNITURE_PRESETS } from "../labels";
-import { buildStairFlights, buildStairShape, checkStairs, DOOR_STAIR_PASSAGE_DEPTH, doorBlockedByStairShape, STAIR_TYPES, stairIssues, subtractRect, subtractRects, type StairType } from "../stairs";
+import {
+  buildStairFlights,
+  buildStairShape,
+  checkStairs,
+  DOOR_STAIR_PASSAGE_DEPTH,
+  doorBlockedByStairShape,
+  STAIR_TYPES,
+  stairIssues,
+  subtractRect,
+  subtractRects,
+  type StairType,
+} from "../stairs";
 import { HOUSE_TEMPLATES, buildPlanFromSpec } from "../templates";
-import { createWalkWorld, moveVisitor, spawnVisitor, visibleFloorIndex, visitorElevation, type VisitorState } from "../walk";
+import {
+  createWalkWorld,
+  moveVisitor,
+  spawnVisitor,
+  visibleFloorIndex,
+  visitorElevation,
+  type VisitorState,
+} from "../walk";
 
 let counter = 0;
 const nextId = () => `id-${(counter += 1)}`;
 
-const room = (id: string): Room => ({ id, name: id, type: "hallway", x: 0, y: 0, width: 6, depth: 6, polygon: null, floorMaterialId: null });
+const room = (id: string): Room => ({
+  id,
+  name: id,
+  type: "hallway",
+  x: 0,
+  y: 0,
+  width: 6,
+  depth: 6,
+  polygon: null,
+  floorMaterialId: null,
+});
 
 const floor = (id: string, level: number, furniture: Furniture[] = []): Floor => {
   const hall = room(`${id}-hall`);
@@ -29,7 +57,17 @@ const floor = (id: string, level: number, furniture: Furniture[] = []): Floor =>
 };
 
 /** Straight flight in the middle of a 6 × 6 hall, climbing north from y = 4.7 to y = 1.3. */
-const stairs: Furniture = { id: "stairs", type: "stairs", x: 3, y: 3, rotation: 0, width: 1, depth: 3.4, height: 2.7, color: "#999999" };
+const stairs: Furniture = {
+  id: "stairs",
+  type: "stairs",
+  x: 3,
+  y: 3,
+  rotation: 0,
+  width: 1,
+  depth: 3.4,
+  height: 2.7,
+  color: "#999999",
+};
 
 const twoLevels = (): Plan => {
   const demo = buildDemoPlan();
@@ -50,7 +88,13 @@ const walk = (plan: Plan, from: VisitorState, target: { x: number; y: number }, 
 };
 
 /** A stairs item of the given model at its preset size, in the middle of the 6 × 6 hall. */
-const model = (type: StairType): Furniture => ({ ...stairs, id: type, type, width: FURNITURE_PRESETS[type].width, depth: FURNITURE_PRESETS[type].depth });
+const model = (type: StairType): Furniture => ({
+  ...stairs,
+  id: type,
+  type,
+  width: FURNITURE_PRESETS[type].width,
+  depth: FURNITURE_PRESETS[type].depth,
+});
 
 const withStairs = (item: Furniture): Plan => {
   const plan = twoLevels();
@@ -83,7 +127,10 @@ const verticalDoor = (upper: Floor, wallX: number, doorY = 4, id = "blocked-door
 
 /** Walks through a list of waypoints, each leg in small steps. */
 const walkPath = (plan: Plan, from: VisitorState, waypoints: { x: number; y: number }[]): VisitorState[] =>
-  waypoints.reduce<VisitorState[]>((states, waypoint) => [...states, ...walk(plan, states[states.length - 1] ?? from, waypoint)], []);
+  waypoints.reduce<VisitorState[]>(
+    (states, waypoint) => [...states, ...walk(plan, states[states.length - 1] ?? from, waypoint)],
+    [],
+  );
 
 describe("stair flights", () => {
   it("rise up to the finished floor of the level above", () => {
@@ -142,7 +189,8 @@ describe("climbing", () => {
     const world = createWalkWorld(plan);
     const up = walk(plan, { position: { x: 3, y: 5.5 }, floorIndex: 0, flightId: null }, { x: 3, y: 0.6 });
     const elevations = up.map((state) => visitorElevation(world, state));
-    for (let index = 1; index < elevations.length; index += 1) expect(elevations[index]).toBeGreaterThanOrEqual(elevations[index - 1] - 1e-9);
+    for (let index = 1; index < elevations.length; index += 1)
+      expect(elevations[index]).toBeGreaterThanOrEqual(elevations[index - 1] - 1e-9);
     const end = up[up.length - 1];
     expect(end.floorIndex).toBe(1);
     expect(end.flightId).toBeNull();
@@ -171,15 +219,38 @@ describe("climbing", () => {
   });
 
   it.each([
-    ["stairs_quarter_right", [{ x: 2.25, y: 5.6 }, { x: 2.25, y: 1.75 }, { x: 5.3, y: 1.75 }]],
-    ["stairs_quarter_left", [{ x: 3.75, y: 5.6 }, { x: 3.75, y: 1.75 }, { x: 0.7, y: 1.75 }]],
-    ["stairs_half_turn", [{ x: 2.5, y: 5.6 }, { x: 2.5, y: 1.95 }, { x: 3.5, y: 1.95 }, { x: 3.5, y: 5.5 }]],
+    [
+      "stairs_quarter_right",
+      [
+        { x: 2.25, y: 5.6 },
+        { x: 2.25, y: 1.75 },
+        { x: 5.3, y: 1.75 },
+      ],
+    ],
+    [
+      "stairs_quarter_left",
+      [
+        { x: 3.75, y: 5.6 },
+        { x: 3.75, y: 1.75 },
+        { x: 0.7, y: 1.75 },
+      ],
+    ],
+    [
+      "stairs_half_turn",
+      [
+        { x: 2.5, y: 5.6 },
+        { x: 2.5, y: 1.95 },
+        { x: 3.5, y: 1.95 },
+        { x: 3.5, y: 5.5 },
+      ],
+    ],
   ] as const)("climbs a « %s » stair through its landing and comes back down", (type, waypoints) => {
     const plan = withStairs(model(type));
     const world = createWalkWorld(plan);
     const up = walkPath(plan, { position: waypoints[0], floorIndex: 0, flightId: null }, waypoints.slice(1));
     const elevations = up.map((state) => visitorElevation(world, state));
-    for (let index = 1; index < elevations.length; index += 1) expect(elevations[index]).toBeGreaterThanOrEqual(elevations[index - 1] - 1e-9);
+    for (let index = 1; index < elevations.length; index += 1)
+      expect(elevations[index]).toBeGreaterThanOrEqual(elevations[index - 1] - 1e-9);
     const top = up[up.length - 1];
     expect(top.floorIndex).toBe(1);
     expect(top.flightId).toBeNull();
@@ -194,7 +265,11 @@ describe("climbing", () => {
   });
 
   it("cannot walk under the high flight of a half-turn stair downstairs", () => {
-    const states = walk(withStairs(model("stairs_half_turn")), { position: { x: 3.5, y: 5.6 }, floorIndex: 0, flightId: null }, { x: 3.5, y: 3 });
+    const states = walk(
+      withStairs(model("stairs_half_turn")),
+      { position: { x: 3.5, y: 5.6 }, floorIndex: 0, flightId: null },
+      { x: 3.5, y: 3 },
+    );
     const end = states[states.length - 1];
     expect(end.flightId).toBeNull();
     expect(end.position.y).toBeGreaterThan(4.5 + 0.28 - 0.01);
@@ -224,11 +299,15 @@ describe("stairs checks", () => {
     const { wall, door } = verticalDoor(upper, 2);
     plan.floors[1] = { ...upper, walls: [wall], doors: [door] };
 
-    expect(checkStairs(plan, 0, stairs).issues).toContain("Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).");
+    expect(checkStairs(plan, 0, stairs).issues).toContain(
+      "Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).",
+    );
 
     const distant = verticalDoor(upper, 1.5, 4, "distant-door");
     plan.floors[1] = { ...upper, walls: [distant.wall], doors: [distant.door] };
-    expect(checkStairs(plan, 0, stairs).issues).not.toContain("Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).");
+    expect(checkStairs(plan, 0, stairs).issues).not.toContain(
+      "Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).",
+    );
     expect(DOOR_STAIR_PASSAGE_DEPTH).toBe(0.9);
   });
 
@@ -242,23 +321,30 @@ describe("stairs checks", () => {
     const { wall, door } = verticalDoor(upper, 2.1);
     plan.floors[1] = { ...upper, walls: [wall], doors: [door] };
 
-    expect(checkStairs(plan, 0, plan.floors[0].furniture[0]).issues).toContain("Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).");
-    expect(checkStairs(plan, 0, plan.floors[0].furniture[1]).issues).not.toContain("Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).");
+    expect(checkStairs(plan, 0, plan.floors[0].furniture[0]).issues).toContain(
+      "Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).",
+    );
+    expect(checkStairs(plan, 0, plan.floors[0].furniture[1]).issues).not.toContain(
+      "Une porte de l'étage est bloquée par la trémie de l'escalier (Étage).",
+    );
   });
 
-  it.each(["stairs_quarter_left", "stairs_quarter_right", "stairs_half_turn"] as StairType[])("detects a blocked door for the turning stair « %s »", (type) => {
-    const item = model(type);
-    const stair = buildStairShape(item, 2.95);
-    const opening = stair.openings[0];
-    const wallX = opening.minX - 0.5;
-    const doorY = (opening.minY + opening.maxY) / 2;
-    const upper = withStairs(item).floors[1];
-    const { wall, door } = verticalDoor(upper, wallX, doorY, "turning-door");
-    upper.walls = [wall];
-    upper.doors = [door];
+  it.each(["stairs_quarter_left", "stairs_quarter_right", "stairs_half_turn"] as StairType[])(
+    "detects a blocked door for the turning stair « %s »",
+    (type) => {
+      const item = model(type);
+      const stair = buildStairShape(item, 2.95);
+      const opening = stair.openings[0];
+      const wallX = opening.minX - 0.5;
+      const doorY = (opening.minY + opening.maxY) / 2;
+      const upper = withStairs(item).floors[1];
+      const { wall, door } = verticalDoor(upper, wallX, doorY, "turning-door");
+      upper.walls = [wall];
+      upper.doors = [door];
 
-    expect(doorBlockedByStairShape(upper, door, stair)).toBe(true);
-  });
+      expect(doorBlockedByStairShape(upper, door, stair)).toBe(true);
+    },
+  );
 
   it("reports two blocked doors with an exact plural message", () => {
     const plan = withStairs(stairs);
@@ -271,28 +357,43 @@ describe("stairs checks", () => {
       doors: [first.door, second.door],
     };
 
-    expect(checkStairs(plan, 0, stairs).issues).toContain("2 portes de l'étage sont bloquées par la trémie de l'escalier (Étage).");
+    expect(checkStairs(plan, 0, stairs).issues).toContain(
+      "2 portes de l'étage sont bloquées par la trémie de l'escalier (Étage).",
+    );
   });
 
   it("reports the original demo bug: stairs ending against the façade, under the bathroom", () => {
     const plan = buildDemoPlan();
     const ground = plan.floors[0];
-    const buggy: Furniture = { id: "old-stairs", type: "stairs", x: 5 + 6.4, y: 1.5 + 1.4, rotation: 0, width: 0.9, depth: 2.4, height: 2.7, color: "#9ca3af" };
+    const buggy: Furniture = {
+      id: "old-stairs",
+      type: "stairs",
+      x: 5 + 6.4,
+      y: 1.5 + 1.4,
+      rotation: 0,
+      width: 0.9,
+      depth: 2.4,
+      height: 2.7,
+      color: "#9ca3af",
+    };
     plan.floors[0] = { ...ground, furniture: [...ground.furniture.filter((item) => item.type !== "stairs"), buggy] };
     expect(checkStairs(plan, 0, buggy).issues.length).toBeGreaterThan(0);
   });
 
-  it.each(HOUSE_TEMPLATES.map((template) => [template.key, template] as const))("finds no stairs issue in the « %s » template", (_key, template) => {
-    const plan = buildPlanFromSpec(template);
-    expect(Object.fromEntries(stairIssues(plan))).toEqual({});
-    const multiLevel = plan.floors.length > 1;
-    expect(buildStairFlights(plan).length > 0).toBe(multiLevel);
-    for (const flight of buildStairFlights(plan)) {
-      const check = checkStairs(plan, flight.lowerIndex, flight.item);
-      const arrival = plan.floors[flight.upperIndex].rooms.find((item) => item.name === check.arrivalRoom);
-      expect(arrival?.type, template.key).toBe("hallway");
-    }
-  });
+  it.each(HOUSE_TEMPLATES.map((template) => [template.key, template] as const))(
+    "finds no stairs issue in the « %s » template",
+    (_key, template) => {
+      const plan = buildPlanFromSpec(template);
+      expect(Object.fromEntries(stairIssues(plan))).toEqual({});
+      const multiLevel = plan.floors.length > 1;
+      expect(buildStairFlights(plan).length > 0).toBe(multiLevel);
+      for (const flight of buildStairFlights(plan)) {
+        const check = checkStairs(plan, flight.lowerIndex, flight.item);
+        const arrival = plan.floors[flight.upperIndex].rooms.find((item) => item.name === check.arrivalRoom);
+        expect(arrival?.type, template.key).toBe("hallway");
+      }
+    },
+  );
 });
 
 describe("subtractRect", () => {

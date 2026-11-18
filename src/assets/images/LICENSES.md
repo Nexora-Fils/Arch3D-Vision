@@ -7,7 +7,7 @@
 ## Photos
 
 | Fichier | Auteur | Source | Licence |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `photos/hero-house-dusk.jpg` | Michael Brown (@vettexan) | https://unsplash.com/photos/modern-luxury-home-with-large-windows-at-dusk-G48h926L2qo | [Unsplash License](https://unsplash.com/license) : usage commercial et non commercial, modification autorisée, attribution facultative, revente de l'image telle quelle interdite |
 
 ## Rendus de l'application
@@ -17,7 +17,7 @@ Tous les autres fichiers de ce dossier (`*.jpg`, `templates/*.jpg`) sont des cap
 ## Environnements HDR (éclairage par image)
 
 | Fichier | Nom Poly Haven | Licence |
-|---|---|---|
+| --- | --- | --- |
 | `public/hdri/je_gray_park_2k.hdr` (jour, utilisé) | J&E Gray Park (Greg Zaal) | [CC0](https://polyhaven.com/license) : usage commercial et redistribution autorisés, attribution facultative |
 | `public/hdri/sunset_fairway_2k.hdr` (soir, utilisé) | Sunset Fairway (Greg Zaal) | [CC0](https://polyhaven.com/license) |
 | `public/hdri/day_1k.hdr` (plus utilisé) | Kloofendal 48d Partly Cloudy (Pure Sky) | [CC0](https://polyhaven.com/license) |
@@ -46,7 +46,7 @@ Licence [CC0](https://polyhaven.com/license) (Poly Haven), convertis en GLB avec
 Licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (attribution obligatoire, usage commercial autorisé), vérifiée sur la page Sketchfab de chaque modèle. Fichiers obtenus via le jeu de données [Objaverse](https://huggingface.co/datasets/allenai/objaverse) (ODC-By), puis optimisés pour le web par glTF-Transform (textures WebP 2048 px, géométrie meshopt) ; aucune autre modification. L'attribution est affichée dans la galerie et dans la vue 3D de chaque modèle.
 
 | Fichier | Titre | Auteur | Source |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `villa-aalsmeer.glb` | Villa Aalsmeer 7 | pjotr.van.schothorst | https://sketchfab.com/3d-models/63bf1b1ade914643b3b866d3bbae988a |
 | `duplex-house.glb` | Duplex House | jimbogies | https://sketchfab.com/3d-models/9bce4b9490ce43b18900e2e99e8ebe66 |
 | `green-residence.glb` | White Silver Green Residence | Francesco Coldesina (topfrank2013) | https://sketchfab.com/3d-models/ec516ba32f03403f97954472c5d4b2cf |

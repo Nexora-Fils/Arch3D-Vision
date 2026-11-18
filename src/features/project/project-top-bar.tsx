@@ -58,12 +58,22 @@ export const ProjectTopBar = () => {
       </Tooltip>
       <span className="min-w-0 truncate px-1 text-sm font-semibold md:max-w-60" title={planName}>
         {planName}
-        {isDirty ? <span className="ml-1.5 inline-block size-1.5 rounded-full bg-amber-400 align-middle" title="Modifications non enregistrées" /> : null}
+        {isDirty ? (
+          <span
+            className="ml-1.5 inline-block size-1.5 rounded-full bg-amber-400 align-middle"
+            title="Modifications non enregistrées"
+          />
+        ) : null}
       </span>
       <span className="mx-2 hidden h-5 w-px bg-white/15 md:block" />
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button asChild variant="ghost" size="icon-sm" className={cn("text-white/70 hover:bg-white/10 hover:text-white", isEditor && "bg-white/10 text-white")}>
+          <Button
+            asChild
+            variant="ghost"
+            size="icon-sm"
+            className={cn("text-white/70 hover:bg-white/10 hover:text-white", isEditor && "bg-white/10 text-white")}
+          >
             <Link href={`/projects/${planId}/editor`} aria-label="Plan 2D" aria-current={isEditor ? "page" : undefined}>
               <LayoutGrid />
             </Link>
@@ -73,7 +83,15 @@ export const ProjectTopBar = () => {
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button asChild variant="ghost" size="icon-sm" className={cn("text-white/70 hover:bg-white/10 hover:text-white", pathname.endsWith("/settings") && "bg-white/10 text-white")}>
+          <Button
+            asChild
+            variant="ghost"
+            size="icon-sm"
+            className={cn(
+              "text-white/70 hover:bg-white/10 hover:text-white",
+              pathname.endsWith("/settings") && "bg-white/10 text-white",
+            )}
+          >
             <Link href={`/projects/${planId}/settings`} aria-label="Paramètres du projet">
               <Settings />
             </Link>
@@ -83,20 +101,41 @@ export const ProjectTopBar = () => {
       </Tooltip>
 
       <div className="ml-auto flex items-center gap-1">
-        <Button variant="ghost" size="sm" className={cn(barButton, "hidden md:inline-flex")} onClick={undo} disabled={!canUndo}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(barButton, "hidden md:inline-flex")}
+          onClick={undo}
+          disabled={!canUndo}
+        >
           <Undo2 data-icon="inline-start" />
           Annuler
         </Button>
-        <Button variant="ghost" size="sm" className={cn(barButton, "hidden md:inline-flex")} onClick={redo} disabled={!canRedo}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(barButton, "hidden md:inline-flex")}
+          onClick={redo}
+          disabled={!canRedo}
+        >
           <Redo2 data-icon="inline-start" />
           Rétablir
         </Button>
         <Button size="sm" className="h-8 px-3" onClick={() => void save()} disabled={isSaving || !isDirty}>
-          {isSaving ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : <Save data-icon="inline-start" />}
+          {isSaving ? (
+            <LoaderCircle className="animate-spin" data-icon="inline-start" />
+          ) : (
+            <Save data-icon="inline-start" />
+          )}
           <span className="hidden sm:inline">{isSaving ? "Enregistrement…" : "Enregistrer"}</span>
         </Button>
         {isEditor ? (
-          <Button variant="ghost" size="sm" className={cn(barButton, "hidden lg:inline-flex")} onClick={() => window.dispatchEvent(new Event(EXPORT_PLAN_EVENT))}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(barButton, "hidden lg:inline-flex")}
+            onClick={() => window.dispatchEvent(new Event(EXPORT_PLAN_EVENT))}
+          >
             <Download data-icon="inline-start" />
             Exporter
           </Button>

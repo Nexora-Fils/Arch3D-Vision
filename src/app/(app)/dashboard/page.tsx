@@ -16,7 +16,11 @@ export const metadata: Metadata = { title: "Accueil" };
 const Greeting = async () => {
   const { name } = await requireUser("/dashboard");
   const firstName = name.split(/\s+/)[0];
-  return <h1 className="text-2xl font-semibold tracking-tight text-midnight">{firstName ? `Bonjour, ${firstName} !` : "Bonjour !"}</h1>;
+  return (
+    <h1 className="text-2xl font-semibold tracking-tight text-midnight">
+      {firstName ? `Bonjour, ${firstName} !` : "Bonjour !"}
+    </h1>
+  );
 };
 
 export default function DashboardPage() {
@@ -63,9 +67,19 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {HOUSE_TEMPLATES.map((template) => (
             <form key={template.key} action={createFromTemplateAction.bind(null, template.key)}>
-              <button type="submit" title={`Créer un projet à partir du modèle « ${template.shortName} »`} className="group block w-full overflow-hidden rounded-xl border bg-card text-left shadow-sm transition-shadow hover:shadow-md">
+              <button
+                type="submit"
+                title={`Créer un projet à partir du modèle « ${template.shortName} »`}
+                className="group block w-full overflow-hidden rounded-xl border bg-card text-left shadow-sm transition-shadow hover:shadow-md"
+              >
                 <span className="relative block aspect-[4/3] overflow-hidden bg-muted">
-                  <Image src={TEMPLATE_IMAGES[template.key]} alt={`Rendu 3D : ${template.name}`} fill sizes="(min-width: 1024px) 20vw, 50vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
+                  <Image
+                    src={TEMPLATE_IMAGES[template.key]}
+                    alt={`Rendu 3D : ${template.name}`}
+                    fill
+                    sizes="(min-width: 1024px) 20vw, 50vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                  />
                 </span>
                 <span className="block px-3 py-2 text-sm font-medium">{template.shortName}</span>
               </button>

@@ -11,4 +11,5 @@ export const safeNextPath = (value: string | null | undefined): string => {
   return url.origin === BASE ? `${url.pathname}${url.search}${url.hash}` : DEFAULT_PATH;
 };
 
-export const loginPath = (next?: string): string => (next ? `/connexion?next=${encodeURIComponent(next)}` : "/connexion");
+export const loginPath = (next?: string): string =>
+  next ? `/connexion?next=${encodeURIComponent(next)}` : "/connexion";

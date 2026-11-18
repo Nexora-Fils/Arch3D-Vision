@@ -37,7 +37,9 @@ describe("clonePlan", () => {
     expect(floor.doors.every((door) => wallIds.has(door.wallId))).toBe(true);
     expect(floor.windows.every((window) => wallIds.has(window.wallId))).toBe(true);
     expect(floor.walls.every((wall) => wall.roomId === null || roomIds.has(wall.roomId))).toBe(true);
-    expect(floor.rooms.every((room) => room.floorMaterialId === null || materialIds.has(room.floorMaterialId))).toBe(true);
+    expect(floor.rooms.every((room) => room.floorMaterialId === null || materialIds.has(room.floorMaterialId))).toBe(
+      true,
+    );
     expect(materialIds.has(copy.settings.roofMaterialId ?? "")).toBe(true);
   });
 });

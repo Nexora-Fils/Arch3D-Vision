@@ -21,7 +21,10 @@ export const RoofFields = () => {
     <div className="grid gap-4">
       <div className="grid gap-1.5">
         <Label className="text-xs text-muted-foreground">Type de toit</Label>
-        <Select value={settings.roofType} onValueChange={(roofType) => updateSettings({ roofType: roofType as RoofType })}>
+        <Select
+          value={settings.roofType}
+          onValueChange={(roofType) => updateSettings({ roofType: roofType as RoofType })}
+        >
           <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
@@ -50,21 +53,49 @@ export const RoofFields = () => {
           aria-label="Pente du toit"
         />
       </div>
-      <NumberField label="Débord de toit" unit="m" min={0} max={2} step={0.05} value={settings.roofOverhang} onChange={(roofOverhang) => updateSettings({ roofOverhang })} />
+      <NumberField
+        label="Débord de toit"
+        unit="m"
+        min={0}
+        max={2}
+        step={0.05}
+        value={settings.roofOverhang}
+        onChange={(roofOverhang) => updateSettings({ roofOverhang })}
+      />
       <div className="flex items-center justify-between">
         <Label htmlFor="solar-panels" className="text-xs text-muted-foreground">
           Panneaux solaires
         </Label>
-        <Switch id="solar-panels" checked={settings.solarPanels} onCheckedChange={(solarPanels) => updateSettings({ solarPanels })} />
+        <Switch
+          id="solar-panels"
+          checked={settings.solarPanels}
+          onCheckedChange={(solarPanels) => updateSettings({ solarPanels })}
+        />
       </div>
       <div className="flex items-center justify-between">
         <Label htmlFor="shutters" className="text-xs text-muted-foreground">
           Volets et encadrements
         </Label>
-        <Switch id="shutters" checked={settings.shutters} onCheckedChange={(shutters) => updateSettings({ shutters })} />
+        <Switch
+          id="shutters"
+          checked={settings.shutters}
+          onCheckedChange={(shutters) => updateSettings({ shutters })}
+        />
       </div>
-      <MaterialSelect label="Matériau de toiture" materials={materials} kinds={["roof"]} value={settings.roofMaterialId} onChange={(roofMaterialId) => updateSettings({ roofMaterialId })} />
-      <MaterialSelect label="Matériau de façade" materials={materials} kinds={["exterior", "wall"]} value={settings.exteriorMaterialId} onChange={(exteriorMaterialId) => updateSettings({ exteriorMaterialId })} />
+      <MaterialSelect
+        label="Matériau de toiture"
+        materials={materials}
+        kinds={["roof"]}
+        value={settings.roofMaterialId}
+        onChange={(roofMaterialId) => updateSettings({ roofMaterialId })}
+      />
+      <MaterialSelect
+        label="Matériau de façade"
+        materials={materials}
+        kinds={["exterior", "wall"]}
+        value={settings.exteriorMaterialId}
+        onChange={(exteriorMaterialId) => updateSettings({ exteriorMaterialId })}
+      />
     </div>
   );
 };

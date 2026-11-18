@@ -79,7 +79,9 @@ export const createFromTemplateAction = async (templateKey: string): Promise<voi
   const user = await requireUser("/templates");
   const source = buildTemplatePlan(template.key);
   const existing = await listProjects({ ownerId: user.id });
-  const siblings = existing.filter((project) => project.name === template.name || project.name.startsWith(`${template.name} (`)).length;
+  const siblings = existing.filter(
+    (project) => project.name === template.name || project.name.startsWith(`${template.name} (`),
+  ).length;
   const name = siblings === 0 ? template.name : `${template.name} (${siblings + 1})`;
   const plan = await createProject(clonePlan(source, { name }), user.id);
   revalidatePath("/dashboard");

@@ -21,7 +21,14 @@ interface FurnitureShapeProps {
   isInteractive: boolean;
 }
 
-export const FurnitureShape = ({ item, floorId, gridStep, isSelected, isInteractive, hasIssue = false }: FurnitureShapeProps) => {
+export const FurnitureShape = ({
+  item,
+  floorId,
+  gridStep,
+  isSelected,
+  isInteractive,
+  hasIssue = false,
+}: FurnitureShapeProps) => {
   const { updateFurniture, commit } = usePlanStore.getState();
   const { select } = useEditorStore.getState();
 
@@ -84,7 +91,17 @@ export const FurnitureShape = ({ item, floorId, gridStep, isSelected, isInteract
           ) : null}
         </>
       ) : item.width > 0.9 && item.depth > 0.5 ? (
-        <Text x={-item.width / 2} y={-0.09} width={item.width} align="center" text={label} fontSize={0.16} fill="#1e293b" opacity={0.65} listening={false} />
+        <Text
+          x={-item.width / 2}
+          y={-0.09}
+          width={item.width}
+          align="center"
+          text={label}
+          fontSize={0.16}
+          fill="#1e293b"
+          opacity={0.65}
+          listening={false}
+        />
       ) : null}
     </Group>
   );

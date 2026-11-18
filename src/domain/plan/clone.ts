@@ -38,7 +38,12 @@ export const clonePlan = (plan: Plan, overrides: CloneOverrides): Plan => {
       ...floor,
       id: fresh(floor.id),
       rooms: floor.rooms.map((room) => ({ ...room, id: fresh(room.id), floorMaterialId: ref(room.floorMaterialId) })),
-      walls: floor.walls.map((wall) => ({ ...wall, id: fresh(wall.id), roomId: ref(wall.roomId), materialId: ref(wall.materialId) })),
+      walls: floor.walls.map((wall) => ({
+        ...wall,
+        id: fresh(wall.id),
+        roomId: ref(wall.roomId),
+        materialId: ref(wall.materialId),
+      })),
       doors: floor.doors.map((door) => ({ ...door, id: fresh(door.id), wallId: fresh(door.wallId) })),
       windows: floor.windows.map((window) => ({ ...window, id: fresh(window.id), wallId: fresh(window.wallId) })),
       furniture: floor.furniture.map((item) => ({ ...item, id: fresh(item.id) })),

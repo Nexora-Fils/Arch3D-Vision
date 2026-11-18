@@ -9,9 +9,20 @@ const dateFormatter = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
 /** Mockup project card: real 3D render, name, last modification date and a discreet menu. */
 export const ProjectCard = ({ project }: { project: ProjectSummary }) => (
   <article className="group overflow-hidden rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-lg">
-    <Link href={`/projects/${project.id}/editor`} className="relative block aspect-[16/10] overflow-hidden bg-[#dde7d2]" aria-label={`Ouvrir ${project.name}`}>
+    <Link
+      href={`/projects/${project.id}/editor`}
+      className="relative block aspect-[16/10] overflow-hidden bg-[#dde7d2]"
+      aria-label={`Ouvrir ${project.name}`}
+    >
       {project.thumbnail ? (
-        <Image src={project.thumbnail} alt={`Rendu 3D de ${project.name}`} fill unoptimized sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+        <Image
+          src={project.thumbnail}
+          alt={`Rendu 3D de ${project.name}`}
+          fill
+          unoptimized
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+        />
       ) : (
         <div className="h-full w-full p-4">
           <PlanSvg preview={project.preview} />

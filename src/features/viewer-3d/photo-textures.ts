@@ -14,7 +14,13 @@ export const PHOTO_TEXTURES = {
   laminate: { dir: "laminate_floor_02", scale: 2.2, normal: 0.8, variation: { mode: "tint", strength: 0.06 } },
   deck: { dir: "wood_floor_deck", scale: 2, normal: 1, variation: { mode: "tint", strength: 0.08 } },
   cladding: { dir: "brown_planks_05", scale: 2, normal: 1, variation: { mode: "tint", strength: 0.08 } },
-  plaster: { dir: "white_plaster_02", scale: 3, normal: 0.35, colorMap: false, variation: { mode: "tint", strength: 0.035 } },
+  plaster: {
+    dir: "white_plaster_02",
+    scale: 3,
+    normal: 0.35,
+    colorMap: false,
+    variation: { mode: "tint", strength: 0.035 },
+  },
   sandstone: { dir: "large_sandstone_blocks_01", scale: 1.6, normal: 1.2, variation: { mode: "tint", strength: 0.08 } },
   slateTiles: { dir: "grey_roof_tiles_02", scale: 1.6, normal: 1, variation: { mode: "tint", strength: 0.1 } },
   shingles: { dir: "roof_slates_02", scale: 1.6, normal: 1, variation: { mode: "tint", strength: 0.1 } },
@@ -28,7 +34,10 @@ export const PHOTO_TEXTURES = {
   gravel: { dir: "gravel_floor_02", scale: 2, normal: 1, variation: { mode: "blend", strength: 0.08 } },
   linen: { dir: "rough_linen", scale: 0.6, normal: 0.6, variation: null },
   bark: { dir: "bark_brown_02", scale: 1.2, normal: 1.2, variation: null },
-} as const satisfies Record<string, { dir: string; scale: number; normal: number; colorMap?: false; variation: TextureVariation | null }>;
+} as const satisfies Record<
+  string,
+  { dir: string; scale: number; normal: number; colorMap?: false; variation: TextureVariation | null }
+>;
 
 export type PhotoKey = keyof typeof PHOTO_TEXTURES;
 

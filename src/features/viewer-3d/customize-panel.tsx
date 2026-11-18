@@ -57,7 +57,12 @@ export const CustomizePanel = ({ plan }: { plan: Plan }) => {
               >
                 <span className="flex shrink-0 -space-x-1.5">
                   {swatches.map((color, index) => (
-                    <span key={index} className="size-6 rounded-full border-2 border-background shadow" style={{ backgroundColor: color }} aria-hidden />
+                    <span
+                      key={index}
+                      className="size-6 rounded-full border-2 border-background shadow"
+                      style={{ backgroundColor: color }}
+                      aria-hidden
+                    />
                   ))}
                 </span>
                 <span className="min-w-0">
@@ -90,7 +95,12 @@ export const CustomizePanel = ({ plan }: { plan: Plan }) => {
             </div>
             <div className="grid gap-1.5">
               <Label className="text-xs text-muted-foreground">Sol</Label>
-              <MaterialSwatches label="Sol" materials={floorMaterials} value={selected.room.floorMaterialId} onSelect={(floorMaterialId) => updateRoom(selected.floor.id, selected.room.id, { floorMaterialId })} />
+              <MaterialSwatches
+                label="Sol"
+                materials={floorMaterials}
+                value={selected.room.floorMaterialId}
+                onSelect={(floorMaterialId) => updateRoom(selected.floor.id, selected.room.id, { floorMaterialId })}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label className="text-xs text-muted-foreground">Murs</Label>
@@ -98,11 +108,25 @@ export const CustomizePanel = ({ plan }: { plan: Plan }) => {
                 label="Murs"
                 materials={wallMaterials}
                 value={wallMaterialId}
-                onSelect={(materialId) => roomWalls.forEach((wall) => updateWall(selected.floor.id, wall.id, { materialId }))}
+                onSelect={(materialId) =>
+                  roomWalls.forEach((wall) => updateWall(selected.floor.id, wall.id, { materialId }))
+                }
               />
             </div>
             <div className="grid gap-1.5">
-              <Label className="text-xs text-muted-foreground">Meubles ({selected.floor.furniture.filter((item) => item.x >= selected.room.x && item.x <= selected.room.x + selected.room.width && item.y >= selected.room.y && item.y <= selected.room.y + selected.room.depth).length} dans la pièce)</Label>
+              <Label className="text-xs text-muted-foreground">
+                Meubles (
+                {
+                  selected.floor.furniture.filter(
+                    (item) =>
+                      item.x >= selected.room.x &&
+                      item.x <= selected.room.x + selected.room.width &&
+                      item.y >= selected.room.y &&
+                      item.y <= selected.room.y + selected.room.depth,
+                  ).length
+                }{" "}
+                dans la pièce)
+              </Label>
               <div className="grid grid-cols-3 gap-1.5">
                 {FURNITURE_TYPES.map((type) => (
                   <Button
@@ -110,9 +134,20 @@ export const CustomizePanel = ({ plan }: { plan: Plan }) => {
                     variant="outline"
                     size="sm"
                     className={cn("h-auto flex-col gap-1 py-2 text-[11px]")}
-                    onClick={() => addFurniture(selected.floor.id, { type, ...roomCenter(selected.room), rotation: 0, ...FURNITURE_PRESETS[type] })}
+                    onClick={() =>
+                      addFurniture(selected.floor.id, {
+                        type,
+                        ...roomCenter(selected.room),
+                        rotation: 0,
+                        ...FURNITURE_PRESETS[type],
+                      })
+                    }
                   >
-                    <span className="size-4 rounded-sm" style={{ backgroundColor: FURNITURE_PRESETS[type].color }} aria-hidden />
+                    <span
+                      className="size-4 rounded-sm"
+                      style={{ backgroundColor: FURNITURE_PRESETS[type].color }}
+                      aria-hidden
+                    />
                     {FURNITURE_TYPE_LABELS[type]}
                   </Button>
                 ))}
@@ -151,7 +186,11 @@ export const CustomizePanel = ({ plan }: { plan: Plan }) => {
         {plan.floors.map((floor) => (
           <div key={floor.id} className="flex items-center justify-between">
             <Label htmlFor={`floor-${floor.id}`}>{floor.name}</Label>
-            <Switch id={`floor-${floor.id}`} checked={!hiddenFloorIds.includes(floor.id)} onCheckedChange={(checked) => setFloorVisible(floor.id, checked)} />
+            <Switch
+              id={`floor-${floor.id}`}
+              checked={!hiddenFloorIds.includes(floor.id)}
+              onCheckedChange={(checked) => setFloorVisible(floor.id, checked)}
+            />
           </div>
         ))}
         <Button asChild variant="link" className="w-fit px-0">

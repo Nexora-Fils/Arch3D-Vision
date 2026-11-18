@@ -16,11 +16,27 @@ interface MetricBoxProps {
 }
 
 /** A box mesh with UVs in meters (see createMetricBox). */
-export const MetricBox = ({ size, material, position, rotation, castShadow = false, receiveShadow = true }: MetricBoxProps) => {
+export const MetricBox = ({
+  size,
+  material,
+  position,
+  rotation,
+  castShadow = false,
+  receiveShadow = true,
+}: MetricBoxProps) => {
   const [width, height, depth] = size;
   const geometry = useMemo(() => createMetricBox(width, height, depth), [width, height, depth]);
   useEffect(() => () => geometry.dispose(), [geometry]);
-  return <mesh geometry={geometry} material={material} position={position} rotation={rotation} castShadow={castShadow} receiveShadow={receiveShadow} />;
+  return (
+    <mesh
+      geometry={geometry}
+      material={material}
+      position={position}
+      rotation={rotation}
+      castShadow={castShadow}
+      receiveShadow={receiveShadow}
+    />
+  );
 };
 
 export interface Segment {

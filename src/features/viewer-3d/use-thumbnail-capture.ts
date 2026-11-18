@@ -14,7 +14,12 @@ const isBlank = (context: CanvasRenderingContext2D): boolean => {
   const { data } = context.getImageData(0, 0, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
   const reference = [data[0], data[1], data[2]];
   for (let index = 0; index < data.length; index += 4 * 97) {
-    if (Math.abs(data[index] - reference[0]) > 8 || Math.abs(data[index + 1] - reference[1]) > 8 || Math.abs(data[index + 2] - reference[2]) > 8) return false;
+    if (
+      Math.abs(data[index] - reference[0]) > 8 ||
+      Math.abs(data[index + 1] - reference[1]) > 8 ||
+      Math.abs(data[index + 2] - reference[2]) > 8
+    )
+      return false;
   }
   return true;
 };

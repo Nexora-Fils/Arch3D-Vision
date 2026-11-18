@@ -40,7 +40,9 @@ export const MaterialSwatches = ({ materials, value, onSelect, label }: Material
                 backgroundBlendMode: "multiply",
               }}
             >
-              {isSelected ? <Check className="size-4 text-white drop-shadow-[0_0_2px_rgba(0,0,0,0.9)]" aria-hidden /> : null}
+              {isSelected ? (
+                <Check className="size-4 text-white drop-shadow-[0_0_2px_rgba(0,0,0,0.9)]" aria-hidden />
+              ) : null}
             </button>
           </TooltipTrigger>
           <TooltipContent>{material.name}</TooltipContent>

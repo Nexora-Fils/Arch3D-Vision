@@ -32,7 +32,13 @@ export interface WalkInput {
   consumeTeleport: () => TeleportTarget | null;
 }
 
-const createState = (): WalkInputState => ({ keys: new Set(), joystick: { x: 0, y: 0 }, lookDelta: { x: 0, y: 0 }, turn: 0, teleport: null });
+const createState = (): WalkInputState => ({
+  keys: new Set(),
+  joystick: { x: 0, y: 0 },
+  lookDelta: { x: 0, y: 0 },
+  turn: 0,
+  teleport: null,
+});
 
 const createReader = (state: WalkInputState): WalkInput => ({
   readKeys: () => state.keys,
@@ -121,7 +127,8 @@ export const useWalkInput = (containerRef: RefObject<HTMLDivElement | null>) => 
 
     let lookTouchId: number | null = null;
     let lastTouch: Vec2 | null = null;
-    const isUiTarget = (target: EventTarget | null) => target instanceof Element && target.closest("[data-walk-ui]") !== null;
+    const isUiTarget = (target: EventTarget | null) =>
+      target instanceof Element && target.closest("[data-walk-ui]") !== null;
     const onTouchStart = (event: TouchEvent) => {
       if (lookTouchId !== null) return;
       for (const touch of Array.from(event.changedTouches)) {

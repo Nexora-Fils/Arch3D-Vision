@@ -117,7 +117,12 @@ export const buildPitchedRoof = ({ type, width, depth, pitchDegrees, overhang, t
   const addSlope = (points: Point3[], uAxis: Point3, vAxis: Point3) => {
     const origin = points[0];
     bottom.push(flip({ points, uAxis, vAxis, origin }));
-    top.push({ points: points.map(([x, y, z]) => [x, y + lift, z] as Point3), uAxis, vAxis, origin: [origin[0], origin[1] + lift, origin[2]] });
+    top.push({
+      points: points.map(([x, y, z]) => [x, y + lift, z] as Point3),
+      uAxis,
+      vAxis,
+      origin: [origin[0], origin[1] + lift, origin[2]],
+    });
   };
 
   for (const side of [1, -1] as const) {
@@ -126,7 +131,8 @@ export const buildPitchedRoof = ({ type, width, depth, pitchDegrees, overhang, t
     const eaveRight: Point3 = [eaveX, under(eaveZ), side * eaveZ];
     const ridgeLeft: Point3 = [-ridgeHalf, ridgeHeight, 0];
     const ridgeRight: Point3 = [ridgeHalf, ridgeHeight, 0];
-    const points = side === 1 ? [eaveLeft, eaveRight, ridgeRight, ridgeLeft] : [eaveRight, eaveLeft, ridgeLeft, ridgeRight];
+    const points =
+      side === 1 ? [eaveLeft, eaveRight, ridgeRight, ridgeLeft] : [eaveRight, eaveLeft, ridgeLeft, ridgeRight];
     // v climbs the slope: opposite of the downhill axis.
     const downhill: Point3 = [0, slopeAxisZ[1], side * slopeAxisZ[2]];
     addSlope(points, [side, 0, 0], [-downhill[0], -downhill[1], -downhill[2]]);
@@ -148,11 +154,16 @@ export const buildPitchedRoof = ({ type, width, depth, pitchDegrees, overhang, t
       const downhill: Point3 = [end * slopeAxisX[0], slopeAxisX[1], 0];
       addSlope(points, [0, 0, -end], [-downhill[0], -downhill[1], -downhill[2]]);
       eaves.push({ start: [end * eaveX, eaveHeight, -eaveZ], end: [end * eaveX, eaveHeight, eaveZ] });
-      for (const side of [1, -1] as const) hips.push({ start: [end * eaveX, eaveHeight + lift, side * eaveZ], end: [apex[0], apex[1] + lift, 0] });
+      for (const side of [1, -1] as const)
+        hips.push({ start: [end * eaveX, eaveHeight + lift, side * eaveZ], end: [apex[0], apex[1] + lift, 0] });
     }
   } else {
     for (const end of [1, -1] as const) {
-      for (const side of [1, -1] as const) verges.push({ start: [end * eaveX, eaveHeight + lift, side * eaveZ], end: [end * eaveX, ridgeHeight + lift, 0] });
+      for (const side of [1, -1] as const)
+        verges.push({
+          start: [end * eaveX, eaveHeight + lift, side * eaveZ],
+          end: [end * eaveX, ridgeHeight + lift, 0],
+        });
       // Gable wall triangle in the wall plane, facing outward (±x).
       const low: Point3 = [end * a, 0, -end * b];
       const high: Point3 = [end * a, 0, end * b];
@@ -161,12 +172,14 @@ export const buildPitchedRoof = ({ type, width, depth, pitchDegrees, overhang, t
     }
   }
 
-  const ridges: Segment3[] = ridgeHalf > 1e-3 ? [{ start: [-ridgeHalf, ridgeHeight + lift, 0], end: [ridgeHalf, ridgeHeight + lift, 0] }] : [];
+  const ridges: Segment3[] =
+    ridgeHalf > 1e-3 ? [{ start: [-ridgeHalf, ridgeHeight + lift, 0], end: [ridgeHalf, ridgeHeight + lift, 0] }] : [];
 
   const covering = facesToGeometry(top);
   const soffit = facesToGeometry(bottom);
   const gables = facesToGeometry(gableFaces);
-  const orient = (segment: Segment3): Segment3 => (ridgeAlongX ? segment : { start: swapAxes(segment.start), end: swapAxes(segment.end) });
+  const orient = (segment: Segment3): Segment3 =>
+    ridgeAlongX ? segment : { start: swapAxes(segment.start), end: swapAxes(segment.end) };
   if (!ridgeAlongX) {
     for (const geometry of [covering, soffit, gables]) geometry.rotateY(Math.PI / 2);
   }
