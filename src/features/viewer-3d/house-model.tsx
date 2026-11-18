@@ -21,7 +21,11 @@ import { FurnitureMesh } from "@/features/viewer-3d/furniture-mesh";
 import { ScannedModel } from "@/features/viewer-3d/scanned-model";
 import { DoorUnit, WindowUnit, type JoineryStyle } from "@/features/viewer-3d/architecture/openings";
 import { RoofAssembly } from "@/features/viewer-3d/architecture/roof-assembly";
-import { computePaths, FlowerBeds, Garden, Ground, Hedges, PathSlab } from "@/features/viewer-3d/landscape/garden";
+import { FlowerBeds } from "@/features/viewer-3d/landscape/flower-beds";
+import { Garden } from "@/features/viewer-3d/landscape/garden";
+import { Ground } from "@/features/viewer-3d/landscape/ground";
+import { Hedges } from "@/features/viewer-3d/landscape/hedges";
+import { computePaths, PathSlab } from "@/features/viewer-3d/landscape/paths";
 import {
   pickMaterial,
   useSceneMaterials,
