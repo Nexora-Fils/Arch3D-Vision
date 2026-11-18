@@ -22,7 +22,17 @@ interface OpeningGroupProps {
 }
 
 /** Positions an opening on its wall and constrains dragging along the wall. */
-const OpeningGroup = ({ wall, width, offset, isSelected, isInteractive, onSelect, onOffsetChange, onCommit, children }: OpeningGroupProps) => {
+const OpeningGroup = ({
+  wall,
+  width,
+  offset,
+  isSelected,
+  isInteractive,
+  onSelect,
+  onOffsetChange,
+  onCommit,
+  children,
+}: OpeningGroupProps) => {
   const { center, angle } = openingPlacement(wall, { offset, width });
   const direction = wallDirection(wall);
 
@@ -31,7 +41,10 @@ const OpeningGroup = ({ wall, width, offset, isSelected, isInteractive, onSelect
     onSelect();
   };
 
-  const dragBoundFunc = function (this: { getStage: () => { x: () => number; y: () => number; scaleX: () => number } | null }, position: Vector2d) {
+  const dragBoundFunc = function (
+    this: { getStage: () => { x: () => number; y: () => number; scaleX: () => number } | null },
+    position: Vector2d,
+  ) {
     const stage = this.getStage();
     if (!stage) return position;
     const scale = stage.scaleX();
@@ -43,7 +56,11 @@ const OpeningGroup = ({ wall, width, offset, isSelected, isInteractive, onSelect
 
   const handleDragMove = (event: KonvaEventObject<DragEvent>) => {
     const node = event.target;
-    const nextOffset = clampOpeningOffset(wall, width, vecDot(vecSub({ x: node.x(), y: node.y() }, wall.start), direction));
+    const nextOffset = clampOpeningOffset(
+      wall,
+      width,
+      vecDot(vecSub({ x: node.x(), y: node.y() }, wall.start), direction),
+    );
     onOffsetChange(Math.round(nextOffset * 100) / 100);
   };
 
@@ -63,7 +80,16 @@ const OpeningGroup = ({ wall, width, offset, isSelected, isInteractive, onSelect
     >
       {children}
       {isSelected ? (
-        <Rect x={-width / 2 - 0.08} y={-wall.thickness / 2 - 0.08} width={width + 0.16} height={wall.thickness + 0.16} stroke={SELECTION_COLOR} strokeWidth={2} strokeScaleEnabled={false} listening={false} />
+        <Rect
+          x={-width / 2 - 0.08}
+          y={-wall.thickness / 2 - 0.08}
+          width={width + 0.16}
+          height={wall.thickness + 0.16}
+          stroke={SELECTION_COLOR}
+          strokeWidth={2}
+          strokeScaleEnabled={false}
+          listening={false}
+        />
       ) : null}
     </Group>
   );
@@ -96,17 +122,47 @@ export const DoorShape = ({ door, wall, floorId, isSelected, isInteractive }: Do
       <Rect x={-door.width / 2} y={-thickness / 2 - 0.01} width={door.width} height={thickness + 0.02} fill="#ffffff" />
       {door.type === "standard" ? (
         <>
-          <Arc x={hingeX} y={-thickness / 2} innerRadius={0} outerRadius={door.width} angle={90} rotation={door.swing === "left" ? -90 : 180} stroke="#64748b" strokeWidth={1} strokeScaleEnabled={false} dash={[0.08, 0.06]} />
-          <Line points={[hingeX, -thickness / 2, hingeX, -thickness / 2 - door.width]} stroke="#1e293b" strokeWidth={0.04} />
+          <Arc
+            x={hingeX}
+            y={-thickness / 2}
+            innerRadius={0}
+            outerRadius={door.width}
+            angle={90}
+            rotation={door.swing === "left" ? -90 : 180}
+            stroke="#64748b"
+            strokeWidth={1}
+            strokeScaleEnabled={false}
+            dash={[0.08, 0.06]}
+          />
+          <Line
+            points={[hingeX, -thickness / 2, hingeX, -thickness / 2 - door.width]}
+            stroke="#1e293b"
+            strokeWidth={0.04}
+          />
         </>
       ) : door.type === "sliding" ? (
         <>
           <Line points={[-door.width / 2, -thickness / 4, 0, -thickness / 4]} stroke="#1d4ed8" strokeWidth={0.05} />
-          <Line points={[-door.width / 10, thickness / 4, door.width / 2, thickness / 4]} stroke="#1d4ed8" strokeWidth={0.05} />
-          <Line points={[-door.width / 2, 0, door.width / 2, 0]} stroke="#93c5fd" strokeWidth={1} strokeScaleEnabled={false} />
+          <Line
+            points={[-door.width / 10, thickness / 4, door.width / 2, thickness / 4]}
+            stroke="#1d4ed8"
+            strokeWidth={0.05}
+          />
+          <Line
+            points={[-door.width / 2, 0, door.width / 2, 0]}
+            stroke="#93c5fd"
+            strokeWidth={1}
+            strokeScaleEnabled={false}
+          />
         </>
       ) : (
-        <Line points={[-door.width / 2, 0, door.width / 2, 0]} stroke="#94a3b8" strokeWidth={1} strokeScaleEnabled={false} dash={[0.15, 0.1]} />
+        <Line
+          points={[-door.width / 2, 0, door.width / 2, 0]}
+          stroke="#94a3b8"
+          strokeWidth={1}
+          strokeScaleEnabled={false}
+          dash={[0.15, 0.1]}
+        />
       )}
     </OpeningGroup>
   );
@@ -135,8 +191,22 @@ export const WindowShape = ({ window, wall, floorId, isSelected, isInteractive }
       onOffsetChange={(offset) => updateWindow(floorId, window.id, { offset }, { transient: true })}
       onCommit={commit}
     >
-      <Rect x={-window.width / 2} y={-thickness / 2 - 0.01} width={window.width} height={thickness + 0.02} fill="#dbeafe" stroke="#1d4ed8" strokeWidth={1} strokeScaleEnabled={false} />
-      <Line points={[-window.width / 2, 0, window.width / 2, 0]} stroke="#1d4ed8" strokeWidth={1} strokeScaleEnabled={false} />
+      <Rect
+        x={-window.width / 2}
+        y={-thickness / 2 - 0.01}
+        width={window.width}
+        height={thickness + 0.02}
+        fill="#dbeafe"
+        stroke="#1d4ed8"
+        strokeWidth={1}
+        strokeScaleEnabled={false}
+      />
+      <Line
+        points={[-window.width / 2, 0, window.width / 2, 0]}
+        stroke="#1d4ed8"
+        strokeWidth={1}
+        strokeScaleEnabled={false}
+      />
     </OpeningGroup>
   );
 };

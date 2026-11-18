@@ -12,10 +12,13 @@ import { cn } from "@/lib/utils";
 import { useViewerStore } from "@/store/viewer-store";
 
 /** WebGL must only run in the browser. */
-const DetailedHouseCanvas = dynamic(() => import("@/features/detailed-houses/detailed-house-canvas").then((module) => module.DetailedHouseCanvas), {
-  ssr: false,
-  loading: () => <Skeleton className="h-full w-full rounded-none bg-[#0d1830]" />,
-});
+const DetailedHouseCanvas = dynamic(
+  () => import("@/features/detailed-houses/detailed-house-canvas").then((module) => module.DetailedHouseCanvas),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-full w-full rounded-none bg-[#0d1830]" />,
+  },
+);
 
 const glass = "border border-white/10 bg-[#0d1830]/85 text-white shadow-xl backdrop-blur-md";
 
@@ -63,7 +66,10 @@ export const DetailedHouseScreen = ({ house }: { house: DetailedHouse }) => {
           <h1 className="text-lg font-semibold">{house.name}</h1>
           <p className="text-sm text-white/70">{house.style}</p>
         </div>
-        <div id="detailed-house-info" className={cn("flex-col gap-3", infoOpen === null ? "hidden md:flex" : isInfoOpen ? "flex" : "hidden")}>
+        <div
+          id="detailed-house-info"
+          className={cn("flex-col gap-3", infoOpen === null ? "hidden md:flex" : isInfoOpen ? "flex" : "hidden")}
+        >
           <div className="flex flex-wrap gap-1.5 text-[11px]">
             <span className="rounded-full bg-white/15 px-2 py-0.5">Modèle détaillé</span>
             <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-amber-200">Non modifiable</span>
@@ -85,7 +91,9 @@ export const DetailedHouseScreen = ({ house }: { house: DetailedHouse }) => {
               <dd className="font-medium">{formatMeters(house.height)}</dd>
             </div>
           </dl>
-          <p className="text-xs text-white/55">{interiorNote(house)} Maquette sans plan : surface habitable et nombre de pièces non renseignés.</p>
+          <p className="text-xs text-white/55">
+            {interiorNote(house)} Maquette sans plan : surface habitable et nombre de pièces non renseignés.
+          </p>
         </div>
       </div>
 
@@ -98,10 +106,15 @@ export const DetailedHouseScreen = ({ house }: { house: DetailedHouse }) => {
         <a href={house.license.url} target="_blank" rel="noreferrer" className="underline hover:text-white">
           {house.license.name}
         </a>
-        , optimisé pour le web (textures WebP, géométrie compressée){house.relit ? " ; matériaux non éclairés convertis en matériaux PBR éclairés" : ""}.
+        , optimisé pour le web (textures WebP, géométrie compressée)
+        {house.relit ? " ; matériaux non éclairés convertis en matériaux PBR éclairés" : ""}.
       </p>
 
-      <div className={cn("absolute right-3 bottom-3 flex items-center gap-1 rounded-xl p-1", glass)} role="group" aria-label="Moment de la journée">
+      <div
+        className={cn("absolute right-3 bottom-3 flex items-center gap-1 rounded-xl p-1", glass)}
+        role="group"
+        aria-label="Moment de la journée"
+      >
         {(
           [
             { value: "day", label: "Jour", icon: Sun },
@@ -113,7 +126,10 @@ export const DetailedHouseScreen = ({ house }: { house: DetailedHouse }) => {
             type="button"
             onClick={() => (timeOfDay === value ? null : toggleTimeOfDay())}
             aria-pressed={timeOfDay === value}
-            className={cn("flex h-9 items-center gap-2 rounded-lg px-3 text-sm text-white/80 hover:bg-white/10", timeOfDay === value && "bg-electric text-white hover:bg-electric")}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-lg px-3 text-sm text-white/80 hover:bg-white/10",
+              timeOfDay === value && "bg-electric text-white hover:bg-electric",
+            )}
           >
             <Icon className="size-4" />
             {label}

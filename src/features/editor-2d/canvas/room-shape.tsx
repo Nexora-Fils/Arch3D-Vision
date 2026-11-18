@@ -32,18 +32,49 @@ interface RoomLabelProps {
 /** Name, dimensions and area, drawn in a layer above the furniture so they always stay readable. */
 export const RoomLabel = ({ room, showDimensions, typeLabel }: RoomLabelProps) => {
   if (room.width <= 1.6 || room.depth <= 1.2) return null;
-  const lines = [room.name, showDimensions ? `${formatMeters(room.width)} × ${formatMeters(room.depth)}` : typeLabel, formatArea(roomArea(room))];
+  const lines = [
+    room.name,
+    showDimensions ? `${formatMeters(room.width)} × ${formatMeters(room.depth)}` : typeLabel,
+    formatArea(roomArea(room)),
+  ];
   const labelHeight = lines.length * LABEL_SIZE * 1.25;
   const labelWidth = Math.min(room.width - 0.2, 3.2);
   return (
     <Group x={room.x} y={room.y} listening={false}>
-      <Rect x={room.width / 2 - labelWidth / 2} y={room.depth / 2 - labelHeight / 2 - 0.08} width={labelWidth} height={labelHeight + 0.16} fill="rgba(255, 255, 255, 0.78)" cornerRadius={0.08} />
-      <Text x={0} y={room.depth / 2 - labelHeight / 2} width={room.width} align="center" text={lines.join("\n")} fontSize={LABEL_SIZE} fontFamily={LABEL_FONT} lineHeight={1.25} fill={LABEL_COLOR} fontStyle="500" />
+      <Rect
+        x={room.width / 2 - labelWidth / 2}
+        y={room.depth / 2 - labelHeight / 2 - 0.08}
+        width={labelWidth}
+        height={labelHeight + 0.16}
+        fill="rgba(255, 255, 255, 0.78)"
+        cornerRadius={0.08}
+      />
+      <Text
+        x={0}
+        y={room.depth / 2 - labelHeight / 2}
+        width={room.width}
+        align="center"
+        text={lines.join("\n")}
+        fontSize={LABEL_SIZE}
+        fontFamily={LABEL_FONT}
+        lineHeight={1.25}
+        fill={LABEL_COLOR}
+        fontStyle="500"
+      />
     </Group>
   );
 };
 
-export const RoomShape = ({ room, floorId, gridStep, isSelected, isInteractive, showDimensions, floorColor, floorPattern }: RoomShapeProps) => {
+export const RoomShape = ({
+  room,
+  floorId,
+  gridStep,
+  isSelected,
+  isInteractive,
+  showDimensions,
+  floorColor,
+  floorPattern,
+}: RoomShapeProps) => {
   const { moveRoom, commit } = usePlanStore.getState();
   const { select } = useEditorStore.getState();
 
@@ -61,7 +92,6 @@ export const RoomShape = ({ room, floorId, gridStep, isSelected, isInteractive, 
       moveRoom(floorId, room.id, { x: x - room.x, y: y - room.y }, { transient: true });
     }
   };
-
 
   return (
     <Group
@@ -90,18 +120,88 @@ export const RoomShape = ({ room, floorId, gridStep, isSelected, isInteractive, 
         shadowOpacity={isSelected ? 0.35 : 0}
         shadowEnabled={isSelected}
       />
-      {floorPattern ? <Rect width={room.width} height={room.depth} fill="#ffffff" opacity={0.32} listening={false} /> : null}
-      {floorColor && !floorPattern ? <Rect x={0.08} y={0.08} width={Math.max(0, room.width - 0.16)} height={Math.max(0, room.depth - 0.16)} fill={floorColor} opacity={0.18} listening={false} /> : null}
+      {floorPattern ? (
+        <Rect width={room.width} height={room.depth} fill="#ffffff" opacity={0.32} listening={false} />
+      ) : null}
+      {floorColor && !floorPattern ? (
+        <Rect
+          x={0.08}
+          y={0.08}
+          width={Math.max(0, room.width - 0.16)}
+          height={Math.max(0, room.depth - 0.16)}
+          fill={floorColor}
+          opacity={0.18}
+          listening={false}
+        />
+      ) : null}
       {isSelected && showDimensions ? (
         <>
-          <Line points={[0, -0.35, room.width, -0.35]} stroke={SELECTION_COLOR} strokeWidth={1} strokeScaleEnabled={false} listening={false} />
-          <Line points={[0, -0.5, 0, -0.2]} stroke={SELECTION_COLOR} strokeWidth={1} strokeScaleEnabled={false} listening={false} />
-          <Line points={[room.width, -0.5, room.width, -0.2]} stroke={SELECTION_COLOR} strokeWidth={1} strokeScaleEnabled={false} listening={false} />
-          <Text x={0} y={-0.75} width={room.width} align="center" text={formatMeters(room.width)} fontSize={0.26} fontFamily={LABEL_FONT} fill={SELECTION_COLOR} listening={false} />
-          <Line points={[-0.35, 0, -0.35, room.depth]} stroke={SELECTION_COLOR} strokeWidth={1} strokeScaleEnabled={false} listening={false} />
-          <Line points={[-0.5, 0, -0.2, 0]} stroke={SELECTION_COLOR} strokeWidth={1} strokeScaleEnabled={false} listening={false} />
-          <Line points={[-0.5, room.depth, -0.2, room.depth]} stroke={SELECTION_COLOR} strokeWidth={1} strokeScaleEnabled={false} listening={false} />
-          <Text x={-0.45} y={room.depth / 2} rotation={-90} width={room.depth} offsetX={room.depth / 2} align="center" text={formatMeters(room.depth)} fontSize={0.26} fontFamily={LABEL_FONT} fill={SELECTION_COLOR} listening={false} />
+          <Line
+            points={[0, -0.35, room.width, -0.35]}
+            stroke={SELECTION_COLOR}
+            strokeWidth={1}
+            strokeScaleEnabled={false}
+            listening={false}
+          />
+          <Line
+            points={[0, -0.5, 0, -0.2]}
+            stroke={SELECTION_COLOR}
+            strokeWidth={1}
+            strokeScaleEnabled={false}
+            listening={false}
+          />
+          <Line
+            points={[room.width, -0.5, room.width, -0.2]}
+            stroke={SELECTION_COLOR}
+            strokeWidth={1}
+            strokeScaleEnabled={false}
+            listening={false}
+          />
+          <Text
+            x={0}
+            y={-0.75}
+            width={room.width}
+            align="center"
+            text={formatMeters(room.width)}
+            fontSize={0.26}
+            fontFamily={LABEL_FONT}
+            fill={SELECTION_COLOR}
+            listening={false}
+          />
+          <Line
+            points={[-0.35, 0, -0.35, room.depth]}
+            stroke={SELECTION_COLOR}
+            strokeWidth={1}
+            strokeScaleEnabled={false}
+            listening={false}
+          />
+          <Line
+            points={[-0.5, 0, -0.2, 0]}
+            stroke={SELECTION_COLOR}
+            strokeWidth={1}
+            strokeScaleEnabled={false}
+            listening={false}
+          />
+          <Line
+            points={[-0.5, room.depth, -0.2, room.depth]}
+            stroke={SELECTION_COLOR}
+            strokeWidth={1}
+            strokeScaleEnabled={false}
+            listening={false}
+          />
+          <Text
+            x={-0.45}
+            y={room.depth / 2}
+            rotation={-90}
+            width={room.depth}
+            offsetX={room.depth / 2}
+            align="center"
+            text={formatMeters(room.depth)}
+            fontSize={0.26}
+            fontFamily={LABEL_FONT}
+            fill={SELECTION_COLOR}
+            listening={false}
+          />
         </>
       ) : null}
     </Group>

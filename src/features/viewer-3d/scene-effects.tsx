@@ -16,7 +16,14 @@ interface SceneEffectsProps {
  */
 export const SceneEffects = ({ interior = false }: SceneEffectsProps) => (
   <EffectComposer multisampling={0} enableNormalPass={false}>
-    <N8AO aoRadius={interior ? 0.6 : 1.2} distanceFalloff={interior ? 0.6 : 1} intensity={interior ? 2.2 : 2.6} quality="medium" halfRes depthAwareUpsampling />
+    <N8AO
+      aoRadius={interior ? 0.6 : 1.2}
+      distanceFalloff={interior ? 0.6 : 1}
+      intensity={interior ? 2.2 : 2.6}
+      quality="medium"
+      halfRes
+      depthAwareUpsampling
+    />
     {/* Only lamps and lit windows exceed this luminance: sunlit white façades do not glow. */}
     <Bloom luminanceThreshold={3.2} luminanceSmoothing={0.4} intensity={0.45} mipmapBlur />
     <ToneMapping mode={ToneMappingMode.AGX} />

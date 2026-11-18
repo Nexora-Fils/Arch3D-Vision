@@ -41,7 +41,11 @@ const hasAny = (keys: ReadonlySet<string>, codes: string[]) => codes.some((code)
 export const FirstPersonController = ({ plan, floorId, start, input, onFloorChange }: FirstPersonControllerProps) => {
   const camera = useThree((state) => state.camera);
   const world = useMemo(() => createWalkWorld(plan), [plan]);
-  const indexOf = (id: string) => Math.max(0, plan.floors.findIndex((floor) => floor.id === id));
+  const indexOf = (id: string) =>
+    Math.max(
+      0,
+      plan.floors.findIndex((floor) => floor.id === id),
+    );
   const state = useRef({
     visitor: spawnVisitor(world, indexOf(floorId), start),
     yaw: 0,
@@ -58,7 +62,11 @@ export const FirstPersonController = ({ plan, floorId, start, input, onFloorChan
 
     const teleportTarget = input.consumeTeleport();
     if (teleportTarget) {
-      current.visitor = spawnVisitor(world, teleportTarget.floorId ? indexOf(teleportTarget.floorId) : current.visitor.floorIndex, teleportTarget.position);
+      current.visitor = spawnVisitor(
+        world,
+        teleportTarget.floorId ? indexOf(teleportTarget.floorId) : current.visitor.floorIndex,
+        teleportTarget.position,
+      );
       if (teleportTarget.yaw !== undefined) current.yaw = teleportTarget.yaw;
       current.velocity = { x: 0, y: 0 };
       current.eyeY = null;
@@ -71,8 +79,10 @@ export const FirstPersonController = ({ plan, floorId, start, input, onFloorChan
 
     const keys = input.readKeys();
     const joystick = input.readJoystick();
-    const forwardInput = (hasAny(keys, ["KeyW", "ArrowUp"]) ? 1 : 0) - (hasAny(keys, ["KeyS", "ArrowDown"]) ? 1 : 0) - joystick.y;
-    const strafeInput = (hasAny(keys, ["KeyD", "ArrowRight"]) ? 1 : 0) - (hasAny(keys, ["KeyA", "ArrowLeft"]) ? 1 : 0) + joystick.x;
+    const forwardInput =
+      (hasAny(keys, ["KeyW", "ArrowUp"]) ? 1 : 0) - (hasAny(keys, ["KeyS", "ArrowDown"]) ? 1 : 0) - joystick.y;
+    const strafeInput =
+      (hasAny(keys, ["KeyD", "ArrowRight"]) ? 1 : 0) - (hasAny(keys, ["KeyA", "ArrowLeft"]) ? 1 : 0) + joystick.x;
     const magnitude = Math.hypot(forwardInput, strafeInput);
 
     // Smooth acceleration and braking: the target velocity is reached in ~0.15 s.
@@ -99,7 +109,8 @@ export const FirstPersonController = ({ plan, floorId, start, input, onFloorChan
     }
 
     const eyeTarget = visitorElevation(world, current.visitor) + EYE_HEIGHT;
-    current.eyeY = current.eyeY === null ? eyeTarget : current.eyeY + (eyeTarget - current.eyeY) * Math.min(1, dt * EYE_FOLLOW);
+    current.eyeY =
+      current.eyeY === null ? eyeTarget : current.eyeY + (eyeTarget - current.eyeY) * Math.min(1, dt * EYE_FOLLOW);
     const [x, z] = toScene(current.visitor.position, plan.lot);
     camera.position.set(x, current.eyeY, z);
     camera.rotation.set(current.pitch, current.yaw, 0, "YXZ");
@@ -108,7 +119,9 @@ export const FirstPersonController = ({ plan, floorId, start, input, onFloorChan
     if (current.frame % 6 === 0) {
       const shown = plan.floors[visibleFloorIndex(world, current.visitor)];
       if (!shown) return;
-      useWalkState.getState().update(current.visitor.position, current.yaw, findRoomAt(shown, current.visitor.position)?.id ?? null);
+      useWalkState
+        .getState()
+        .update(current.visitor.position, current.yaw, findRoomAt(shown, current.visitor.position)?.id ?? null);
       if (shown.id !== current.reportedFloorId) {
         current.reportedFloorId = shown.id;
         onFloorChange(shown.id);

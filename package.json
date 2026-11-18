@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -55,12 +58,23 @@
     "dotenv": "^18.0.8",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.1",
+    "prettier": "3.10.1",
     "prisma": "7.10.1",
     "shadcn": "^4.22.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.5"
+  },
+  "lint-staged": {
+    "*.{js,jsx,mjs,ts,tsx,mts,cts}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "!(*.{js,jsx,mjs,ts,tsx,mts,cts})": "prettier --write --ignore-unknown"
   },
   "engines": {
     "node": "24.x"

@@ -40,19 +40,50 @@ export const PlanSvg = ({ preview, marker, showLabels = false, className, onRoom
             {onRoomSelect ? <title>{`Aller dans : ${room.name}`}</title> : null}
           </rect>
           {showLabels && room.width > 1.8 && room.depth > 1 ? (
-            <text x={room.x + room.width / 2} y={room.y + room.depth / 2} fontSize={Math.min(0.5, room.width / 6)} textAnchor="middle" dominantBaseline="middle" fill="#1e293b">
+            <text
+              x={room.x + room.width / 2}
+              y={room.y + room.depth / 2}
+              fontSize={Math.min(0.5, room.width / 6)}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#1e293b"
+            >
               {room.name}
             </text>
           ) : null}
         </g>
       ))}
       {walls.map((wall) => (
-        <line key={wall.id} x1={wall.start.x} y1={wall.start.y} x2={wall.end.x} y2={wall.end.y} stroke="#1f2937" strokeWidth={wall.thickness} strokeLinecap="square" />
+        <line
+          key={wall.id}
+          x1={wall.start.x}
+          y1={wall.start.y}
+          x2={wall.end.x}
+          y2={wall.end.y}
+          stroke="#1f2937"
+          strokeWidth={wall.thickness}
+          strokeLinecap="square"
+        />
       ))}
       {marker && heading ? (
         <g>
-          <line x1={marker.position.x} y1={marker.position.y} x2={marker.position.x + heading.x * 1.2} y2={marker.position.y + heading.y * 1.2} stroke="#2563eb" strokeWidth={0.12} strokeLinecap="round" />
-          <circle cx={marker.position.x} cy={marker.position.y} r={0.35} fill="#2563eb" stroke="#ffffff" strokeWidth={0.1} />
+          <line
+            x1={marker.position.x}
+            y1={marker.position.y}
+            x2={marker.position.x + heading.x * 1.2}
+            y2={marker.position.y + heading.y * 1.2}
+            stroke="#2563eb"
+            strokeWidth={0.12}
+            strokeLinecap="round"
+          />
+          <circle
+            cx={marker.position.x}
+            cy={marker.position.y}
+            r={0.35}
+            fill="#2563eb"
+            stroke="#ffffff"
+            strokeWidth={0.1}
+          />
         </g>
       ) : null}
     </svg>

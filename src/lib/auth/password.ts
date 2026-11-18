@@ -8,7 +8,9 @@ const SALT_LENGTH = 16;
 
 const deriveKey = (password: string, salt: Buffer, keyLength: number, options: ScryptOptions) =>
   new Promise<Buffer>((resolve, reject) => {
-    scrypt(password.normalize("NFKC"), salt, keyLength, { ...options, maxmem: MAX_MEMORY }, (error, key) => (error ? reject(error) : resolve(key)));
+    scrypt(password.normalize("NFKC"), salt, keyLength, { ...options, maxmem: MAX_MEMORY }, (error, key) =>
+      error ? reject(error) : resolve(key),
+    );
   });
 
 /** Stored as `scrypt$N$r$p$salt$key` (base64url): the parameters travel with the hash. */
@@ -23,6 +25,10 @@ export const verifyPassword = async (password: string, storedHash: string): Prom
   const [scheme, N, r, p, salt, key] = storedHash.split("$");
   if (scheme !== "scrypt" || !salt || !key) return false;
   const expected = Buffer.from(key, "base64url");
-  const actual = await deriveKey(password, Buffer.from(salt, "base64url"), expected.length, { N: Number(N), r: Number(r), p: Number(p) });
+  const actual = await deriveKey(password, Buffer.from(salt, "base64url"), expected.length, {
+    N: Number(N),
+    r: Number(r),
+    p: Number(p),
+  });
   return timingSafeEqual(actual, expected);
 };

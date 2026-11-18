@@ -13,7 +13,10 @@ export interface ProfileFormState {
 
 export const saveProfileAction = async (_previous: ProfileFormState, formData: FormData): Promise<ProfileFormState> => {
   const user = await requireUser("/settings");
-  const parsed = accountSchema.safeParse({ name: String(formData.get("name") ?? ""), email: String(formData.get("email") ?? "") });
+  const parsed = accountSchema.safeParse({
+    name: String(formData.get("name") ?? ""),
+    email: String(formData.get("email") ?? ""),
+  });
   if (!parsed.success) {
     const errors: ProfileFormState["errors"] = {};
     for (const issue of parsed.error.issues) {

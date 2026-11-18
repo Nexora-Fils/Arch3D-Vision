@@ -22,9 +22,10 @@ Next.js tourne sur la machine hôte, PostgreSQL dans Docker. Le port hôte de Po
 ## Commandes
 
 | But | Commande |
-|---|---|
+| --- | --- |
 | Serveur de développement | `pnpm dev` |
 | Build / démarrage production | `pnpm build` puis `pnpm start` |
+| Formatage (Prettier) | `pnpm format` · `pnpm format:check` |
 | Lint / types / tests | `pnpm lint` · `pnpm typecheck` · `pnpm test` |
 | Démarrer / arrêter PostgreSQL | `pnpm db:up` · `pnpm db:down` |
 | Journaux PostgreSQL | `pnpm db:logs` |
@@ -42,7 +43,7 @@ Next.js tourne sur la machine hôte, PostgreSQL dans Docker. Le port hôte de Po
 Voir `.env.example`. Aucun secret n'est versionné : `.env` est ignoré par git.
 
 | Variable | Rôle |
-|---|---|
+| --- | --- |
 | `POSTGRES_PORT` | Port hôte exposé par le conteneur |
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Base et utilisateur dédiés |
 | `DATABASE_URL` | Chaîne de connexion utilisée par Prisma (doit refléter les valeurs ci-dessus) |
@@ -91,7 +92,7 @@ src/features/walkthrough/       visite à la première personne (collisions, tac
 ## Écrans
 
 | Route | Contenu |
-|---|---|
+| --- | --- |
 | `/` | Landing : photo d'architecture (licence Unsplash), « Voir la vidéo » (enregistrement réel de la vue 3D), six fonctionnalités, parcours plan → 3D → visite et vitrine en rendus réels de l'application, bandeau d'appel à l'action, version mobile |
 | `/dashboard`, `/projects` | « Bonjour, prénom ! », projets du compte connecté (vignette = capture du rendu 3D réel enregistrée en base), modèles disponibles ; barre latérale avec « Mon compte », barre d'onglets mobile |
 | `/templates` | Deux sections clairement séparées. « Plans modifiables » : cinq maisons générées à partir de leur plan (contemporaine, traditionnelle, minimaliste, familiale, petite), avec rendu réel, style, surface habitable, chambres, salles de bain, niveaux, terrain et garage calculés depuis le plan ; chaque carte crée un projet indépendant. « Modèles détaillés » : trois maquettes GLB sous licence CC BY 4.0, avec rendu réel, niveaux, emprise et hauteur mesurés, attribution |

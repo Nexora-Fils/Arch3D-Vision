@@ -280,7 +280,9 @@ export const listProjects = async (options: { ownerId: string; limit?: number })
   });
   return rows.map((row) => {
     const lot = { width: row.lotWidth, depth: row.lotDepth };
-    const rooms = row.floors.flatMap((floor) => floor.rooms.map((room) => ({ ...room, type: asEnum(ROOM_TYPES, room.type, "other") })));
+    const rooms = row.floors.flatMap((floor) =>
+      floor.rooms.map((room) => ({ ...room, type: asEnum(ROOM_TYPES, room.type, "other") })),
+    );
     const ground = row.floors[0];
     return {
       id: row.id,
@@ -295,7 +297,14 @@ export const listProjects = async (options: { ownerId: string; limit?: number })
       preview: {
         lot,
         rooms: ground ? ground.rooms.map((room) => ({ ...room, type: asEnum(ROOM_TYPES, room.type, "other") })) : [],
-        walls: ground ? ground.walls.map((wall) => ({ id: wall.id, start: { x: wall.x1, y: wall.y1 }, end: { x: wall.x2, y: wall.y2 }, thickness: wall.thickness })) : [],
+        walls: ground
+          ? ground.walls.map((wall) => ({
+              id: wall.id,
+              start: { x: wall.x1, y: wall.y1 },
+              end: { x: wall.x2, y: wall.y2 },
+              thickness: wall.thickness,
+            }))
+          : [],
       },
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -329,7 +338,9 @@ export const getProjectPlan = async (id: string): Promise<Plan | null> => {
   return row ? toPlan(row) : null;
 };
 
-export const getProjectWithMeta = async (id: string): Promise<{ plan: Plan; updatedAt: Date; ownerId: string | null } | null> => {
+export const getProjectWithMeta = async (
+  id: string,
+): Promise<{ plan: Plan; updatedAt: Date; ownerId: string | null } | null> => {
   const row = await prisma.project.findUnique({ where: { id }, ...projectWithPlan });
   return row ? { plan: toPlan(row), updatedAt: row.updatedAt, ownerId: row.ownerId } : null;
 };

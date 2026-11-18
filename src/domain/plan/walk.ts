@@ -1,6 +1,23 @@
-import { buildSolidSegments, buildWallSegments, floorBaseHeight, resolveCollisions, vecAdd, vecScale, type SolidSegment } from "./geometry";
+import {
+  buildSolidSegments,
+  buildWallSegments,
+  floorBaseHeight,
+  resolveCollisions,
+  vecAdd,
+  vecScale,
+  type SolidSegment,
+} from "./geometry";
 import type { Plan, Vec2 } from "./schema";
-import { buildStairFlights, isOnStair, locateOnStair, lowerStairSolids, stairElevation, stairSideSolids, upperStairSolids, type StairFlight } from "./stairs";
+import {
+  buildStairFlights,
+  isOnStair,
+  locateOnStair,
+  lowerStairSolids,
+  stairElevation,
+  stairSideSolids,
+  upperStairSolids,
+  type StairFlight,
+} from "./stairs";
 
 /** Everything the walkthrough needs to move a visitor across levels. */
 export interface WalkWorld {
@@ -36,7 +53,8 @@ export const createWalkWorld = (plan: Plan): WalkWorld => {
   };
 };
 
-const findFlight = (world: WalkWorld, id: string | null) => (id ? world.flights.find((flight) => flight.id === id) : undefined);
+const findFlight = (world: WalkWorld, id: string | null) =>
+  id ? world.flights.find((flight) => flight.id === id) : undefined;
 
 /** Distance kept between a spawn point moved off the stairs and the stair (m). */
 const SPAWN_CLEARANCE = 0.6;
@@ -47,7 +65,10 @@ const SPAWN_CLEARANCE = 0.6;
  * foot of the stair, so a teleport never drops the visitor mid-flight.
  */
 export const spawnVisitor = (world: WalkWorld, floorIndex: number, point: Vec2): VisitorState => {
-  const flight = world.flights.find((candidate) => (candidate.lowerIndex === floorIndex || candidate.upperIndex === floorIndex) && isOnStair(candidate, point));
+  const flight = world.flights.find(
+    (candidate) =>
+      (candidate.lowerIndex === floorIndex || candidate.upperIndex === floorIndex) && isOnStair(candidate, point),
+  );
   if (!flight) return { position: point, floorIndex, flightId: null };
   const position =
     flight.upperIndex === floorIndex
@@ -71,14 +92,20 @@ export const moveVisitor = (world: WalkWorld, state: VisitorState, target: Vec2,
     const location = locateOnStair(flight, position);
     if (location.kind === "above") return { position, floorIndex: flight.upperIndex, flightId: null };
     if (location.kind === "below") return { position, floorIndex: flight.lowerIndex, flightId: null };
-    return { position, floorIndex: flight.lowerIndex, flightId: flight.id, pieceIndex: location.kind === "piece" ? location.index : state.pieceIndex };
+    return {
+      position,
+      floorIndex: flight.lowerIndex,
+      flightId: flight.id,
+      pieceIndex: location.kind === "piece" ? location.index : state.pieceIndex,
+    };
   }
 
   const position = resolveCollisions(target, world.obstacles[state.floorIndex] ?? [], radius);
   for (const candidate of world.flights) {
     if (candidate.lowerIndex !== state.floorIndex && candidate.upperIndex !== state.floorIndex) continue;
     const location = locateOnStair(candidate, position);
-    if (location.kind === "piece") return { position, floorIndex: candidate.lowerIndex, flightId: candidate.id, pieceIndex: location.index };
+    if (location.kind === "piece")
+      return { position, floorIndex: candidate.lowerIndex, flightId: candidate.id, pieceIndex: location.index };
   }
   return { position, floorIndex: state.floorIndex, flightId: null };
 };
@@ -94,5 +121,7 @@ export const visitorElevation = (world: WalkWorld, state: VisitorState): number 
 export const visibleFloorIndex = (world: WalkWorld, state: VisitorState): number => {
   const flight = findFlight(world, state.flightId);
   if (!flight) return state.floorIndex;
-  return stairElevation(flight, state.position, state.pieceIndex) >= flight.rise / 2 ? flight.upperIndex : flight.lowerIndex;
+  return stairElevation(flight, state.position, state.pieceIndex) >= flight.rise / 2
+    ? flight.upperIndex
+    : flight.lowerIndex;
 };

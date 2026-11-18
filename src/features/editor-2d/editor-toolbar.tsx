@@ -1,6 +1,20 @@
 "use client";
 
-import { AppWindow, Armchair, DoorOpen, Eye, EyeOff, Footprints, MousePointer2, Ruler, Square, SquareDashed, Trash, Type, type LucideIcon } from "lucide-react";
+import {
+  AppWindow,
+  Armchair,
+  DoorOpen,
+  Eye,
+  EyeOff,
+  Footprints,
+  MousePointer2,
+  Ruler,
+  Square,
+  SquareDashed,
+  Trash,
+  Type,
+  type LucideIcon,
+} from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FURNITURE_TYPE_LABELS } from "@/domain/plan/labels";
 import { FURNITURE_TYPES } from "@/domain/plan/schema";
@@ -48,11 +62,21 @@ export const EditorToolbar = () => {
   const deleteSelection = useDeleteSelection();
 
   return (
-    <aside className="flex shrink-0 gap-1 overflow-x-auto border-b border-white/10 bg-[#0f1b34] p-2 md:w-44 md:flex-col md:overflow-visible md:border-r md:border-b-0" aria-label="Outils">
+    <aside
+      className="flex shrink-0 gap-1 overflow-x-auto border-b border-white/10 bg-[#0f1b34] p-2 md:w-44 md:flex-col md:overflow-visible md:border-r md:border-b-0"
+      aria-label="Outils"
+    >
       {TOOLS.map(({ tool: value, label, shortcut, icon: Icon }) => {
         const isActive = tool === value;
         return (
-          <button key={value} type="button" onClick={() => setTool(value)} aria-pressed={isActive} title={`${label} (${shortcut})`} className={cn(itemClass, "w-auto", isActive && "bg-electric text-white hover:bg-electric")}>
+          <button
+            key={value}
+            type="button"
+            onClick={() => setTool(value)}
+            aria-pressed={isActive}
+            title={`${label} (${shortcut})`}
+            className={cn(itemClass, "w-auto", isActive && "bg-electric text-white hover:bg-electric")}
+          >
             <Icon className="size-4 shrink-0" aria-hidden />
             {label}
           </button>
@@ -60,7 +84,12 @@ export const EditorToolbar = () => {
       })}
       <Popover>
         <PopoverTrigger asChild>
-          <button type="button" aria-pressed={tool === "furniture"} title="Meuble (M)" className={cn(itemClass, "w-auto", tool === "furniture" && "bg-electric text-white hover:bg-electric")}>
+          <button
+            type="button"
+            aria-pressed={tool === "furniture"}
+            title="Meuble (M)"
+            className={cn(itemClass, "w-auto", tool === "furniture" && "bg-electric text-white hover:bg-electric")}
+          >
             <Armchair className="size-4 shrink-0" aria-hidden />
             Meuble
           </button>
@@ -76,7 +105,10 @@ export const EditorToolbar = () => {
                   setFurnitureType(type);
                   setTool("furniture");
                 }}
-                className={cn("rounded-md border px-2 py-1.5 text-left text-xs hover:bg-muted", furnitureType === type && tool === "furniture" && "border-electric bg-electric/10")}
+                className={cn(
+                  "rounded-md border px-2 py-1.5 text-left text-xs hover:bg-muted",
+                  furnitureType === type && tool === "furniture" && "border-electric bg-electric/10",
+                )}
               >
                 {FURNITURE_TYPE_LABELS[type]}
               </button>
@@ -93,11 +125,21 @@ export const EditorToolbar = () => {
           title={showLowerFloor ? "Masquer le niveau inférieur" : "Afficher le niveau inférieur"}
           className={cn(itemClass, "w-auto", showLowerFloor && "bg-electric text-white hover:bg-electric")}
         >
-          {showLowerFloor ? <Eye className="size-4 shrink-0" aria-hidden /> : <EyeOff className="size-4 shrink-0" aria-hidden />}
+          {showLowerFloor ? (
+            <Eye className="size-4 shrink-0" aria-hidden />
+          ) : (
+            <EyeOff className="size-4 shrink-0" aria-hidden />
+          )}
           Calque inférieur
         </button>
       ) : null}
-      <button type="button" onClick={deleteSelection} disabled={!selection} title="Supprimer (⌫)" className={cn(itemClass, "w-auto")}>
+      <button
+        type="button"
+        onClick={deleteSelection}
+        disabled={!selection}
+        title="Supprimer (⌫)"
+        className={cn(itemClass, "w-auto")}
+      >
         <Trash className="size-4 shrink-0" aria-hidden />
         Supprimer
       </button>

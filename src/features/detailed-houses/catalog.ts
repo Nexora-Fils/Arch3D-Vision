@@ -40,7 +40,8 @@ export const DETAILED_HOUSES: DetailedHouse[] = [
     key: "villa-aalsmeer",
     name: "Villa Aalsmeer",
     style: "Contemporain à pignon",
-    description: "Villa néerlandaise à pignons vitrés, bardage bois vertical et brique, terrasse couverte et panneaux solaires.",
+    description:
+      "Villa néerlandaise à pignons vitrés, bardage bois vertical et brique, terrasse couverte et panneaux solaires.",
     file: "/models/houses/villa-aalsmeer.glb",
     metersPerUnit: 1,
     hiddenMeshes: ["Model_0", "Terrain"],
@@ -58,7 +59,8 @@ export const DETAILED_HOUSES: DetailedHouse[] = [
     key: "duplex-house",
     name: "Maison jumelée en brique",
     style: "Colonial américain",
-    description: "Maison à étage pour deux familles : brique et bardage à clin, volets, porches couverts et pignon en façade.",
+    description:
+      "Maison à étage pour deux familles : brique et bardage à clin, volets, porches couverts et pignon en façade.",
     file: "/models/houses/duplex-house.glb",
     metersPerUnit: 0.0254,
     hiddenMeshes: [],
@@ -98,4 +100,5 @@ export const interiorNote = (house: DetailedHouse): string =>
     ? "Intérieur meublé visible à travers les baies, mais pas de visite intérieure (vue 3D seule)."
     : "Extérieur seul : pas d'intérieur modélisé, pas de visite intérieure (vue 3D seule).";
 
-export const findDetailedHouse = (key: string): DetailedHouse | undefined => DETAILED_HOUSES.find((house) => house.key === key);
+export const findDetailedHouse = (key: string): DetailedHouse | undefined =>
+  DETAILED_HOUSES.find((house) => house.key === key);

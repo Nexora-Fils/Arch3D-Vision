@@ -1,14 +1,34 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { CanvasTexture, CylinderGeometry, IcosahedronGeometry, InstancedMesh, Matrix4, MeshStandardMaterial, PlaneGeometry, Quaternion, Vector3, type BufferGeometry } from "three";
+import {
+  CanvasTexture,
+  CylinderGeometry,
+  IcosahedronGeometry,
+  InstancedMesh,
+  Matrix4,
+  MeshStandardMaterial,
+  PlaneGeometry,
+  Quaternion,
+  Vector3,
+  type BufferGeometry,
+} from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { buildWallSegments, vecAdd, vecScale, type Bounds } from "@/domain/plan/geometry";
 import type { Floor, Lot } from "@/domain/plan/schema";
 import { MetricBox } from "@/features/viewer-3d/architecture/parts";
 import { useMergedBoxes, type BoxPart } from "@/features/viewer-3d/architecture/merged-boxes";
 import { toScene } from "@/features/viewer-3d/convert";
-import { cardAttributes, createFoliageMaterial, createLeafAtlas, createRandom, ellipsoidCards, hedgeCards, packCards, type CardSet } from "@/features/viewer-3d/landscape/foliage";
+import {
+  cardAttributes,
+  createFoliageMaterial,
+  createLeafAtlas,
+  createRandom,
+  ellipsoidCards,
+  hedgeCards,
+  packCards,
+  type CardSet,
+} from "@/features/viewer-3d/landscape/foliage";
 import { ScannedModel } from "@/features/viewer-3d/scanned-model";
 import { useTiledMaterial, type SceneMaterials } from "@/features/viewer-3d/scene-materials";
 
@@ -82,7 +102,6 @@ export const computePaths = (floor: Floor, lot: Lot): PathRect[] => {
 const boundsOverlap = (a: Bounds, b: Bounds, margin = 0): boolean =>
   a.minX < b.maxX + margin && a.maxX > b.minX - margin && a.minY < b.maxY + margin && a.maxY > b.minY - margin;
 
-
 /** Lawn margin around the lot that fades into the photographed ground (m). */
 const LAWN_FADE = 22;
 
@@ -91,14 +110,25 @@ const LAWN_FADE = 22;
  * projected on the ground: the lawn extends past the lot and fades into it.
  * The low-quality profile (procedural sky) keeps a plain countryside plane.
  */
-export const Ground = ({ lot, materials, quality }: { lot: Lot; materials: SceneMaterials; quality: "low" | "high" }) => {
+export const Ground = ({
+  lot,
+  materials,
+  quality,
+}: {
+  lot: Lot;
+  materials: SceneMaterials;
+  quality: "low" | "high";
+}) => {
   const isPhotographic = quality === "high";
   const size = 1200;
   const width = lot.width + (isPhotographic ? LAWN_FADE * 2 : 0);
   const depth = lot.depth + (isPhotographic ? LAWN_FADE * 2 : 0);
   const surroundings = useTiledMaterial(materials.surroundings, size, size);
   const tiled = useTiledMaterial(materials.ground, width, depth);
-  const fade = useMemo(() => (isPhotographic ? createFadeTexture(lot.width / width, lot.depth / depth) : null), [isPhotographic, lot.width, lot.depth, width, depth]);
+  const fade = useMemo(
+    () => (isPhotographic ? createFadeTexture(lot.width / width, lot.depth / depth) : null),
+    [isPhotographic, lot.width, lot.depth, width, depth],
+  );
   const lawn = useMemo(() => {
     if (!fade) return tiled;
     const material = tiled.clone();
@@ -155,9 +185,18 @@ const createFadeTexture = (innerWidth: number, innerDepth: number): CanvasTextur
   return new CanvasTexture(canvas);
 };
 
-
 /** Paved path (or gravel driveway) with concrete kerbs along both sides. */
-export const PathSlab = ({ path, lot, material, materials }: { path: PathRect; lot: Lot; material: MeshStandardMaterial; materials: SceneMaterials }) => {
+export const PathSlab = ({
+  path,
+  lot,
+  material,
+  materials,
+}: {
+  path: PathRect;
+  lot: Lot;
+  material: MeshStandardMaterial;
+  materials: SceneMaterials;
+}) => {
   const tiled = useTiledMaterial(material, path.depth, path.width);
   const [x, z] = toScene({ x: path.x, y: path.y }, lot);
   const kerb = 0.08;
@@ -168,7 +207,13 @@ export const PathSlab = ({ path, lot, material, materials }: { path: PathRect; l
       </mesh>
       {[1, -1].map((side) => (
         // Nearly flush kerbs: their top (3.4 cm) stays under a pool's water level (3.5 cm) when a path runs past it.
-        <MetricBox key={side} size={[path.depth, 0.05, kerb]} position={[0, 0.009, side * (path.width / 2 + kerb / 2)]} material={materials.kerb} castShadow />
+        <MetricBox
+          key={side}
+          size={[path.depth, 0.05, kerb]}
+          position={[0, 0.009, side * (path.width / 2 + kerb / 2)]}
+          material={materials.kerb}
+          castShadow
+        />
       ))}
     </group>
   );
@@ -184,11 +229,31 @@ export const FlowerBeds = ({ lot, houseBounds, paths }: { lot: Lot; houseBounds:
       const alongEdge = random();
       const side = Math.floor(random() * 4);
       const offset = 1.3 + random() * 0.6;
-      const x = side === 0 ? alongEdge * lot.width : side === 1 ? lot.width - offset : side === 2 ? alongEdge * lot.width : offset;
-      const y = side === 0 ? offset : side === 1 ? alongEdge * lot.depth : side === 2 ? lot.depth - offset : alongEdge * lot.depth;
+      const x =
+        side === 0
+          ? alongEdge * lot.width
+          : side === 1
+            ? lot.width - offset
+            : side === 2
+              ? alongEdge * lot.width
+              : offset;
+      const y =
+        side === 0
+          ? offset
+          : side === 1
+            ? alongEdge * lot.depth
+            : side === 2
+              ? lot.depth - offset
+              : alongEdge * lot.depth;
       if (x < 1 || x > lot.width - 1 || y < 1 || y > lot.depth - 1) continue;
-      const nearHouse = x > houseBounds.minX - 1.2 && x < houseBounds.maxX + 1.2 && y > houseBounds.minY - 1.2 && y < houseBounds.maxY + 1.2;
-      const onPath = paths.some((path) => boundsOverlap(path.bounds, { minX: x - 0.5, maxX: x + 0.5, minY: y - 0.5, maxY: y + 0.5 }));
+      const nearHouse =
+        x > houseBounds.minX - 1.2 &&
+        x < houseBounds.maxX + 1.2 &&
+        y > houseBounds.minY - 1.2 &&
+        y < houseBounds.maxY + 1.2;
+      const onPath = paths.some((path) =>
+        boundsOverlap(path.bounds, { minX: x - 0.5, maxX: x + 0.5, minY: y - 0.5, maxY: y + 0.5 }),
+      );
       if (nearHouse || onPath) continue;
       items.push({ x, y, r: 0.22 + random() * 0.2, tone: Math.floor(random() * 3) });
     }
@@ -211,7 +276,6 @@ export const FlowerBeds = ({ lot, houseBounds, paths }: { lot: Lot; houseBounds:
     </group>
   );
 };
-
 
 interface HedgeRun {
   x: number;
@@ -237,8 +301,16 @@ const hedgeRuns = (lot: Lot, paths: PathRect[]): HedgeRun[] => {
   ];
   for (const side of sides) {
     const cuts = paths
-      .filter((path) => (side.axis === "x" ? path.bounds.minY <= side.at + thickness && path.bounds.maxY >= side.at - thickness : path.bounds.minX <= side.at + thickness && path.bounds.maxX >= side.at - thickness))
-      .map((path) => (side.axis === "x" ? [path.bounds.minX - gap, path.bounds.maxX + gap] : [path.bounds.minY - gap, path.bounds.maxY + gap]))
+      .filter((path) =>
+        side.axis === "x"
+          ? path.bounds.minY <= side.at + thickness && path.bounds.maxY >= side.at - thickness
+          : path.bounds.minX <= side.at + thickness && path.bounds.maxX >= side.at - thickness,
+      )
+      .map((path) =>
+        side.axis === "x"
+          ? [path.bounds.minX - gap, path.bounds.maxX + gap]
+          : [path.bounds.minY - gap, path.bounds.maxY + gap],
+      )
       .sort((a, b) => a[0] - b[0]);
     let cursor = side.from;
     const push = (from: number, to: number) => {
@@ -289,7 +361,8 @@ const useFoliageMaterials = () => {
   useEffect(
     () => () => {
       materials.atlas.dispose();
-      for (const material of [materials.hedge, materials.broadleaf, materials.birch, materials.conifer, materials.core]) material.dispose();
+      for (const material of [materials.hedge, materials.broadleaf, materials.birch, materials.conifer, materials.core])
+        material.dispose();
     },
     [materials],
   );
@@ -305,7 +378,13 @@ export const Hedges = ({ lot, paths, quality }: { lot: Lot; paths: PathRect[]; q
     const density = quality === "high" ? 95 : 45;
     const all = runs.flatMap((run) => {
       const [x, z] = toScene({ x: run.x, y: run.y }, lot);
-      return hedgeCards(new Vector3(x, HEDGE_HEIGHT / 2, z), new Vector3(run.width / 2, HEDGE_HEIGHT / 2, run.depth / 2), density, [0.26, 0.42], random);
+      return hedgeCards(
+        new Vector3(x, HEDGE_HEIGHT / 2, z),
+        new Vector3(run.width / 2, HEDGE_HEIGHT / 2, run.depth / 2),
+        density,
+        [0.26, 0.42],
+        random,
+      );
     });
     return packCards(all, random);
   }, [runs, lot, quality]);
@@ -313,7 +392,10 @@ export const Hedges = ({ lot, paths, quality }: { lot: Lot; paths: PathRect[]; q
     () =>
       runs.map((run) => {
         const [x, z] = toScene({ x: run.x, y: run.y }, lot);
-        return { size: [Math.max(0.1, run.width - 0.16), HEDGE_HEIGHT - 0.12, Math.max(0.1, run.depth - 0.16)], position: [x, (HEDGE_HEIGHT - 0.12) / 2, z] };
+        return {
+          size: [Math.max(0.1, run.width - 0.16), HEDGE_HEIGHT - 0.12, Math.max(0.1, run.depth - 0.16)],
+          position: [x, (HEDGE_HEIGHT - 0.12) / 2, z],
+        };
       }),
     [runs, lot],
   );
@@ -375,31 +457,59 @@ const growTree = (tree: TreePlacement, random: () => number): { limbs: Limb[]; l
       const heading = index * 2.4 + random() * 0.8;
       const reach = (1 - t) * 1.6 * s + 0.3 * s;
       const start = base.clone().setY(height * t);
-      const end = start.clone().add(new Vector3(Math.cos(heading) * reach, 0.25 * s + random() * 0.35 * s, Math.sin(heading) * reach));
+      const end = start
+        .clone()
+        .add(new Vector3(Math.cos(heading) * reach, 0.25 * s + random() * 0.35 * s, Math.sin(heading) * reach));
       limbs.push({ start, end, bottomRadius: 0.035 * s, topRadius: 0.012 * s });
       const radius = (0.45 + random() * 0.35) * s * (1.1 - t * 0.4);
-      lobes.push({ center: end.clone().add(new Vector3(0, -radius * 0.2, 0)), radii: new Vector3(radius * 1.15, radius * 0.9, radius * 1.15) });
+      lobes.push({
+        center: end.clone().add(new Vector3(0, -radius * 0.2, 0)),
+        radii: new Vector3(radius * 1.15, radius * 0.9, radius * 1.15),
+      });
     }
     return { limbs, lobes };
   }
   const trunkHeight = 2 * s;
   const top = base.clone().setY(trunkHeight);
-  limbs.push({ start: base, end: top, bottomRadius: (isBirch ? 0.12 : 0.19) * s, topRadius: (isBirch ? 0.07 : 0.11) * s });
+  limbs.push({
+    start: base,
+    end: top,
+    bottomRadius: (isBirch ? 0.12 : 0.19) * s,
+    topRadius: (isBirch ? 0.07 : 0.11) * s,
+  });
   const branches = isBirch ? 4 : 5 + Math.floor(random() * 3);
   for (let index = 0; index < branches; index += 1) {
     const heading = (index / branches) * Math.PI * 2 + random() * 0.9;
     const elevation = (isBirch ? 1.1 : 0.55) + random() * 0.5;
     const length = (isBirch ? 1.2 + random() * 0.9 : 1.3 + random() * 1.1) * s;
-    const direction = new Vector3(Math.cos(heading) * Math.cos(elevation), Math.sin(elevation), Math.sin(heading) * Math.cos(elevation));
+    const direction = new Vector3(
+      Math.cos(heading) * Math.cos(elevation),
+      Math.sin(elevation),
+      Math.sin(heading) * Math.cos(elevation),
+    );
     const start = top.clone().addScaledVector(new Vector3(0, -1, 0), random() * (isBirch ? 1.2 : 0.5) * s);
     const end = start.clone().addScaledVector(direction, length);
     limbs.push({ start, end, bottomRadius: (isBirch ? 0.05 : 0.09) * s, topRadius: 0.025 * s });
     // Irregular crown: lobes of varied size and squash at the branch tips.
     const radius = (isBirch ? 0.55 + random() * 0.4 : 0.75 + random() * 0.6) * s;
-    lobes.push({ center: end.clone().add(new Vector3((random() - 0.5) * 0.4 * s, radius * (0.1 + random() * 0.4), (random() - 0.5) * 0.4 * s)), radii: new Vector3(radius * (0.85 + random() * 0.3), radius * (isBirch ? 1.4 : 0.7 + random() * 0.35), radius * (0.85 + random() * 0.3)) });
+    lobes.push({
+      center: end
+        .clone()
+        .add(new Vector3((random() - 0.5) * 0.4 * s, radius * (0.1 + random() * 0.4), (random() - 0.5) * 0.4 * s)),
+      radii: new Vector3(
+        radius * (0.85 + random() * 0.3),
+        radius * (isBirch ? 1.4 : 0.7 + random() * 0.35),
+        radius * (0.85 + random() * 0.3),
+      ),
+    });
   }
   const crown = (isBirch ? 0.85 : 1.25 + random() * 0.3) * s;
-  lobes.push({ center: top.clone().add(new Vector3((random() - 0.5) * 0.5 * s, crown * (isBirch ? 1.9 : 1.15), (random() - 0.5) * 0.5 * s)), radii: new Vector3(crown, crown * (isBirch ? 1.7 : 0.85), crown * (0.9 + random() * 0.2)) });
+  lobes.push({
+    center: top
+      .clone()
+      .add(new Vector3((random() - 0.5) * 0.5 * s, crown * (isBirch ? 1.9 : 1.15), (random() - 0.5) * 0.5 * s)),
+    radii: new Vector3(crown, crown * (isBirch ? 1.7 : 0.85), crown * (0.9 + random() * 0.2)),
+  });
   return { limbs, lobes };
 };
 
@@ -413,8 +523,13 @@ const mergeLimbs = (limbs: Limb[]): BufferGeometry | null => {
     const cylinder = new CylinderGeometry(limb.topRadius, limb.bottomRadius, length, 10, 1, true);
     const uv = cylinder.getAttribute("uv");
     const circumference = Math.PI * (limb.topRadius + limb.bottomRadius);
-    for (let index = 0; index < uv.count; index += 1) uv.setXY(index, uv.getX(index) * circumference, uv.getY(index) * length);
-    const matrix = new Matrix4().compose(limb.start.clone().addScaledVector(axis, 0.5), new Quaternion().setFromUnitVectors(up, axis.normalize()), new Vector3(1, 1, 1));
+    for (let index = 0; index < uv.count; index += 1)
+      uv.setXY(index, uv.getX(index) * circumference, uv.getY(index) * length);
+    const matrix = new Matrix4().compose(
+      limb.start.clone().addScaledVector(axis, 0.5),
+      new Quaternion().setFromUnitVectors(up, axis.normalize()),
+      new Vector3(1, 1, 1),
+    );
     cylinder.applyMatrix4(matrix);
     return cylinder;
   });
@@ -443,7 +558,19 @@ const useDisposable = (geometry: BufferGeometry | null) => {
 };
 
 /** Trees along the lot and shrubs by the house corners. */
-export const Garden = ({ lot, houseBounds, paths, materials, quality }: { lot: Lot; houseBounds: Bounds; paths: PathRect[]; materials: SceneMaterials; quality: "low" | "high" }) => {
+export const Garden = ({
+  lot,
+  houseBounds,
+  paths,
+  materials,
+  quality,
+}: {
+  lot: Lot;
+  houseBounds: Bounds;
+  paths: PathRect[];
+  materials: SceneMaterials;
+  quality: "low" | "high";
+}) => {
   const foliage = useFoliageMaterials();
   const { trees, shrubs } = useMemo(() => {
     const random = createRandom(lot.width * 1000 + lot.depth * 7);
@@ -453,15 +580,27 @@ export const Garden = ({ lot, houseBounds, paths, materials, quality }: { lot: L
     const inset = 2;
     const candidates: { x: number; y: number }[] = [];
     for (let x = inset; x <= lot.width - inset; x += 4.2) candidates.push({ x, y: inset }, { x, y: lot.depth - inset });
-    for (let y = inset + 3; y <= lot.depth - inset - 3; y += 4.2) candidates.push({ x: inset, y }, { x: lot.width - inset, y });
+    for (let y = inset + 3; y <= lot.depth - inset - 3; y += 4.2)
+      candidates.push({ x: inset, y }, { x: lot.width - inset, y });
     for (const candidate of candidates) {
       const x = candidate.x + (random() - 0.5) * 1.2;
       const y = candidate.y + (random() - 0.5) * 0.6;
-      const nearHouse = x > houseBounds.minX - clearance && x < houseBounds.maxX + clearance && y > houseBounds.minY - clearance && y < houseBounds.maxY + clearance;
-      const onPath = paths.some((path) => boundsOverlap(path.bounds, { minX: x - 1.6, maxX: x + 1.6, minY: y - 1.6, maxY: y + 1.6 }));
+      const nearHouse =
+        x > houseBounds.minX - clearance &&
+        x < houseBounds.maxX + clearance &&
+        y > houseBounds.minY - clearance &&
+        y < houseBounds.maxY + clearance;
+      const onPath = paths.some((path) =>
+        boundsOverlap(path.bounds, { minX: x - 1.6, maxX: x + 1.6, minY: y - 1.6, maxY: y + 1.6 }),
+      );
       if (nearHouse || onPath || random() < 0.35) continue;
       const [sx, sz] = toScene({ x, y }, lot);
-      placements.push({ x: sx, z: sz, scale: 0.75 + random() * 0.6, species: species[Math.floor(random() * species.length)] });
+      placements.push({
+        x: sx,
+        z: sz,
+        scale: 0.75 + random() * 0.6,
+        species: species[Math.floor(random() * species.length)],
+      });
     }
     const shrubs: { x: number; y: number; r: number }[] = [];
     const corners = [
@@ -472,8 +611,23 @@ export const Garden = ({ lot, houseBounds, paths, materials, quality }: { lot: L
     ];
     for (const corner of corners) {
       if (corner.x < 0.8 || corner.x > lot.width - 0.8 || corner.y < 0.8 || corner.y > lot.depth - 0.8) continue;
-      if (paths.some((path) => boundsOverlap(path.bounds, { minX: corner.x - 0.7, maxX: corner.x + 0.7, minY: corner.y - 0.7, maxY: corner.y + 0.7 }))) continue;
-      for (let index = 0; index < 3; index += 1) shrubs.push({ x: corner.x + (random() - 0.5) * 1.1, y: corner.y + (random() - 0.5) * 1.1, r: 0.3 + random() * 0.25 });
+      if (
+        paths.some((path) =>
+          boundsOverlap(path.bounds, {
+            minX: corner.x - 0.7,
+            maxX: corner.x + 0.7,
+            minY: corner.y - 0.7,
+            maxY: corner.y + 0.7,
+          }),
+        )
+      )
+        continue;
+      for (let index = 0; index < 3; index += 1)
+        shrubs.push({
+          x: corner.x + (random() - 0.5) * 1.1,
+          y: corner.y + (random() - 0.5) * 1.1,
+          r: 0.3 + random() * 0.25,
+        });
     }
     return { trees: placements, shrubs };
   }, [houseBounds, lot, paths]);
@@ -497,8 +651,18 @@ export const Garden = ({ lot, houseBounds, paths, materials, quality }: { lot: L
     };
     return { broadleaf: pack("broadleaf"), birch: pack("birch"), conifer: pack("conifer") };
   }, [grown, density, lot.depth]);
-  const bark = useDisposable(useMemo(() => mergeLimbs(grown.filter(({ tree }) => tree.species !== "birch").flatMap(({ limbs }) => limbs)), [grown]));
-  const birchBark = useDisposable(useMemo(() => mergeLimbs(grown.filter(({ tree }) => tree.species === "birch").flatMap(({ limbs }) => limbs)), [grown]));
+  const bark = useDisposable(
+    useMemo(
+      () => mergeLimbs(grown.filter(({ tree }) => tree.species !== "birch").flatMap(({ limbs }) => limbs)),
+      [grown],
+    ),
+  );
+  const birchBark = useDisposable(
+    useMemo(
+      () => mergeLimbs(grown.filter(({ tree }) => tree.species === "birch").flatMap(({ limbs }) => limbs)),
+      [grown],
+    ),
+  );
   const cores = useDisposable(useMemo(() => mergeCores(grown.flatMap(({ lobes }) => lobes)), [grown]));
   const birchMaterial = useMemo(() => {
     const material = materials.bark.clone();

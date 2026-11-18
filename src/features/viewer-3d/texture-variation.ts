@@ -60,13 +60,18 @@ diffuseColor.rgb *= 1.0 + variationStrength * (macroVariation(variationUv * 0.14
  * settings live in userData so clones (which do not copy onBeforeCompile)
  * can be patched again with applyTextureVariation(clone).
  */
-export const applyTextureVariation = <T extends Material>(material: T, variation: TextureVariation | null = (material.userData.variation as TextureVariation | undefined) ?? null): T => {
+export const applyTextureVariation = <T extends Material>(
+  material: T,
+  variation: TextureVariation | null = (material.userData.variation as TextureVariation | undefined) ?? null,
+): T => {
   if (!variation) return material;
   material.userData.variation = variation;
   material.defines = { ...material.defines, ...(variation.mode === "blend" ? { VARIATION_BLEND: "" } : {}) };
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.uniforms.variationStrength = { value: variation.strength };
-    shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>\n${NOISE}`).replace("#include <map_fragment>", MAP_CHUNK);
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", `#include <common>\n${NOISE}`)
+      .replace("#include <map_fragment>", MAP_CHUNK);
   };
   material.customProgramCacheKey = () => `variation-${variation.mode}`;
   material.needsUpdate = true;

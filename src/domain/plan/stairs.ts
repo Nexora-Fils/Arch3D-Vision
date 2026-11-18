@@ -18,10 +18,16 @@ import {
 import type { Door, Floor, Furniture, FurnitureType, Plan, Vec2, Wall } from "./schema";
 
 /** Furniture types that are stairs, one per model. */
-export const STAIR_TYPES = ["stairs", "stairs_quarter_left", "stairs_quarter_right", "stairs_half_turn"] as const satisfies readonly FurnitureType[];
+export const STAIR_TYPES = [
+  "stairs",
+  "stairs_quarter_left",
+  "stairs_quarter_right",
+  "stairs_half_turn",
+] as const satisfies readonly FurnitureType[];
 export type StairType = (typeof STAIR_TYPES)[number];
 
-export const isStairs = (type: FurnitureType): type is StairType => (STAIR_TYPES as readonly FurnitureType[]).includes(type);
+export const isStairs = (type: FurnitureType): type is StairType =>
+  (STAIR_TYPES as readonly FurnitureType[]).includes(type);
 
 /** Comfortable riser height used to count the steps (m). */
 const TARGET_RISER = 0.175;
@@ -134,7 +140,11 @@ export const stairLayout = (type: StairType, width: number, depth: number): Loca
   const halfW = width / 2;
   const halfD = depth / 2;
   if (type === "stairs") {
-    return { flightWidth: width, pieces: [{ kind: "flight", rect: { minA: -halfW, maxA: halfW, minC: -halfD, maxC: halfD }, axis: UP }], wells: [] };
+    return {
+      flightWidth: width,
+      pieces: [{ kind: "flight", rect: { minA: -halfW, maxA: halfW, minC: -halfD, maxC: halfD }, axis: UP }],
+      wells: [],
+    };
   }
   if (type === "stairs_half_turn") {
     // Up the left column, across the full-width landing, back down the right column (climbing).
@@ -219,15 +229,23 @@ const outline = (rects: { rect: LocalRect; piece: number; entry?: Side; exit?: S
     }),
   );
 
-const rectLength = (rect: LocalRect, axis: LocalVec): number => (axis.c !== 0 ? rect.maxC - rect.minC : rect.maxA - rect.minA);
-const rectWidth = (rect: LocalRect, axis: LocalVec): number => (axis.c !== 0 ? rect.maxA - rect.minA : rect.maxC - rect.minC);
+const rectLength = (rect: LocalRect, axis: LocalVec): number =>
+  axis.c !== 0 ? rect.maxC - rect.minC : rect.maxA - rect.minA;
+const rectWidth = (rect: LocalRect, axis: LocalVec): number =>
+  axis.c !== 0 ? rect.maxA - rect.minA : rect.maxC - rect.minC;
 
 /** Converts the item frame to plan coordinates. */
 export const stairFrame = (item: Pick<Furniture, "x" | "y" | "rotation">) => {
   const direction = stairDirection(item.rotation);
   const right = { x: -direction.y, y: direction.x };
-  const toPlan = (local: LocalVec): Vec2 => ({ x: item.x + right.x * local.a + direction.x * local.c, y: item.y + right.y * local.a + direction.y * local.c });
-  const toPlanVector = (local: LocalVec): Vec2 => ({ x: right.x * local.a + direction.x * local.c, y: right.y * local.a + direction.y * local.c });
+  const toPlan = (local: LocalVec): Vec2 => ({
+    x: item.x + right.x * local.a + direction.x * local.c,
+    y: item.y + right.y * local.a + direction.y * local.c,
+  });
+  const toPlanVector = (local: LocalVec): Vec2 => ({
+    x: right.x * local.a + direction.x * local.c,
+    y: right.y * local.a + direction.y * local.c,
+  });
   return { toPlan, toPlanVector };
 };
 
@@ -266,7 +284,9 @@ export const buildStairShape = (item: Furniture, rise: number): StairShape => {
   const exact = lengths.map((length) => (available * length) / total);
   const counts = exact.map((value) => Math.max(1, Math.floor(value)));
   let missing = available - counts.reduce((sum, count) => sum + count, 0);
-  const order = exact.map((value, index) => ({ index, rest: value - Math.floor(value) })).sort((left, right) => right.rest - left.rest);
+  const order = exact
+    .map((value, index) => ({ index, rest: value - Math.floor(value) }))
+    .sort((left, right) => right.rest - left.rest);
   for (let index = 0; missing > 0; index = (index + 1) % order.length, missing -= 1) counts[order[index].index] += 1;
   for (let index = order.length - 1; missing < 0; index = (index - 1 + order.length) % order.length) {
     if (counts[order[index].index] > 1) {
@@ -313,7 +333,14 @@ export const buildStairShape = (item: Furniture, rise: number): StairShape => {
     entry: index === 0 ? entrySide(first.axis) : undefined,
     exit: index === layout.pieces.length - 1 ? exitSide(last.axis) : undefined,
   }));
-  const toEdge = (edge: LocalEdge): StairEdge => ({ start: toPlan(edge.from), end: toPlan(edge.to), localStart: edge.from, localEnd: edge.to, role: edge.role, piece: edge.piece });
+  const toEdge = (edge: LocalEdge): StairEdge => ({
+    start: toPlan(edge.from),
+    end: toPlan(edge.to),
+    localStart: edge.from,
+    localEnd: edge.to,
+    role: edge.role,
+    piece: edge.piece,
+  });
   const firstPiece = pieces[0];
   const lastPiece = pieces[pieces.length - 1];
   return {
@@ -326,9 +353,15 @@ export const buildStairShape = (item: Furniture, rise: number): StairShape => {
     pieces,
     edges: outline(tagged).map(toEdge),
     footprintEdges: outline([...tagged, ...layout.wells.map((rect) => ({ rect, piece: -1 }))]).map(toEdge),
-    openings: [...pieces.map((piece) => piece.bounds), ...layout.wells.map((rect) => boundsOf(rectCorners(rect).map(toPlan)))],
+    openings: [
+      ...pieces.map((piece) => piece.bounds),
+      ...layout.wells.map((rect) => boundsOf(rectCorners(rect).map(toPlan))),
+    ],
     entry: { center: firstPiece.start, direction: firstPiece.direction },
-    exit: { center: vecAdd(lastPiece.start, vecScale(lastPiece.direction, lastPiece.length)), direction: lastPiece.direction },
+    exit: {
+      center: vecAdd(lastPiece.start, vecScale(lastPiece.direction, lastPiece.length)),
+      direction: lastPiece.direction,
+    },
   };
 };
 
@@ -338,7 +371,12 @@ export const buildStairFlights = (plan: Plan): StairFlight[] =>
     index < plan.floors.length - 1
       ? floor.furniture
           .filter((item) => isStairs(item.type))
-          .map((item) => ({ ...buildStairShape(item, floor.height + LEVEL_SLAB_THICKNESS), id: item.id, lowerIndex: index, upperIndex: index + 1 }))
+          .map((item) => ({
+            ...buildStairShape(item, floor.height + LEVEL_SLAB_THICKNESS),
+            id: item.id,
+            lowerIndex: index,
+            upperIndex: index + 1,
+          }))
       : [],
   );
 
@@ -350,9 +388,12 @@ export const pieceCoordinates = (piece: StairPiece, point: Vec2): { t: number; v
 
 /** Height of the walking surface of a piece at `point` (clamped to the piece). */
 export const pieceElevation = (piece: StairPiece, point: Vec2): number =>
-  piece.kind === "landing" ? piece.fromHeight : piece.fromHeight + clamp(pieceCoordinates(piece, point).t, 0, 1) * (piece.toHeight - piece.fromHeight);
+  piece.kind === "landing"
+    ? piece.fromHeight
+    : piece.fromHeight + clamp(pieceCoordinates(piece, point).t, 0, 1) * (piece.toHeight - piece.fromHeight);
 
-export type StairLocation = { kind: "piece"; index: number } | { kind: "below" } | { kind: "above" } | { kind: "outside" };
+export type StairLocation =
+  { kind: "piece"; index: number } | { kind: "below" } | { kind: "above" } | { kind: "outside" };
 
 /**
  * Where a point stands relative to a stair: on one of its pieces, past the
@@ -399,16 +440,23 @@ export const edgeElevation = (stair: StairShape, edge: StairEdge, point: Vec2): 
   return pieceElevation(stair.pieces[edge.piece], point);
 };
 
-const solid = (edge: StairEdge): SolidSegment => ({ start: edge.start, end: edge.end, halfThickness: RAIL_HALF_THICKNESS });
+const solid = (edge: StairEdge): SolidSegment => ({
+  start: edge.start,
+  end: edge.end,
+  halfThickness: RAIL_HALF_THICKNESS,
+});
 
 /** Rails around the walkable pieces, open at the entry and the exit. */
-export const stairSideSolids = (stair: StairShape): SolidSegment[] => stair.edges.filter((edge) => edge.role === "side").map(solid);
+export const stairSideSolids = (stair: StairShape): SolidSegment[] =>
+  stair.edges.filter((edge) => edge.role === "side").map(solid);
 
 /** On the lower floor the stair can only be entered from its entry edge. */
-export const lowerStairSolids = (stair: StairShape): SolidSegment[] => stair.footprintEdges.filter((edge) => edge.role !== "entry").map(solid);
+export const lowerStairSolids = (stair: StairShape): SolidSegment[] =>
+  stair.footprintEdges.filter((edge) => edge.role !== "entry").map(solid);
 
 /** On the upper floor the stairwell is guarded on every side except the arrival. */
-export const upperStairSolids = (stair: StairShape): SolidSegment[] => stair.footprintEdges.filter((edge) => edge.role !== "exit").map(solid);
+export const upperStairSolids = (stair: StairShape): SolidSegment[] =>
+  stair.footprintEdges.filter((edge) => edge.role !== "exit").map(solid);
 
 /** Splits `rect` into the (up to four) rectangles left once `hole` is removed. */
 export const subtractRect = (rect: Bounds, hole: Bounds): Bounds[] => {
@@ -440,7 +488,10 @@ interface Frame {
  * of a frame? Liang–Barsky clipping, the area being grown by the wall's half thickness.
  */
 const crossesArea = (frame: Frame, wall: SolidSegment, from: number, to: number, halfWidth: number): boolean => {
-  const toLocal = (point: Vec2) => ({ u: vecDot(vecSub(point, frame.start), frame.direction), v: vecDot(vecSub(point, frame.start), frame.across) });
+  const toLocal = (point: Vec2) => ({
+    u: vecDot(vecSub(point, frame.start), frame.direction),
+    v: vecDot(vecSub(point, frame.start), frame.across),
+  });
   const start = toLocal(wall.start);
   const end = toLocal(wall.end);
   const grow = wall.halfThickness;
@@ -470,7 +521,11 @@ const crossesArea = (frame: Frame, wall: SolidSegment, from: number, to: number,
 
 /** Does a wall cut through one of the pieces (shrunk by a tolerance)? */
 const crossesStair = (stair: StairShape, walls: SolidSegment[]): boolean =>
-  stair.pieces.some((piece) => walls.some((wall) => crossesArea(piece, wall, EDGE_TOLERANCE, piece.length - EDGE_TOLERANCE, piece.width / 2 - EDGE_TOLERANCE)));
+  stair.pieces.some((piece) =>
+    walls.some((wall) =>
+      crossesArea(piece, wall, EDGE_TOLERANCE, piece.length - EDGE_TOLERANCE, piece.width / 2 - EDGE_TOLERANCE),
+    ),
+  );
 
 const floorSolids = (floor: Floor): SolidSegment[] => buildSolidSegments(buildWallSegments(floor));
 
@@ -495,7 +550,10 @@ const polygonIntersectsBounds = (polygon: Vec2[], bounds: Bounds): boolean => {
     { x: bounds.maxX, y: bounds.maxY },
     { x: bounds.minX, y: bounds.maxY },
   ];
-  const axes = [{ x: 1, y: 0 }, { x: 0, y: 1 }];
+  const axes = [
+    { x: 1, y: 0 },
+    { x: 0, y: 1 },
+  ];
   for (let index = 0; index < polygon.length; index += 1) {
     const start = polygon[index];
     const end = polygon[(index + 1) % polygon.length];
@@ -569,7 +627,10 @@ export const checkStairs = (plan: Plan, floorIndex: number, item: Furniture): St
   const lower = plan.floors[floorIndex];
   const upper = plan.floors[floorIndex + 1];
   if (!upper) {
-    return { arrivalRoom: null, issues: ["Aucun niveau au-dessus : cet escalier ne mène nulle part. Ajoutez un étage."] };
+    return {
+      arrivalRoom: null,
+      issues: ["Aucun niveau au-dessus : cet escalier ne mène nulle part. Ajoutez un étage."],
+    };
   }
   const stair = buildStairShape(item, lower.height + LEVEL_SLAB_THICKNESS);
   const issues: string[] = [];
@@ -596,14 +657,19 @@ export const checkStairs = (plan: Plan, floorIndex: number, item: Furniture): St
   const arrivalRoom = upper.rooms.find((room) => !isOutdoorRoom(room) && isPointInRoom(room, arrival)) ?? null;
   if (!arrivalRoom) {
     issues.push(`L'arrivée de l'escalier donne hors de l'${upper.name.toLowerCase()} ou sur l'extérieur.`);
-  } else if (upperWalls.some((wall) => crossesArea(lastPiece, wall, lastPiece.length - 0.1, lastPiece.length + 0.6, halfInner))) {
+  } else if (
+    upperWalls.some((wall) => crossesArea(lastPiece, wall, lastPiece.length - 0.1, lastPiece.length + 0.6, halfInner))
+  ) {
     issues.push(`L'arrivée de l'escalier est bloquée par un mur (${upper.name}).`);
   }
 
   // …and to step on at the bottom.
   const firstPiece = stair.pieces[0];
   const departure = vecAdd(stair.entry.center, vecScale(stair.entry.direction, -0.45));
-  if (!isInsideIndoorRoom(lower, departure) || lowerWalls.some((wall) => crossesArea(firstPiece, wall, -0.6, 0.1, firstPiece.width / 2 - EDGE_TOLERANCE))) {
+  if (
+    !isInsideIndoorRoom(lower, departure) ||
+    lowerWalls.some((wall) => crossesArea(firstPiece, wall, -0.6, 0.1, firstPiece.width / 2 - EDGE_TOLERANCE))
+  ) {
     issues.push(`Le départ de l'escalier est bloqué (${lower.name}).`);
   }
 

@@ -23,7 +23,16 @@ export const StairwellOutline = ({ flight }: { flight: StairFlight }) => {
       {flight.openings.map((bounds, index) => (
         <Group key={index}>
           <Line
-            points={[bounds.minX, bounds.minY, bounds.maxX, bounds.minY, bounds.maxX, bounds.maxY, bounds.minX, bounds.maxY]}
+            points={[
+              bounds.minX,
+              bounds.minY,
+              bounds.maxX,
+              bounds.minY,
+              bounds.maxX,
+              bounds.maxY,
+              bounds.minX,
+              bounds.maxY,
+            ]}
             closed
             fill="rgba(37, 99, 235, 0.06)"
             stroke={COLOR}
@@ -31,12 +40,44 @@ export const StairwellOutline = ({ flight }: { flight: StairFlight }) => {
             dash={[0.15, 0.1]}
             strokeScaleEnabled={false}
           />
-          <Line points={[bounds.minX, bounds.minY, bounds.maxX, bounds.maxY]} stroke={COLOR} strokeWidth={0.8} strokeScaleEnabled={false} opacity={0.5} />
-          <Line points={[bounds.maxX, bounds.minY, bounds.minX, bounds.maxY]} stroke={COLOR} strokeWidth={0.8} strokeScaleEnabled={false} opacity={0.5} />
+          <Line
+            points={[bounds.minX, bounds.minY, bounds.maxX, bounds.maxY]}
+            stroke={COLOR}
+            strokeWidth={0.8}
+            strokeScaleEnabled={false}
+            opacity={0.5}
+          />
+          <Line
+            points={[bounds.maxX, bounds.minY, bounds.minX, bounds.maxY]}
+            stroke={COLOR}
+            strokeWidth={0.8}
+            strokeScaleEnabled={false}
+            opacity={0.5}
+          />
         </Group>
       ))}
-      <Arrow points={[arrowFrom.x, arrowFrom.y, arrowTo.x, arrowTo.y]} stroke={COLOR} fill={COLOR} strokeWidth={1.6} strokeScaleEnabled={false} pointerLength={0.2} pointerWidth={0.2} />
-      <Text x={labelAt.x} y={labelAt.y} offsetX={0.55} offsetY={0.12} width={1.1} align="center" text="Trémie" fontSize={0.22} fontFamily={LABEL_FONT} fill={COLOR} fontStyle="600" />
+      <Arrow
+        points={[arrowFrom.x, arrowFrom.y, arrowTo.x, arrowTo.y]}
+        stroke={COLOR}
+        fill={COLOR}
+        strokeWidth={1.6}
+        strokeScaleEnabled={false}
+        pointerLength={0.2}
+        pointerWidth={0.2}
+      />
+      <Text
+        x={labelAt.x}
+        y={labelAt.y}
+        offsetX={0.55}
+        offsetY={0.12}
+        width={1.1}
+        align="center"
+        text="Trémie"
+        fontSize={0.22}
+        fontFamily={LABEL_FONT}
+        fill={COLOR}
+        fontStyle="600"
+      />
     </Group>
   );
 };

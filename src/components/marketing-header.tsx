@@ -5,7 +5,13 @@ import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
@@ -31,7 +37,15 @@ export const MarketingHeader = ({ transparent = false }: MarketingHeaderProps) =
           {NAV_LINKS.map((link) => {
             const isActive = link.href === pathname;
             return (
-              <Link key={link.href} href={link.href} className={cn("relative py-1 text-white/80 transition-colors hover:text-white", isActive && "text-white after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-electric")}>
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "relative py-1 text-white/80 transition-colors hover:text-white",
+                  isActive &&
+                    "text-white after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-electric",
+                )}
+              >
                 {link.label}
               </Link>
             );
@@ -47,7 +61,12 @@ export const MarketingHeader = ({ transparent = false }: MarketingHeaderProps) =
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white md:hidden" aria-label="Menu">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10 hover:text-white md:hidden"
+              aria-label="Menu"
+            >
               <Menu />
             </Button>
           </DropdownMenuTrigger>

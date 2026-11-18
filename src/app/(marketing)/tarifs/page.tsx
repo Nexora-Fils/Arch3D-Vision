@@ -18,7 +18,9 @@ export default function PricingPage() {
     <div className="flex flex-col items-center gap-8">
       <div className="text-center">
         <h1 className="text-3xl font-semibold tracking-tight text-midnight">Tarifs</h1>
-        <p className="mt-2 text-muted-foreground">Arch3D Vision est un prototype : toutes les fonctionnalités sont ouvertes, sans abonnement.</p>
+        <p className="mt-2 text-muted-foreground">
+          Arch3D Vision est un prototype : toutes les fonctionnalités sont ouvertes, sans abonnement.
+        </p>
       </div>
       <Card className="w-full max-w-md">
         <CardHeader>
@@ -45,7 +47,8 @@ export default function PricingPage() {
         </CardFooter>
       </Card>
       <p className="max-w-md text-center text-xs text-muted-foreground">
-        Des offres avec comptes, partage et hébergement des projets seront définies avec l&apos;arrivée de l&apos;authentification.
+        Des offres avec comptes, partage et hébergement des projets seront définies avec l&apos;arrivée de
+        l&apos;authentification.
       </p>
     </div>
   );

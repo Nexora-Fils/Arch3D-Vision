@@ -84,7 +84,8 @@ export const ProjectCardMenu = ({ projectId, projectName }: ProjectCardMenuProps
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer « {projectName} » ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Le projet, ses étages, pièces, murs, ouvertures et meubles seront définitivement supprimés de la base de données.
+              Le projet, ses étages, pièces, murs, ouvertures et meubles seront définitivement supprimés de la base de
+              données.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

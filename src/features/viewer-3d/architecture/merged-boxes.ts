@@ -15,7 +15,11 @@ export const mergeBoxes = (parts: BoxPart[]): BufferGeometry | null => {
   const matrix = new Matrix4();
   const geometries = parts.map(({ size, position, rotation }) => {
     const box = createMetricBox(...size);
-    matrix.compose(new Vector3(...position), new Quaternion().setFromEuler(new Euler(...(rotation ?? [0, 0, 0]))), new Vector3(1, 1, 1));
+    matrix.compose(
+      new Vector3(...position),
+      new Quaternion().setFromEuler(new Euler(...(rotation ?? [0, 0, 0]))),
+      new Vector3(1, 1, 1),
+    );
     box.applyMatrix4(matrix);
     return box;
   });

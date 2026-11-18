@@ -10,7 +10,8 @@ export const HOUSE_TEMPLATES: HouseTemplateSpec[] = [CONTEMPORAINE, TRADITIONNEL
 
 export type HouseTemplateKey = (typeof HOUSE_TEMPLATES)[number]["key"];
 
-export const findTemplate = (key: string): HouseTemplateSpec | undefined => HOUSE_TEMPLATES.find((template) => template.key === key);
+export const findTemplate = (key: string): HouseTemplateSpec | undefined =>
+  HOUSE_TEMPLATES.find((template) => template.key === key);
 
 /** A complete, valid plan for the template (deterministic ids, ready to seed or clone). */
 export const buildTemplatePlan = (key: string): Plan => {

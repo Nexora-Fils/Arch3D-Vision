@@ -1,7 +1,26 @@
-import { createDefaultMaterials, createDefaultSettings, DEFAULT_EXTERIOR_WALL_THICKNESS, DEFAULT_WALL_THICKNESS } from "../factory";
+import {
+  createDefaultMaterials,
+  createDefaultSettings,
+  DEFAULT_EXTERIOR_WALL_THICKNESS,
+  DEFAULT_WALL_THICKNESS,
+} from "../factory";
 import { isOutdoorRoom, roomSides } from "../geometry";
 import { FURNITURE_PRESETS } from "../labels";
-import type { Door, Floor, Furniture, FurnitureType, Lot, Plan, PlanSettings, Room, RoomType, Vec2, Wall, WallSide, Window } from "../schema";
+import type {
+  Door,
+  Floor,
+  Furniture,
+  FurnitureType,
+  Lot,
+  Plan,
+  PlanSettings,
+  Room,
+  RoomType,
+  Vec2,
+  Wall,
+  WallSide,
+  Window,
+} from "../schema";
 
 export interface RoomSpec {
   key: string;
@@ -187,7 +206,18 @@ const buildFloor = (template: HouseTemplateSpec, spec: FloorSpec, materialId: (k
     };
   });
 
-  return { id: id("floor", spec.key), name: spec.name, level: spec.level, height: template.wallHeight, rooms, walls, doors, windows, furniture, annotations: [] };
+  return {
+    id: id("floor", spec.key),
+    name: spec.name,
+    level: spec.level,
+    height: template.wallHeight,
+    rooms,
+    walls,
+    doors,
+    windows,
+    furniture,
+    annotations: [],
+  };
 };
 
 /** Builds a complete, valid plan from a template specification (deterministic ids). */

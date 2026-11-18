@@ -18,7 +18,15 @@ interface WallShapeProps {
   snapTolerance?: number;
 }
 
-export const WallShape = ({ wall, floorId, gridStep, isSelected, isInteractive, snapWalls, snapTolerance = 0.2 }: WallShapeProps) => {
+export const WallShape = ({
+  wall,
+  floorId,
+  gridStep,
+  isSelected,
+  isInteractive,
+  snapWalls,
+  snapTolerance = 0.2,
+}: WallShapeProps) => {
   const { updateWall, commit } = usePlanStore.getState();
   const { select } = useEditorStore.getState();
   const isFreeWall = wall.roomId === null;

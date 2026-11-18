@@ -95,10 +95,8 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
   const fitToLot = useCallback(() => {
     if (size.width === 0) return;
     const margin = 60;
-    const nextZoom = Math.min(
-      (size.width - margin * 2) / lot.width,
-      (size.height - margin * 2) / lot.depth,
-    ) / pixelsPerMeter(1);
+    const nextZoom =
+      Math.min((size.width - margin * 2) / lot.width, (size.height - margin * 2) / lot.depth) / pixelsPerMeter(1);
     const boundedZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom));
     const nextScale = pixelsPerMeter(boundedZoom);
     setView({
@@ -198,7 +196,10 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
     const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, direction > 0 ? zoom * ZOOM_FACTOR : zoom / ZOOM_FACTOR));
     const nextScale = pixelsPerMeter(nextZoom);
     const worldPoint = { x: (pointer.x - pan.x) / scale, y: (pointer.y - pan.y) / scale };
-    setView({ zoom: nextZoom, pan: { x: pointer.x - worldPoint.x * nextScale, y: pointer.y - worldPoint.y * nextScale } });
+    setView({
+      zoom: nextZoom,
+      pan: { x: pointer.x - worldPoint.x * nextScale, y: pointer.y - worldPoint.y * nextScale },
+    });
   };
 
   // --- Touch pinch zoom ----------------------------------------------------
@@ -222,7 +223,10 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
     const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * (distance / previous.distance)));
     const nextScale = pixelsPerMeter(nextZoom);
     const worldPoint = { x: (previous.center.x - pan.x) / scale, y: (previous.center.y - pan.y) / scale };
-    setView({ zoom: nextZoom, pan: { x: center.x - worldPoint.x * nextScale, y: center.y - worldPoint.y * nextScale } });
+    setView({
+      zoom: nextZoom,
+      pan: { x: center.x - worldPoint.x * nextScale, y: center.y - worldPoint.y * nextScale },
+    });
     pinchRef.current = { distance, center };
   };
 
@@ -276,10 +280,23 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
         return;
       }
       if (tool === "door") {
-        const door = store.addDoor(floor.id, { wallId: hit.wall.id, offset: hit.offset, width: 0.9, height: 2.1, type: "standard", swing: "left" });
+        const door = store.addDoor(floor.id, {
+          wallId: hit.wall.id,
+          offset: hit.offset,
+          width: 0.9,
+          height: 2.1,
+          type: "standard",
+          swing: "left",
+        });
         if (door) select({ kind: "door", id: door.id });
       } else {
-        const window = store.addWindow(floor.id, { wallId: hit.wall.id, offset: hit.offset, width: 1.2, height: 1.2, sillHeight: 0.9 });
+        const window = store.addWindow(floor.id, {
+          wallId: hit.wall.id,
+          offset: hit.offset,
+          width: 1.2,
+          height: 1.2,
+          sillHeight: 0.9,
+        });
         if (window) select({ kind: "window", id: window.id });
       }
       return;
@@ -326,7 +343,8 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
     }
     if (tool === "dimension" && draft.dimension) {
       const point = snappedPointer();
-      if (point) setDraft({ dimension: { start: draft.dimension.start, end: alignToAxis(draft.dimension.start, point) } });
+      if (point)
+        setDraft({ dimension: { start: draft.dimension.start, end: alignToAxis(draft.dimension.start, point) } });
       return;
     }
     if (tool === "door" || tool === "window") {
@@ -418,7 +436,13 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
           onContextMenu={handleContextMenu}
         >
           <Layer listening={false}>
-            <GridLayer lot={lot} scale={scale} showGrid={showGrid} viewport={{ pan, size }} grassImage={images.grass ?? null} />
+            <GridLayer
+              lot={lot}
+              scale={scale}
+              showGrid={showGrid}
+              viewport={{ pan, size }}
+              grassImage={images.grass ?? null}
+            />
           </Layer>
           <Layer>
             {showLowerFloor && lowerFloor ? (
@@ -447,12 +471,23 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
                   />
                 ))}
                 {lowerFloor.rooms.map((room) => (
-                  <RoomLabel key={`underlay-label-${room.id}`} room={room} showDimensions={showDimensions} typeLabel={ROOM_TYPE_LABELS[room.type]} />
+                  <RoomLabel
+                    key={`underlay-label-${room.id}`}
+                    room={room}
+                    showDimensions={showDimensions}
+                    typeLabel={ROOM_TYPE_LABELS[room.type]}
+                  />
                 ))}
                 {showDimensions && lowerFloorBounds ? (
                   <>
-                    <DimensionLine start={{ x: lowerFloorBounds.minX, y: lowerFloorBounds.minY - 0.9 }} end={{ x: lowerFloorBounds.maxX, y: lowerFloorBounds.minY - 0.9 }} />
-                    <DimensionLine start={{ x: lowerFloorBounds.minX - 0.9, y: lowerFloorBounds.maxY }} end={{ x: lowerFloorBounds.minX - 0.9, y: lowerFloorBounds.minY }} />
+                    <DimensionLine
+                      start={{ x: lowerFloorBounds.minX, y: lowerFloorBounds.minY - 0.9 }}
+                      end={{ x: lowerFloorBounds.maxX, y: lowerFloorBounds.minY - 0.9 }}
+                    />
+                    <DimensionLine
+                      start={{ x: lowerFloorBounds.minX - 0.9, y: lowerFloorBounds.maxY }}
+                      end={{ x: lowerFloorBounds.minX - 0.9, y: lowerFloorBounds.minY }}
+                    />
                   </>
                 ) : null}
               </Group>
@@ -513,7 +548,12 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
             ))}
             {floor.furniture.filter((item) => !isStairs(item.type)).map(renderFurniture)}
             {floor.rooms.map((room) => (
-              <RoomLabel key={`label-${room.id}`} room={room} showDimensions={showDimensions} typeLabel={ROOM_TYPE_LABELS[room.type]} />
+              <RoomLabel
+                key={`label-${room.id}`}
+                room={room}
+                showDimensions={showDimensions}
+                typeLabel={ROOM_TYPE_LABELS[room.type]}
+              />
             ))}
             {floor.furniture.filter((item) => isStairs(item.type)).map(renderFurniture)}
             {floor.annotations.map((annotation) => (
@@ -528,13 +568,27 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
             ))}
             {showDimensions && houseBounds ? (
               <>
-                <DimensionLine start={{ x: houseBounds.minX, y: houseBounds.minY - 0.9 }} end={{ x: houseBounds.maxX, y: houseBounds.minY - 0.9 }} />
-                <DimensionLine start={{ x: houseBounds.minX - 0.9, y: houseBounds.maxY }} end={{ x: houseBounds.minX - 0.9, y: houseBounds.minY }} />
+                <DimensionLine
+                  start={{ x: houseBounds.minX, y: houseBounds.minY - 0.9 }}
+                  end={{ x: houseBounds.maxX, y: houseBounds.minY - 0.9 }}
+                />
+                <DimensionLine
+                  start={{ x: houseBounds.minX - 0.9, y: houseBounds.maxY }}
+                  end={{ x: houseBounds.minX - 0.9, y: houseBounds.minY }}
+                />
               </>
             ) : null}
-            {draft.dimension?.end ? <DimensionLine start={draft.dimension.start} end={draft.dimension.end} color="#2563eb" /> : null}
+            {draft.dimension?.end ? (
+              <DimensionLine start={draft.dimension.start} end={draft.dimension.end} color="#2563eb" />
+            ) : null}
             {draft.room ? <DraftRoom start={draft.room.start} end={draft.room.end} /> : null}
-            {draft.wall ? <DraftWall start={draft.wall.start} end={draft.wall.end} thickness={settings?.defaultWallThickness ?? 0.15} /> : null}
+            {draft.wall ? (
+              <DraftWall
+                start={draft.wall.start}
+                end={draft.wall.end}
+                thickness={settings?.defaultWallThickness ?? 0.15}
+              />
+            ) : null}
             {draft.hover ? <WallHoverMarker point={draft.hover} kind={tool === "door" ? "door" : "window"} /> : null}
           </Layer>
         </Stage>
@@ -543,13 +597,21 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
       <div className="pointer-events-none absolute bottom-4 left-4 rounded-md bg-[#0f1a33]/85 px-3 py-2 text-[10px] text-white/80 shadow-lg backdrop-blur">
         <div className="relative h-3" style={{ width: scaleBarMeters * scale }}>
           {Array.from({ length: 6 }, (_, index) => (
-            <span key={index} className="absolute top-0 h-2 w-px bg-white/80" style={{ left: (index / 5) * scaleBarMeters * scale }} />
+            <span
+              key={index}
+              className="absolute top-0 h-2 w-px bg-white/80"
+              style={{ left: (index / 5) * scaleBarMeters * scale }}
+            />
           ))}
           <span className="absolute top-2 left-0 h-px w-full bg-white/80" />
         </div>
         <div className="relative mt-0.5 h-3" style={{ width: scaleBarMeters * scale }}>
           {[0, 1, 2, 3, 5].map((step) => (
-            <span key={step} className="absolute -translate-x-1/2 tabular-nums" style={{ left: (step / 5) * scaleBarMeters * scale }}>
+            <span
+              key={step}
+              className="absolute -translate-x-1/2 tabular-nums"
+              style={{ left: (step / 5) * scaleBarMeters * scale }}
+            >
               {(step * scaleBarMeters) / 5}
               {step === 5 ? " m" : ""}
             </span>
@@ -558,11 +620,21 @@ export const EditorCanvas = ({ floor }: EditorCanvasProps) => {
       </div>
       {/* Zoom and grid controls, bottom right. */}
       <div className="absolute right-4 bottom-4 flex items-center gap-1 rounded-lg border border-white/10 bg-[#0f1a33]/90 p-1 text-white shadow-lg backdrop-blur">
-        <button type="button" onClick={() => zoomBy(1.25)} className="flex size-7 items-center justify-center rounded-md hover:bg-white/10" aria-label="Zoom avant">
+        <button
+          type="button"
+          onClick={() => zoomBy(1.25)}
+          className="flex size-7 items-center justify-center rounded-md hover:bg-white/10"
+          aria-label="Zoom avant"
+        >
           <Plus className="size-4" />
         </button>
         <span className="w-12 text-center text-xs tabular-nums">{Math.round(zoom * 100)}%</span>
-        <button type="button" onClick={() => zoomBy(1 / 1.25)} className="flex size-7 items-center justify-center rounded-md hover:bg-white/10" aria-label="Zoom arrière">
+        <button
+          type="button"
+          onClick={() => zoomBy(1 / 1.25)}
+          className="flex size-7 items-center justify-center rounded-md hover:bg-white/10"
+          aria-label="Zoom arrière"
+        >
           <Minus className="size-4" />
         </button>
         <span className="mx-1 h-5 w-px bg-white/15" />

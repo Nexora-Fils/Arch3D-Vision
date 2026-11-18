@@ -40,8 +40,12 @@ describe.each(HOUSE_TEMPLATES.map((template) => [template.key, template] as cons
       for (const room of indoor.rooms) {
         expect(room.x, room.name).toBeGreaterThanOrEqual(template.houseOffset.x - 1e-6);
         expect(room.y, room.name).toBeGreaterThanOrEqual(template.houseOffset.y - 1e-6);
-        expect(room.x + room.width, room.name).toBeLessThanOrEqual(template.houseOffset.x + spec.footprint.width + 1e-6);
-        expect(room.y + room.depth, room.name).toBeLessThanOrEqual(template.houseOffset.y + spec.footprint.depth + 1e-6);
+        expect(room.x + room.width, room.name).toBeLessThanOrEqual(
+          template.houseOffset.x + spec.footprint.width + 1e-6,
+        );
+        expect(room.y + room.depth, room.name).toBeLessThanOrEqual(
+          template.houseOffset.y + spec.footprint.depth + 1e-6,
+        );
       }
       // Indoor rooms never overlap each other.
       for (let a = 0; a < indoor.rooms.length; a += 1) {

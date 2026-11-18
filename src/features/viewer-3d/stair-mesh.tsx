@@ -4,7 +4,16 @@ import { useEffect, useMemo } from "react";
 import type { MeshStandardMaterial } from "three";
 import type { SolidSegment } from "@/domain/plan/geometry";
 import type { Furniture, Lot, Vec2 } from "@/domain/plan/schema";
-import { buildStairShape, distanceToWalls, edgeElevation, type LocalVec, type StairEdge, type StairFlight, type StairPiece, type StairShape } from "@/domain/plan/stairs";
+import {
+  buildStairShape,
+  distanceToWalls,
+  edgeElevation,
+  type LocalVec,
+  type StairEdge,
+  type StairFlight,
+  type StairPiece,
+  type StairShape,
+} from "@/domain/plan/stairs";
 import { useMergedBoxes, type BoxPart } from "@/features/viewer-3d/architecture/merged-boxes";
 import { AlongSegment, MetricBox } from "@/features/viewer-3d/architecture/parts";
 import { toScene } from "@/features/viewer-3d/convert";
@@ -71,12 +80,22 @@ const railFor = (stair: StairShape, edge: StairEdge): { rail: Rail; balusters: B
   const piece = stair.pieces[edge.piece];
   const center = { a: (piece.rect.minA + piece.rect.maxA) / 2, c: (piece.rect.minC + piece.rect.maxC) / 2 };
   const length = Math.hypot(edge.localEnd.a - edge.localStart.a, edge.localEnd.c - edge.localStart.c);
-  const direction = { a: (edge.localEnd.a - edge.localStart.a) / length, c: (edge.localEnd.c - edge.localStart.c) / length };
+  const direction = {
+    a: (edge.localEnd.a - edge.localStart.a) / length,
+    c: (edge.localEnd.c - edge.localStart.c) / length,
+  };
   let inward = { a: -direction.c, c: direction.a };
-  if ((center.a - edge.localStart.a) * inward.a + (center.c - edge.localStart.c) * inward.c < 0) inward = { a: -inward.a, c: -inward.c };
+  if ((center.a - edge.localStart.a) * inward.a + (center.c - edge.localStart.c) * inward.c < 0)
+    inward = { a: -inward.a, c: -inward.c };
   const at = (t: number) => {
-    const local = { a: edge.localStart.a + direction.a * length * t + inward.a * RAIL_INSET, c: edge.localStart.c + direction.c * length * t + inward.c * RAIL_INSET };
-    const plan = { x: edge.start.x + (edge.end.x - edge.start.x) * t, y: edge.start.y + (edge.end.y - edge.start.y) * t };
+    const local = {
+      a: edge.localStart.a + direction.a * length * t + inward.a * RAIL_INSET,
+      c: edge.localStart.c + direction.c * length * t + inward.c * RAIL_INSET,
+    };
+    const plan = {
+      x: edge.start.x + (edge.end.x - edge.start.x) * t,
+      y: edge.start.y + (edge.end.y - edge.start.y) * t,
+    };
     return { local, height: edgeElevation(stair, edge, plan) };
   };
   const from = at(0);
@@ -84,9 +103,15 @@ const railFor = (stair: StairShape, edge: StairEdge): { rail: Rail; balusters: B
   const count = Math.max(2, Math.ceil(length / BALUSTER_SPACING) + 1);
   const balusters = Array.from({ length: count }, (_, index) => {
     const point = at(index / (count - 1));
-    return { size: [0.022, RAIL_HEIGHT, 0.022], position: local3(point.local, point.height + RAIL_HEIGHT / 2) } satisfies BoxPart;
+    return {
+      size: [0.022, RAIL_HEIGHT, 0.022],
+      position: local3(point.local, point.height + RAIL_HEIGHT / 2),
+    } satisfies BoxPart;
   });
-  return { rail: { start: local3(from.local, from.height + RAIL_HEIGHT), end: local3(to.local, to.height + RAIL_HEIGHT) }, balusters };
+  return {
+    rail: { start: local3(from.local, from.height + RAIL_HEIGHT), end: local3(to.local, to.height + RAIL_HEIGHT) },
+    balusters,
+  };
 };
 
 interface StairMeshProps {
@@ -105,7 +130,10 @@ interface StairMeshProps {
  */
 export const StairMesh = ({ stair, base, lot, materials, railEdges }: StairMeshProps) => {
   const { item } = stair;
-  const oak = useMemo(() => createPhotoMaterial(materials.photos.laminate, "#b07a4a", 0.6), [materials.photos.laminate]);
+  const oak = useMemo(
+    () => createPhotoMaterial(materials.photos.laminate, "#b07a4a", 0.6),
+    [materials.photos.laminate],
+  );
   useEffect(() => () => oak.dispose(), [oak]);
   const parts = useMemo(() => stairParts(stair), [stair]);
   const rails = useMemo(() => railEdges.map((edge) => railFor(stair, edge)), [stair, railEdges]);
@@ -121,14 +149,25 @@ export const StairMesh = ({ stair, base, lot, materials, railEdges }: StairMeshP
       {balusters ? <mesh geometry={balusters} material={materials.frame} castShadow /> : null}
       {rails.map(({ rail }, index) => (
         <AlongSegment key={index} segment={rail}>
-          <MetricBox size={[Math.hypot(rail.end[0] - rail.start[0], rail.end[1] - rail.start[1], rail.end[2] - rail.start[2]) + 0.05, 0.045, 0.045]} material={materials.frame} castShadow />
+          <MetricBox
+            size={[
+              Math.hypot(rail.end[0] - rail.start[0], rail.end[1] - rail.start[1], rail.end[2] - rail.start[2]) + 0.05,
+              0.045,
+              0.045,
+            ]}
+            material={materials.frame}
+            castShadow
+          />
         </AlongSegment>
       ))}
     </group>
   );
 };
 
-const edgeMiddle = (edge: StairEdge): Vec2 => ({ x: (edge.start.x + edge.end.x) / 2, y: (edge.start.y + edge.end.y) / 2 });
+const edgeMiddle = (edge: StairEdge): Vec2 => ({
+  x: (edge.start.x + edge.end.x) / 2,
+  y: (edge.start.y + edge.end.y) / 2,
+});
 
 interface StairModelProps {
   item: Furniture;
@@ -144,16 +183,36 @@ interface StairModelProps {
 export const StairModel = ({ item, flight, walls, base, lot, materials }: StairModelProps) => {
   const stair = useMemo(() => flight ?? buildStairShape(item, item.height), [flight, item]);
   const railEdges = useMemo(
-    () => (flight ? flight.edges.filter((edge) => edge.role === "side" && distanceToWalls(walls, edgeMiddle(edge)) > HANDRAIL_WALL_CLEARANCE) : []),
+    () =>
+      flight
+        ? flight.edges.filter(
+            (edge) => edge.role === "side" && distanceToWalls(walls, edgeMiddle(edge)) > HANDRAIL_WALL_CLEARANCE,
+          )
+        : [],
     [flight, walls],
   );
   return <StairMesh stair={stair} base={base} lot={lot} materials={materials} railEdges={railEdges} />;
 };
 
 /** Glass guards around a stairwell, on every edge except the arrival and the edges along a wall. */
-export const StairwellGuards = ({ flight, walls, top, lot, materials }: { flight: StairFlight; walls: SolidSegment[]; top: number; lot: Lot; materials: SceneMaterials }) => {
+export const StairwellGuards = ({
+  flight,
+  walls,
+  top,
+  lot,
+  materials,
+}: {
+  flight: StairFlight;
+  walls: SolidSegment[];
+  top: number;
+  lot: Lot;
+  materials: SceneMaterials;
+}) => {
   const edges = useMemo(
-    () => flight.footprintEdges.filter((edge) => edge.role !== "exit" && distanceToWalls(walls, edgeMiddle(edge)) > HANDRAIL_WALL_CLEARANCE),
+    () =>
+      flight.footprintEdges.filter(
+        (edge) => edge.role !== "exit" && distanceToWalls(walls, edgeMiddle(edge)) > HANDRAIL_WALL_CLEARANCE,
+      ),
     [flight, walls],
   );
   return (
@@ -190,7 +249,12 @@ export const GuardRail = ({ start, end, top, lot, materials, glass = materials.r
         <boxGeometry args={[length - 0.06, 0.9, 0.012]} />
       </mesh>
       {Array.from({ length: posts }, (_, post) => (
-        <mesh key={post} position={[-length / 2 + (length * post) / (posts - 1), 0.5, 0]} material={materials.frame} castShadow>
+        <mesh
+          key={post}
+          position={[-length / 2 + (length * post) / (posts - 1), 0.5, 0]}
+          material={materials.frame}
+          castShadow
+        >
           <boxGeometry args={[0.04, 1, 0.04]} />
         </mesh>
       ))}

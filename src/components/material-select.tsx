@@ -16,7 +16,11 @@ interface MaterialSelectProps {
 }
 
 export const MaterialSwatch = ({ color }: { color: string }) => (
-  <span className="inline-block size-3.5 shrink-0 rounded-sm border border-black/10" style={{ backgroundColor: color }} aria-hidden />
+  <span
+    className="inline-block size-3.5 shrink-0 rounded-sm border border-black/10"
+    style={{ backgroundColor: color }}
+    aria-hidden
+  />
 );
 
 export const MaterialSelect = ({ label, materials, kinds, value, onChange, allowNone = true }: MaterialSelectProps) => {

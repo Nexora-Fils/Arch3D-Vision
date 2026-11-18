@@ -23,14 +23,27 @@ const textureStyle = (material: Material) => ({
   backgroundBlendMode: "multiply" as const,
 });
 
-const Swatch = ({ isSelected, onClick, label, style }: { isSelected: boolean; onClick: () => void; label: string; style: React.CSSProperties }) => (
+const Swatch = ({
+  isSelected,
+  onClick,
+  label,
+  style,
+}: {
+  isSelected: boolean;
+  onClick: () => void;
+  label: string;
+  style: React.CSSProperties;
+}) => (
   <button
     type="button"
     onClick={onClick}
     aria-label={label}
     aria-pressed={isSelected}
     title={label}
-    className={cn("size-9 rounded-md border-2 shadow-sm transition-transform hover:scale-105", isSelected ? "border-electric" : "border-white/15")}
+    className={cn(
+      "size-9 rounded-md border-2 shadow-sm transition-transform hover:scale-105",
+      isSelected ? "border-electric" : "border-white/15",
+    )}
     style={style}
   />
 );
@@ -45,8 +58,12 @@ export const MaterialsPanel = ({ plan }: { plan: Plan }) => {
   const byKind = (...kinds: Material["kind"][]) => plan.materials.filter((material) => kinds.includes(material.kind));
   const facade = plan.materials.find((material) => material.id === plan.settings.exteriorMaterialId);
   const roof = plan.materials.find((material) => material.id === plan.settings.roofMaterialId);
-  const wood = plan.materials.find((material) => material.kind === "exterior" && photoForMaterial(material) === "cladding");
-  const stone = plan.materials.find((material) => material.kind === "exterior" && photoForMaterial(material) === "sandstone");
+  const wood = plan.materials.find(
+    (material) => material.kind === "exterior" && photoForMaterial(material) === "cladding",
+  );
+  const stone = plan.materials.find(
+    (material) => material.kind === "exterior" && photoForMaterial(material) === "sandstone",
+  );
   const floorMaterial = plan.materials.find((material) => material.id === selectedRoom?.room.floorMaterialId);
 
   const categories: { key: CategoryKey; label: string; preview: React.CSSProperties; content: React.ReactNode }[] = [
@@ -56,9 +73,17 @@ export const MaterialsPanel = ({ plan }: { plan: Plan }) => {
       preview: facade ? textureStyle(facade) : { backgroundColor: "#f1f0ec" },
       content: (
         <div className="flex flex-wrap gap-2">
-          {byKind("exterior").filter((material) => photoForMaterial(material) === "plaster").map((material) => (
-            <Swatch key={material.id} label={material.name} isSelected={material.id === plan.settings.exteriorMaterialId} onClick={() => updateSettings({ exteriorMaterialId: material.id })} style={textureStyle(material)} />
-          ))}
+          {byKind("exterior")
+            .filter((material) => photoForMaterial(material) === "plaster")
+            .map((material) => (
+              <Swatch
+                key={material.id}
+                label={material.name}
+                isSelected={material.id === plan.settings.exteriorMaterialId}
+                onClick={() => updateSettings({ exteriorMaterialId: material.id })}
+                style={textureStyle(material)}
+              />
+            ))}
         </div>
       ),
     },
@@ -86,7 +111,10 @@ export const MaterialsPanel = ({ plan }: { plan: Plan }) => {
                 key={material.id}
                 label={material.name}
                 isSelected={material.id === selectedRoom?.room.floorMaterialId}
-                onClick={() => selectedRoom && updateRoom(selectedRoom.floor.id, selectedRoom.room.id, { floorMaterialId: material.id })}
+                onClick={() =>
+                  selectedRoom &&
+                  updateRoom(selectedRoom.floor.id, selectedRoom.room.id, { floorMaterialId: material.id })
+                }
                 style={textureStyle(material)}
               />
             ))}
@@ -101,7 +129,13 @@ export const MaterialsPanel = ({ plan }: { plan: Plan }) => {
       content: (
         <div className="flex flex-wrap gap-2">
           {byKind("roof").map((material) => (
-            <Swatch key={material.id} label={material.name} isSelected={material.id === plan.settings.roofMaterialId} onClick={() => updateSettings({ roofMaterialId: material.id })} style={textureStyle(material)} />
+            <Swatch
+              key={material.id}
+              label={material.name}
+              isSelected={material.id === plan.settings.roofMaterialId}
+              onClick={() => updateSettings({ roofMaterialId: material.id })}
+              style={textureStyle(material)}
+            />
           ))}
         </div>
       ),
@@ -113,7 +147,13 @@ export const MaterialsPanel = ({ plan }: { plan: Plan }) => {
       content: wood ? (
         <div className="flex flex-wrap gap-2">
           {WOOD_TONES.map((tone) => (
-            <Swatch key={tone} label={`Bardage ${tone}`} isSelected={wood.color === tone} onClick={() => updateMaterial(wood.id, { color: tone })} style={textureStyle({ ...wood, color: tone })} />
+            <Swatch
+              key={tone}
+              label={`Bardage ${tone}`}
+              isSelected={wood.color === tone}
+              onClick={() => updateMaterial(wood.id, { color: tone })}
+              style={textureStyle({ ...wood, color: tone })}
+            />
           ))}
         </div>
       ) : (
@@ -129,7 +169,13 @@ export const MaterialsPanel = ({ plan }: { plan: Plan }) => {
           <p className="text-xs text-muted-foreground">Menuiseries des portes et fenêtres.</p>
           <div className="flex flex-wrap gap-2">
             {METAL_TONES.map((tone) => (
-              <Swatch key={tone} label={`Menuiseries ${tone}`} isSelected={plan.settings.frameColor === tone} onClick={() => updateSettings({ frameColor: tone })} style={{ backgroundColor: tone }} />
+              <Swatch
+                key={tone}
+                label={`Menuiseries ${tone}`}
+                isSelected={plan.settings.frameColor === tone}
+                onClick={() => updateSettings({ frameColor: tone })}
+                style={{ backgroundColor: tone }}
+              />
             ))}
           </div>
         </div>
@@ -142,7 +188,13 @@ export const MaterialsPanel = ({ plan }: { plan: Plan }) => {
       content: stone ? (
         <div className="flex flex-wrap gap-2">
           {STONE_TONES.map((tone) => (
-            <Swatch key={tone} label={`Pierre ${tone}`} isSelected={stone.color === tone} onClick={() => updateMaterial(stone.id, { color: tone })} style={textureStyle({ ...stone, color: tone })} />
+            <Swatch
+              key={tone}
+              label={`Pierre ${tone}`}
+              isSelected={stone.color === tone}
+              onClick={() => updateMaterial(stone.id, { color: tone })}
+              style={textureStyle({ ...stone, color: tone })}
+            />
           ))}
         </div>
       ) : (
@@ -157,10 +209,22 @@ export const MaterialsPanel = ({ plan }: { plan: Plan }) => {
         const isOpen = open === category.key;
         return (
           <div key={category.key} className="border-b border-white/10 last:border-0">
-            <button type="button" onClick={() => setOpen(isOpen ? null : category.key)} aria-expanded={isOpen} className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-white/5">
-              <span className="size-7 shrink-0 rounded-full border border-white/20 shadow-inner" style={category.preview} aria-hidden />
+            <button
+              type="button"
+              onClick={() => setOpen(isOpen ? null : category.key)}
+              aria-expanded={isOpen}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-white/5"
+            >
+              <span
+                className="size-7 shrink-0 rounded-full border border-white/20 shadow-inner"
+                style={category.preview}
+                aria-hidden
+              />
               <span className="flex-1 font-medium">{category.label}</span>
-              <ChevronDown className={cn("size-4 text-white/50 transition-transform", isOpen && "rotate-180")} aria-hidden />
+              <ChevronDown
+                className={cn("size-4 text-white/50 transition-transform", isOpen && "rotate-180")}
+                aria-hidden
+              />
             </button>
             {isOpen ? (
               <div className="px-3 pb-3">

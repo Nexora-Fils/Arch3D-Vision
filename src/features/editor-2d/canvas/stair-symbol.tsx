@@ -23,7 +23,15 @@ const alongPiece = (piece: StairPiece, distance: number): LocalVec => {
  * flights with one line per tread, the landing, and an arrow following the
  * walking line from the foot to the arrival.
  */
-export const StairSymbol = ({ item, hasIssue }: { item: Pick<Furniture, "type" | "width" | "depth" | "height" | "x" | "y" | "rotation" | "id" | "color"> & { type: StairType }; hasIssue: boolean }) => {
+export const StairSymbol = ({
+  item,
+  hasIssue,
+}: {
+  item: Pick<Furniture, "type" | "width" | "depth" | "height" | "x" | "y" | "rotation" | "id" | "color"> & {
+    type: StairType;
+  };
+  hasIssue: boolean;
+}) => {
   // Only the layout matters here: the rise sets the step count, as in 3D.
   const shape = buildStairShape({ ...item, x: 0, y: 0, rotation: 0 }, 2.95);
   const color = hasIssue ? "#dc2626" : "#334155";
@@ -49,7 +57,19 @@ export const StairSymbol = ({ item, hasIssue }: { item: Pick<Furniture, "type" |
       {shape.pieces.map((piece, index) => {
         const [x, y] = toKonva({ a: piece.rect.minA, c: piece.rect.maxC });
         return (
-          <Rect key={`piece-${index}`} x={x} y={y} width={piece.rect.maxA - piece.rect.minA} height={piece.rect.maxC - piece.rect.minC} fill={piece.kind === "landing" ? "#eef2f6" : "#f8fafc"} stroke={color} strokeWidth={1} strokeScaleEnabled={false} opacity={0.95} listening={false} />
+          <Rect
+            key={`piece-${index}`}
+            x={x}
+            y={y}
+            width={piece.rect.maxA - piece.rect.minA}
+            height={piece.rect.maxC - piece.rect.minC}
+            fill={piece.kind === "landing" ? "#eef2f6" : "#f8fafc"}
+            stroke={color}
+            strokeWidth={1}
+            strokeScaleEnabled={false}
+            opacity={0.95}
+            listening={false}
+          />
         );
       })}
       {shape.pieces.flatMap((piece, index) => {
@@ -60,10 +80,29 @@ export const StairSymbol = ({ item, hasIssue }: { item: Pick<Furniture, "type" |
           const middle = alongPiece(piece, tread * (step + 1));
           const from = { a: middle.a - (across.a * piece.width) / 2, c: middle.c - (across.c * piece.width) / 2 };
           const to = { a: middle.a + (across.a * piece.width) / 2, c: middle.c + (across.c * piece.width) / 2 };
-          return <Line key={`tread-${index}-${step}`} points={[...toKonva(from), ...toKonva(to)]} stroke={color} strokeWidth={0.8} strokeScaleEnabled={false} opacity={0.55} listening={false} />;
+          return (
+            <Line
+              key={`tread-${index}-${step}`}
+              points={[...toKonva(from), ...toKonva(to)]}
+              stroke={color}
+              strokeWidth={0.8}
+              strokeScaleEnabled={false}
+              opacity={0.55}
+              listening={false}
+            />
+          );
         });
       })}
-      <Arrow points={walkingLine} stroke={color} fill={color} strokeWidth={1.6} strokeScaleEnabled={false} pointerLength={0.22} pointerWidth={0.22} listening={false} />
+      <Arrow
+        points={walkingLine}
+        stroke={color}
+        fill={color}
+        strokeWidth={1.6}
+        strokeScaleEnabled={false}
+        pointerLength={0.22}
+        pointerWidth={0.22}
+        listening={false}
+      />
     </>
   );
 };

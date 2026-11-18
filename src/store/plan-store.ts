@@ -1,7 +1,15 @@
 import { create } from "zustand";
 import { createId } from "@/domain/plan/ids";
 import { floorNameForLevel } from "@/domain/plan/factory";
-import { buildWallSegments, clampOpeningOffset, createRoomWalls, floorBelow, isOutdoorRoom, syncRoomWalls, translateWall } from "@/domain/plan/geometry";
+import {
+  buildWallSegments,
+  clampOpeningOffset,
+  createRoomWalls,
+  floorBelow,
+  isOutdoorRoom,
+  syncRoomWalls,
+  translateWall,
+} from "@/domain/plan/geometry";
 import { applyStylePreset, type StylePresetKey } from "@/domain/plan/style-presets";
 import type {
   Annotation,
@@ -44,7 +52,10 @@ interface PlanStoreState {
   redo: () => void;
   commit: () => void;
 
-  updateProject: (patch: Partial<Pick<Plan, "name" | "description">> & { lot?: Partial<Lot> }, options?: MutationOptions) => void;
+  updateProject: (
+    patch: Partial<Pick<Plan, "name" | "description">> & { lot?: Partial<Lot> },
+    options?: MutationOptions,
+  ) => void;
   updateSettings: (patch: Partial<PlanSettings>, options?: MutationOptions) => void;
 
   addFloor: (copyExteriorWalls?: boolean) => Floor | null;
@@ -65,16 +76,31 @@ interface PlanStoreState {
   removeDoor: (floorId: string, doorId: string) => void;
 
   addWindow: (floorId: string, window: Omit<Window, "id">) => Window | null;
-  updateWindow: (floorId: string, windowId: string, patch: Partial<Omit<Window, "id">>, options?: MutationOptions) => void;
+  updateWindow: (
+    floorId: string,
+    windowId: string,
+    patch: Partial<Omit<Window, "id">>,
+    options?: MutationOptions,
+  ) => void;
   removeWindow: (floorId: string, windowId: string) => void;
 
   addFurniture: (floorId: string, item: Omit<Furniture, "id">) => Furniture | null;
-  updateFurniture: (floorId: string, itemId: string, patch: Partial<Omit<Furniture, "id">>, options?: MutationOptions) => void;
+  updateFurniture: (
+    floorId: string,
+    itemId: string,
+    patch: Partial<Omit<Furniture, "id">>,
+    options?: MutationOptions,
+  ) => void;
   removeFurniture: (floorId: string, itemId: string) => void;
 
   applyStylePreset: (key: StylePresetKey) => void;
   addAnnotation: (floorId: string, annotation: Omit<Annotation, "id">) => Annotation | null;
-  updateAnnotation: (floorId: string, annotationId: string, patch: Partial<Omit<Annotation, "id">>, options?: MutationOptions) => void;
+  updateAnnotation: (
+    floorId: string,
+    annotationId: string,
+    patch: Partial<Omit<Annotation, "id">>,
+    options?: MutationOptions,
+  ) => void;
   removeAnnotation: (floorId: string, annotationId: string) => void;
 
   addMaterial: (material: Omit<Material, "id">) => Material | null;
@@ -153,7 +179,12 @@ export const usePlanStore = create<PlanStoreState>()((set, get) => {
       set((state) => {
         if (!state.plan || state.past.length === 0) return state;
         const previous = state.past[state.past.length - 1];
-        return { plan: previous, past: state.past.slice(0, -1), future: [state.plan, ...state.future], pendingHistory: null };
+        return {
+          plan: previous,
+          past: state.past.slice(0, -1),
+          future: [state.plan, ...state.future],
+          pendingHistory: null,
+        };
       }),
 
     redo: () =>
@@ -173,7 +204,8 @@ export const usePlanStore = create<PlanStoreState>()((set, get) => {
     updateProject: ({ lot, ...patch }, options) =>
       mutate((plan) => ({ ...plan, ...patch, lot: lot ? { ...plan.lot, ...lot } : plan.lot }), options),
 
-    updateSettings: (patch, options) => mutate((plan) => ({ ...plan, settings: { ...plan.settings, ...patch } }), options),
+    updateSettings: (patch, options) =>
+      mutate((plan) => ({ ...plan, settings: { ...plan.settings, ...patch } }), options),
 
     addFloor: (copyExteriorWalls = false) => {
       const plan = requirePlan();
@@ -183,7 +215,11 @@ export const usePlanStore = create<PlanStoreState>()((set, get) => {
       const sourceFloor = plan.floors.find((candidate) => candidate.level === 0) ?? lowerFloor;
       const exteriorWallIds =
         copyExteriorWalls && sourceFloor
-          ? new Set(buildWallSegments(sourceFloor).filter((segment) => segment.exteriorSide !== 0).flatMap((segment) => segment.sourceWallIds))
+          ? new Set(
+              buildWallSegments(sourceFloor)
+                .filter((segment) => segment.exteriorSide !== 0)
+                .flatMap((segment) => segment.sourceWallIds),
+            )
           : new Set<string>();
       const floor: Floor = {
         id: createId(),
@@ -208,7 +244,9 @@ export const usePlanStore = create<PlanStoreState>()((set, get) => {
     updateFloor: (floorId, patch, options) => mutateFloor(floorId, (floor) => ({ ...floor, ...patch }), options),
 
     removeFloor: (floorId) =>
-      mutate((plan) => (plan.floors.length <= 1 ? plan : { ...plan, floors: plan.floors.filter((floor) => floor.id !== floorId) })),
+      mutate((plan) =>
+        plan.floors.length <= 1 ? plan : { ...plan, floors: plan.floors.filter((floor) => floor.id !== floorId) },
+      ),
 
     addRoom: (floorId, input, options) => {
       const plan = requirePlan();
@@ -307,10 +345,17 @@ export const usePlanStore = create<PlanStoreState>()((set, get) => {
     },
 
     updateWindow: (floorId, windowId, patch, options) =>
-      mutateFloor(floorId, (floor) => fitOpenings({ ...floor, windows: patchById(floor.windows, windowId, patch) }), options),
+      mutateFloor(
+        floorId,
+        (floor) => fitOpenings({ ...floor, windows: patchById(floor.windows, windowId, patch) }),
+        options,
+      ),
 
     removeWindow: (floorId, windowId) =>
-      mutateFloor(floorId, (floor) => ({ ...floor, windows: floor.windows.filter((window) => window.id !== windowId) })),
+      mutateFloor(floorId, (floor) => ({
+        ...floor,
+        windows: floor.windows.filter((window) => window.id !== windowId),
+      })),
 
     addFurniture: (floorId, input) => {
       if (!requirePlan()) return null;
@@ -333,10 +378,17 @@ export const usePlanStore = create<PlanStoreState>()((set, get) => {
     },
 
     updateAnnotation: (floorId, annotationId, patch, options) =>
-      mutateFloor(floorId, (floor) => ({ ...floor, annotations: patchById(floor.annotations, annotationId, patch) }), options),
+      mutateFloor(
+        floorId,
+        (floor) => ({ ...floor, annotations: patchById(floor.annotations, annotationId, patch) }),
+        options,
+      ),
 
     removeAnnotation: (floorId, annotationId) =>
-      mutateFloor(floorId, (floor) => ({ ...floor, annotations: floor.annotations.filter((item) => item.id !== annotationId) })),
+      mutateFloor(floorId, (floor) => ({
+        ...floor,
+        annotations: floor.annotations.filter((item) => item.id !== annotationId),
+      })),
 
     applyStylePreset: (key) => mutate((plan) => applyStylePreset(plan, key)),
 
@@ -361,7 +413,9 @@ export const usePlanStore = create<PlanStoreState>()((set, get) => {
         },
         floors: plan.floors.map((floor) => ({
           ...floor,
-          rooms: floor.rooms.map((room) => (room.floorMaterialId === materialId ? { ...room, floorMaterialId: null } : room)),
+          rooms: floor.rooms.map((room) =>
+            room.floorMaterialId === materialId ? { ...room, floorMaterialId: null } : room,
+          ),
           walls: floor.walls.map((wall) => (wall.materialId === materialId ? { ...wall, materialId: null } : wall)),
         })),
       })),
@@ -371,5 +425,7 @@ export const usePlanStore = create<PlanStoreState>()((set, get) => {
 export const selectIsDirty = (state: PlanStoreState): boolean => state.plan !== state.savedPlan;
 export const selectCanUndo = (state: PlanStoreState): boolean => state.past.length > 0;
 export const selectCanRedo = (state: PlanStoreState): boolean => state.future.length > 0;
-export const selectFloor = (floorId: string | null) => (state: PlanStoreState): Floor | null =>
-  state.plan?.floors.find((floor) => floor.id === floorId) ?? state.plan?.floors[0] ?? null;
+export const selectFloor =
+  (floorId: string | null) =>
+  (state: PlanStoreState): Floor | null =>
+    state.plan?.floors.find((floor) => floor.id === floorId) ?? state.plan?.floors[0] ?? null;

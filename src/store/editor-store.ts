@@ -1,7 +1,18 @@
 import { create } from "zustand";
 import type { FurnitureType, Vec2 } from "@/domain/plan/schema";
 
-export const EDITOR_TOOLS = ["select", "pan", "room", "wall", "door", "window", "stairs", "furniture", "text", "dimension"] as const;
+export const EDITOR_TOOLS = [
+  "select",
+  "pan",
+  "room",
+  "wall",
+  "door",
+  "window",
+  "stairs",
+  "furniture",
+  "text",
+  "dimension",
+] as const;
 export type EditorTool = (typeof EDITOR_TOOLS)[number];
 
 export type SelectionKind = "room" | "wall" | "door" | "window" | "furniture" | "annotation";

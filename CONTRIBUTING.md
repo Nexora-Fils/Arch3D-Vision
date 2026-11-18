@@ -31,7 +31,7 @@ Bon à savoir :
 ## Organisation du code
 
 | Zone | Dossier | Rôle |
-|---|---|---|
+| --- | --- | --- |
 | Domaine | `src/domain/plan/` | Modèle métier pur, sans React, Three.js ni Prisma : schémas Zod, géométrie, escaliers, déplacement du visiteur, modèles de maisons |
 | État | `src/store/` | Zustand : `plan-store` (plan, annuler, rétablir), `editor-store` (outil, sélection, zoom), `viewer-store` (qualité, jour ou soir, caméra) |
 | Éditeur 2D | `src/features/editor-2d/` | React Konva : `editor-canvas.tsx`, formes dans `canvas/`, barre d'outils, panneau Propriétés, raccourcis |
@@ -109,18 +109,21 @@ chore: documente les modèles d'escalier et la surface habitable
 À lancer à chaque fois :
 
 ```bash
+pnpm format:check  # Prettier ; pnpm format corrige
 pnpm lint
 pnpm typecheck
-pnpm test        # Vitest : src/**/*.test.ts
+pnpm test          # Vitest : src/**/*.test.ts
 pnpm build
 ```
 
-La CI (`.github/workflows/ci.yml`) relance ces quatre commandes sur chaque PR vers `main`, puis `pnpm test:e2e` contre une base PostgreSQL neuve, migrée et seedée.
+La CI (`.github/workflows/ci.yml`) relance ces cinq commandes sur chaque PR vers `main`, puis `pnpm test:e2e` contre une base PostgreSQL neuve, migrée et seedée.
+
+À chaque commit, un hook (husky et lint-staged, installé par `pnpm install`) passe ESLint (`--fix`) et Prettier sur les fichiers indexés, et bloque le commit si une erreur ESLint subsiste.
 
 Selon le changement :
 
 | Changement | Vérification supplémentaire |
-|---|---|
+| --- | --- |
 | API, persistance ou pages | `pnpm test:e2e` avec le serveur lancé et la démo seedée. Le script crée deux comptes de test (`e2e-owner@homeplan.test`, `e2e-other@homeplan.test`) et un projet qu'il supprime à la fin ; la démo n'est jamais modifiée. Autre port : `pnpm test:e2e http://localhost:3001`. Démo seedée avec un ancien identifiant : `DEMO_ID=demo-project-maison-familiale-moderne pnpm test:e2e` |
 | Schéma Prisma | Migration nommée (`pnpm db:migrate --name <short-name>`), dossier `prisma/migrations/` committé avec le schéma |
 | Logique de domaine | Tests Vitest dans le `__tests__/` du module, cas limites compris |

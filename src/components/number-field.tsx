@@ -20,7 +20,17 @@ interface NumberFieldProps {
 const formatValue = (value: number): string => String(Math.round(value * 1000) / 1000);
 
 /** Numeric input that commits on blur or Enter, so typing never floods the undo history. */
-export const NumberField = ({ label, value, onChange, min, max, step = 0.1, unit, disabled, className }: NumberFieldProps) => {
+export const NumberField = ({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step = 0.1,
+  unit,
+  disabled,
+  className,
+}: NumberFieldProps) => {
   const id = useId();
   const [draft, setDraft] = useState(formatValue(value));
   const [syncedValue, setSyncedValue] = useState(value);

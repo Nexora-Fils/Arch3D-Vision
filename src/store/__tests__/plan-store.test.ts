@@ -23,7 +23,11 @@ const groundFloor: Floor = {
   height: 2.7,
   rooms: [groundRoom],
   walls: [
-    ...createRoomWalls(groundRoom, { thickness: 0.2, height: 2.7, materialId: null }, () => `exterior-${(wallId += 1)}`),
+    ...createRoomWalls(
+      groundRoom,
+      { thickness: 0.2, height: 2.7, materialId: null },
+      () => `exterior-${(wallId += 1)}`,
+    ),
     {
       id: "interior",
       roomId: null,

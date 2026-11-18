@@ -22,7 +22,12 @@ export const MaterialsEditor = ({ kinds = [...MATERIAL_KINDS], compact = false }
   const { addMaterial, updateMaterial, removeMaterial, commit } = usePlanStore.getState();
 
   const handleAdd = (kind: MaterialKind) => {
-    addMaterial({ name: `${MATERIAL_KIND_LABELS[kind]} ${materials.filter((item) => item.kind === kind).length + 1}`, kind, color: "#cccccc", roughness: 0.8 });
+    addMaterial({
+      name: `${MATERIAL_KIND_LABELS[kind]} ${materials.filter((item) => item.kind === kind).length + 1}`,
+      kind,
+      color: "#cccccc",
+      roughness: 0.8,
+    });
   };
 
   return (
@@ -32,7 +37,9 @@ export const MaterialsEditor = ({ kinds = [...MATERIAL_KINDS], compact = false }
         return (
           <section key={kind} className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{MATERIAL_KIND_LABELS[kind]}</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {MATERIAL_KIND_LABELS[kind]}
+              </h3>
               <Button variant="ghost" size="xs" onClick={() => handleAdd(kind)}>
                 <Plus data-icon="inline-start" />
                 Ajouter
@@ -77,7 +84,13 @@ const MaterialRow = ({ material, compact, onChange, onCommit, onRemove }: Materi
           aria-label={`Couleur de ${material.name}`}
         />
       </label>
-      <Input value={material.name} onChange={(event) => onChange({ name: event.target.value }, true)} onBlur={onCommit} className="h-8 flex-1" aria-label="Nom du matériau" />
+      <Input
+        value={material.name}
+        onChange={(event) => onChange({ name: event.target.value }, true)}
+        onBlur={onCommit}
+        className="h-8 flex-1"
+        aria-label="Nom du matériau"
+      />
       {!compact ? (
         <Select value={material.kind} onValueChange={(kind) => onChange({ kind: kind as MaterialKind })}>
           <SelectTrigger className="w-32" aria-label="Type">
@@ -107,7 +120,9 @@ const MaterialRow = ({ material, compact, onChange, onCommit, onRemove }: Materi
         onValueCommit={onCommit}
         aria-label="Rugosité"
       />
-      <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">{Math.round(material.roughness * 100)}%</span>
+      <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">
+        {Math.round(material.roughness * 100)}%
+      </span>
     </div>
   </div>
 );

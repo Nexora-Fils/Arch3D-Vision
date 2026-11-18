@@ -38,9 +38,26 @@ export const ViewerCanvas = () => {
     >
       <SceneEnvironment timeOfDay={timeOfDay} quality={quality} shadowSize={Math.max(plan.lot.width, plan.lot.depth)} />
       <Suspense fallback={null}>
-        <HouseModel plan={plan} showRoof={showRoof} hiddenFloorIds={hiddenFloorIds} mode="orbit" timeOfDay={timeOfDay} quality={quality} />
+        <HouseModel
+          plan={plan}
+          showRoof={showRoof}
+          hiddenFloorIds={hiddenFloorIds}
+          mode="orbit"
+          timeOfDay={timeOfDay}
+          quality={quality}
+        />
       </Suspense>
-      <OrbitControls ref={controlsRef} makeDefault autoRotate={autoRotate} autoRotateSpeed={0.5} enableDamping dampingFactor={0.08} maxPolarAngle={Math.PI / 2 - 0.02} minDistance={2} maxDistance={150} />
+      <OrbitControls
+        ref={controlsRef}
+        makeDefault
+        autoRotate={autoRotate}
+        autoRotateSpeed={0.5}
+        enableDamping
+        dampingFactor={0.08}
+        maxPolarAngle={Math.PI / 2 - 0.02}
+        minDistance={2}
+        maxDistance={150}
+      />
       <CameraRig plan={plan} controlsRef={controlsRef} />
       {quality === "high" ? <SceneEffects /> : null}
     </Canvas>
@@ -74,11 +91,23 @@ const presetPosition = (preset: CameraPreset, frame: HouseFrame): Vector3 => {
   const distance = radius * 1.55 + 4;
   switch (preset) {
     case "main":
-      return new Vector3(center.x + distance * 0.82, Math.max(2.4, center.y + distance * 0.24), center.z + distance * 0.8);
+      return new Vector3(
+        center.x + distance * 0.82,
+        Math.max(2.4, center.y + distance * 0.24),
+        center.z + distance * 0.8,
+      );
     case "front":
-      return new Vector3(center.x + distance * 0.08, Math.max(2, center.y + distance * 0.22), center.z + distance * 1.05);
+      return new Vector3(
+        center.x + distance * 0.08,
+        Math.max(2, center.y + distance * 0.22),
+        center.z + distance * 1.05,
+      );
     case "back":
-      return new Vector3(center.x - distance * 0.08, Math.max(2, center.y + distance * 0.22), center.z - distance * 1.05);
+      return new Vector3(
+        center.x - distance * 0.08,
+        Math.max(2, center.y + distance * 0.22),
+        center.z - distance * 1.05,
+      );
     case "aerial":
       return new Vector3(center.x + distance * 0.2, center.y + distance * 1.35, center.z + distance * 0.35);
     case "threeQuarter":

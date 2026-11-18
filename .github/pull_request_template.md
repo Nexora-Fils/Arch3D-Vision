@@ -14,7 +14,7 @@ HOM-
 
 Détail dans `CONTRIBUTING.md`, section « Avant d'ouvrir une PR ».
 
-- [ ] `pnpm lint`, `pnpm typecheck`, `pnpm test` et `pnpm build` passent
+- [ ] `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test` et `pnpm build` passent
 - [ ] `pnpm test:e2e` passe (si l'API, la persistance ou les pages changent)
 - [ ] Tests ajoutés pour la logique nouvelle et ses cas limites
 - [ ] Migration Prisma committée avec le schéma (si le schéma change)

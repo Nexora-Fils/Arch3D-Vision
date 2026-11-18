@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { Color, DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Texture, type WebGLProgramParametersWithUniforms } from "three";
+import {
+  Color,
+  DoubleSide,
+  MeshPhysicalMaterial,
+  MeshStandardMaterial,
+  Vector2,
+  type Texture,
+  type WebGLProgramParametersWithUniforms,
+} from "three";
 import type { Material } from "@/domain/plan/schema";
 import { tintFor, usePhotoTextures, type PhotoKey, type PhotoSet } from "@/features/viewer-3d/photo-textures";
 import { applyTextureVariation, cloneWithVariation } from "@/features/viewer-3d/texture-variation";
@@ -58,7 +66,12 @@ export interface SceneMaterials {
  * matches `color` (the material color stays editable), or a plain material.
  * Large-surface textures get a macro variation that hides their tiling.
  */
-export const createPhotoMaterial = (photo: PhotoSet | null, color: string, roughness: number, extra: Partial<MeshStandardMaterial> = {}) =>
+export const createPhotoMaterial = (
+  photo: PhotoSet | null,
+  color: string,
+  roughness: number,
+  extra: Partial<MeshStandardMaterial> = {},
+) =>
   applyTextureVariation(
     new MeshStandardMaterial({
       color: photo ? tintFor(color, photo) : new Color(color),
@@ -101,9 +114,26 @@ const GLASS_MAX_RADIANCE = 3;
  */
 const createGlass = (quality: "low" | "high", outsideReflectance = GLASS_REFLECTANCE_OUTSIDE): MeshStandardMaterial => {
   if (quality !== "high") {
-    return new MeshStandardMaterial({ color: "#cfe2f0", roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.25, side: DoubleSide, envMapIntensity: 0.6 });
+    return new MeshStandardMaterial({
+      color: "#cfe2f0",
+      roughness: 0.05,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.25,
+      side: DoubleSide,
+      envMapIntensity: 0.6,
+    });
   }
-  const glass = new MeshPhysicalMaterial({ color: "#000000", metalness: 0, roughness: 0.04, ior: 1.52, specularIntensity: 1, transparent: true, side: DoubleSide, depthWrite: false });
+  const glass = new MeshPhysicalMaterial({
+    color: "#000000",
+    metalness: 0,
+    roughness: 0.04,
+    ior: 1.52,
+    specularIntensity: 1,
+    transparent: true,
+    side: DoubleSide,
+    depthWrite: false,
+  });
   glass.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <opaque_fragment>",
@@ -121,14 +151,23 @@ const createGlass = (quality: "low" | "high", outsideReflectance = GLASS_REFLECT
 };
 
 /** Builds Three.js materials (photographic PBR textures) from the plan's library; disposed on change. */
-export const useSceneMaterials = (materials: Material[], frameColor = "#2b2f36", quality: "low" | "high" = "high"): SceneMaterials => {
+export const useSceneMaterials = (
+  materials: Material[],
+  frameColor = "#2b2f36",
+  quality: "low" | "high" = "high",
+): SceneMaterials => {
   const photos = usePhotoTextures();
   const scene = useMemo<SceneMaterials>(() => {
     const standard = (color: string, roughness: number, photo?: PhotoKey, extra: Partial<MeshStandardMaterial> = {}) =>
       createPhotoMaterial(photo ? photos[photo] : null, color, roughness, extra);
     return {
       photos,
-      byId: new Map(materials.map((material) => [material.id, standard(material.color, material.roughness, photoForMaterial(material))])),
+      byId: new Map(
+        materials.map((material) => [
+          material.id,
+          standard(material.color, material.roughness, photoForMaterial(material)),
+        ]),
+      ),
       wall: standard("#f1f0ec", 0.9, "plaster"),
       floor: standard("#b0a79b", 0.7, "concrete"),
       roof: standard("#505a6b", 0.75, "slateTiles"),
@@ -140,7 +179,13 @@ export const useSceneMaterials = (materials: Material[], frameColor = "#2b2f36",
       glass: createGlass(quality),
       railGlass: createGlass(quality, GLASS_REFLECTANCE_INSIDE),
       // Lit from inside in the evening: seen only from outside (single-sided plane facing out).
-      glassLit: standard("#ffd9a8", 0.1, undefined, { transparent: true, opacity: 0.6, metalness: 0.2, emissive: new Color("#ffb766"), emissiveIntensity: 1.6 }),
+      glassLit: standard("#ffd9a8", 0.1, undefined, {
+        transparent: true,
+        opacity: 0.6,
+        metalness: 0.2,
+        emissive: new Color("#ffb766"),
+        emissiveIntensity: 1.6,
+      }),
       frame: standard(frameColor, 0.42, undefined, { metalness: 0.3 }),
       // Modern entrance door: anodized aluminium panel matching the window frames.
       doorLeaf: standard("#3a3e44", 0.45, undefined, { metalness: 0.25 }),
@@ -163,7 +208,11 @@ export const useSceneMaterials = (materials: Material[], frameColor = "#2b2f36",
       terracotta: standard("#a5583a", 0.85),
       metal: standard("#b8bcc0", 0.3, undefined, { metalness: 0.85 }),
       lamp: standard("#e9e4da", 0.8, undefined, { side: DoubleSide }),
-      lampLit: standard("#fff1dc", 0.8, undefined, { side: DoubleSide, emissive: new Color("#ffd2a0"), emissiveIntensity: 6 }),
+      lampLit: standard("#fff1dc", 0.8, undefined, {
+        side: DoubleSide,
+        emissive: new Color("#ffd2a0"),
+        emissiveIntensity: 6,
+      }),
       water: standard("#2b94c9", 0.06, undefined, { metalness: 0.15, envMapIntensity: 1.1 }),
       poolTiles: standard("#9fd3e6", 0.35, "whiteTiles"),
       woodBeam: standard("#8b6a45", 0.8, "cladding"),
@@ -186,14 +235,23 @@ export const useSceneMaterials = (materials: Material[], frameColor = "#2b2f36",
   return scene;
 };
 
-export const pickMaterial = (scene: SceneMaterials, materialId: string | null | undefined, fallback: MeshStandardMaterial): MeshStandardMaterial =>
-  (materialId ? scene.byId.get(materialId) : undefined) ?? fallback;
+export const pickMaterial = (
+  scene: SceneMaterials,
+  materialId: string | null | undefined,
+  fallback: MeshStandardMaterial,
+): MeshStandardMaterial => (materialId ? scene.byId.get(materialId) : undefined) ?? fallback;
 
 /**
  * Box geometries map their UVs 0..1 per face, so a textured slab needs its own
  * texture repeat: clone the material and its map for the given footprint.
  */
-export const useTiledMaterial = (base: MeshStandardMaterial, width: number, depth: number, offsetX = 0, offsetY = 0): MeshStandardMaterial => {
+export const useTiledMaterial = (
+  base: MeshStandardMaterial,
+  width: number,
+  depth: number,
+  offsetX = 0,
+  offsetY = 0,
+): MeshStandardMaterial => {
   const material = useMemo(() => {
     const reference = base.map ?? base.normalMap;
     if (!reference) return base;
@@ -214,13 +272,16 @@ export const useTiledMaterial = (base: MeshStandardMaterial, width: number, dept
     if (base.roughnessMap) clone.roughnessMap = retile(base.roughnessMap);
     return clone;
   }, [base, width, depth, offsetX, offsetY]);
-  useEffect(() => () => {
-    if (material !== base) {
-      material.map?.dispose();
-      material.normalMap?.dispose();
-      material.roughnessMap?.dispose();
-      material.dispose();
-    }
-  }, [material, base]);
+  useEffect(
+    () => () => {
+      if (material !== base) {
+        material.map?.dispose();
+        material.normalMap?.dispose();
+        material.roughnessMap?.dispose();
+        material.dispose();
+      }
+    },
+    [material, base],
+  );
   return material;
 };

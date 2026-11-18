@@ -24,7 +24,12 @@ import { ScannedModel } from "@/features/viewer-3d/scanned-model";
 import { DoorUnit, WindowUnit, type JoineryStyle } from "@/features/viewer-3d/architecture/openings";
 import { RoofAssembly } from "@/features/viewer-3d/architecture/roof-assembly";
 import { computePaths, FlowerBeds, Garden, Ground, Hedges, PathSlab } from "@/features/viewer-3d/landscape/garden";
-import { pickMaterial, useSceneMaterials, useTiledMaterial, type SceneMaterials } from "@/features/viewer-3d/scene-materials";
+import {
+  pickMaterial,
+  useSceneMaterials,
+  useTiledMaterial,
+  type SceneMaterials,
+} from "@/features/viewer-3d/scene-materials";
 import { photoForMaterial } from "@/features/viewer-3d/textures";
 import { GuardRail, StairModel, StairwellGuards } from "@/features/viewer-3d/stair-mesh";
 import { buildWallGeometry } from "@/features/viewer-3d/wall-geometry";
@@ -49,9 +54,20 @@ const BASEBOARD_HEIGHT = 0.08;
 const PLINTH_HEIGHT = 0.32;
 
 /** The whole house, generated from the plan. Shared by the 3D view and the walkthrough. */
-export const HouseModel = ({ plan, showRoof, hiddenFloorIds = [], mode, timeOfDay = "day", quality = "high", walkFloorId = null }: HouseModelProps) => {
+export const HouseModel = ({
+  plan,
+  showRoof,
+  hiddenFloorIds = [],
+  mode,
+  timeOfDay = "day",
+  quality = "high",
+  walkFloorId = null,
+}: HouseModelProps) => {
   const materials = useSceneMaterials(plan.materials, plan.settings.frameColor, quality);
-  const materialById = useMemo(() => new Map(plan.materials.map((material) => [material.id, material])), [plan.materials]);
+  const materialById = useMemo(
+    () => new Map(plan.materials.map((material) => [material.id, material])),
+    [plan.materials],
+  );
   const topIndex = plan.floors.length - 1;
   const flights = useMemo(() => buildStairFlights(plan), [plan]);
   const ground = plan.floors[0];
@@ -59,16 +75,27 @@ export const HouseModel = ({ plan, showRoof, hiddenFloorIds = [], mode, timeOfDa
   const paths = useMemo(() => (ground ? computePaths(ground, plan.lot) : []), [ground, plan.lot]);
   const isEvening = timeOfDay === "evening";
   const { settings } = plan;
-  const joinery = useMemo<JoineryStyle>(() => ({ shutters: settings.shutters, surrounds: settings.shutters, traditional: settings.shutters }), [settings.shutters]);
+  const joinery = useMemo<JoineryStyle>(
+    () => ({ shutters: settings.shutters, surrounds: settings.shutters, traditional: settings.shutters }),
+    [settings.shutters],
+  );
   const roofLibrary = settings.roofMaterialId ? materialById.get(settings.roofMaterialId) : undefined;
   return (
     <group>
       <Ground lot={plan.lot} materials={materials} quality={quality} />
       <Hedges lot={plan.lot} paths={paths} quality={quality} />
-      {groundBounds ? <Garden lot={plan.lot} houseBounds={groundBounds} paths={paths} materials={materials} quality={quality} /> : null}
+      {groundBounds ? (
+        <Garden lot={plan.lot} houseBounds={groundBounds} paths={paths} materials={materials} quality={quality} />
+      ) : null}
       {groundBounds ? <FlowerBeds lot={plan.lot} houseBounds={groundBounds} paths={paths} /> : null}
       {paths.map((path, index) => (
-        <PathSlab key={index} path={path} lot={plan.lot} material={path.isDriveway ? materials.gravel : materials.path} materials={materials} />
+        <PathSlab
+          key={index}
+          path={path}
+          lot={plan.lot}
+          material={path.isDriveway ? materials.gravel : materials.path}
+          materials={materials}
+        />
       ))}
       {plan.floors.map((floor, index) =>
         hiddenFloorIds.includes(floor.id) ? null : (
@@ -126,7 +153,21 @@ interface FloorModelProps {
   lightsEnabled: boolean;
 }
 
-const FloorModel = ({ floor, flightsFrom, flightsTo, nextFloor, base, isTop, plan, materials, materialById, joinery, mode, isEvening, lightsEnabled }: FloorModelProps) => {
+const FloorModel = ({
+  floor,
+  flightsFrom,
+  flightsTo,
+  nextFloor,
+  base,
+  isTop,
+  plan,
+  materials,
+  materialById,
+  joinery,
+  mode,
+  isEvening,
+  lightsEnabled,
+}: FloorModelProps) => {
   const segments = useMemo(() => buildWallSegments(floor), [floor]);
   const walls = useMemo(() => buildSolidSegments(segments), [segments]);
   const floorHoles = useMemo(() => flightsTo.flatMap((flight) => flight.openings), [flightsTo]);
@@ -139,7 +180,8 @@ const FloorModel = ({ floor, flightsFrom, flightsTo, nextFloor, base, isTop, pla
     <group>
       {floor.rooms.map((room) => {
         const outdoor = isOutdoorRoom(room);
-        if (room.type === "pool") return <Pool key={room.id} room={room} base={base} lot={plan.lot} materials={materials} />;
+        if (room.type === "pool")
+          return <Pool key={room.id} room={room} base={base} lot={plan.lot} materials={materials} />;
         return (
           <RoomSlabs
             key={room.id}
@@ -158,9 +200,11 @@ const FloorModel = ({ floor, flightsFrom, flightsTo, nextFloor, base, isTop, pla
           />
         );
       })}
-      {floor.rooms.filter((room) => room.type === "carport").map((room) => (
-        <Pergola key={`pergola-${room.id}`} room={room} base={base} lot={plan.lot} materials={materials} />
-      ))}
+      {floor.rooms
+        .filter((room) => room.type === "carport")
+        .map((room) => (
+          <Pergola key={`pergola-${room.id}`} room={room} base={base} lot={plan.lot} materials={materials} />
+        ))}
       {segments.map((segment) => {
         const library = segment.materialId ? materialById.get(segment.materialId) : undefined;
         const isFacadeMaterial = library?.kind === "exterior";
@@ -172,7 +216,9 @@ const FloorModel = ({ floor, flightsFrom, flightsTo, nextFloor, base, isTop, pla
             lot={plan.lot}
             indoorRooms={indoorRooms}
             material={isFacadeMaterial ? materials.wall : pickMaterial(materials, segment.materialId, materials.wall)}
-            exteriorMaterial={isFacadeMaterial ? pickMaterial(materials, segment.materialId, exteriorMaterial) : exteriorMaterial}
+            exteriorMaterial={
+              isFacadeMaterial ? pickMaterial(materials, segment.materialId, exteriorMaterial) : exteriorMaterial
+            }
             materials={materials}
             joinery={joinery}
             isEvening={isEvening}
@@ -180,10 +226,28 @@ const FloorModel = ({ floor, flightsFrom, flightsTo, nextFloor, base, isTop, pla
           />
         );
       })}
-      {!isTop && nextFloor ? <TerraceRailings floor={floor} nextFloor={nextFloor} top={base + floor.height + LEVEL_SLAB_THICKNESS - 0.02} lot={plan.lot} materials={materials} /> : null}
+      {!isTop && nextFloor ? (
+        <TerraceRailings
+          floor={floor}
+          nextFloor={nextFloor}
+          top={base + floor.height + LEVEL_SLAB_THICKNESS - 0.02}
+          lot={plan.lot}
+          materials={materials}
+        />
+      ) : null}
       {floor.furniture.map((item) => {
         if (isStairs(item.type)) {
-          return <StairModel key={item.id} item={item} flight={flightByItem.get(item.id) ?? null} walls={walls} base={base} lot={plan.lot} materials={materials} />;
+          return (
+            <StairModel
+              key={item.id}
+              item={item}
+              flight={flightByItem.get(item.id) ?? null}
+              walls={walls}
+              base={base}
+              lot={plan.lot}
+              materials={materials}
+            />
+          );
         }
         return (
           <FurnitureMesh
@@ -198,7 +262,14 @@ const FloorModel = ({ floor, flightsFrom, flightsTo, nextFloor, base, isTop, pla
         );
       })}
       {flightsTo.map((flight) => (
-        <StairwellGuards key={flight.id} flight={flight} walls={walls} top={base} lot={plan.lot} materials={materials} />
+        <StairwellGuards
+          key={flight.id}
+          flight={flight}
+          walls={walls}
+          top={base}
+          lot={plan.lot}
+          materials={materials}
+        />
       ))}
     </group>
   );
@@ -261,7 +332,12 @@ const Pergola = ({ room, base, lot, materials }: { room: Room; base: number; lot
     <group position={[x, base, z]}>
       {[-1, 1].flatMap((sx) =>
         [-1, 1].map((sz) => (
-          <mesh key={`${sx}${sz}`} position={[sx * (room.width / 2 - inset), height / 2, sz * (room.depth / 2 - inset)]} castShadow material={materials.woodBeam}>
+          <mesh
+            key={`${sx}${sz}`}
+            position={[sx * (room.width / 2 - inset), height / 2, sz * (room.depth / 2 - inset)]}
+            castShadow
+            material={materials.woodBeam}
+          >
             <boxGeometry args={[post, height, post]} />
           </mesh>
         )),
@@ -273,7 +349,12 @@ const Pergola = ({ room, base, lot, materials }: { room: Room; base: number; lot
         <boxGeometry args={[room.width, 0.2, 0.14]} />
       </mesh>
       {Array.from({ length: slats }, (_, index) => (
-        <mesh key={index} position={[-room.width / 2 + ((index + 0.5) * room.width) / slats, height + 0.26, 0]} castShadow material={materials.woodBeam}>
+        <mesh
+          key={index}
+          position={[-room.width / 2 + ((index + 0.5) * room.width) / slats, height + 0.26, 0]}
+          castShadow
+          material={materials.woodBeam}
+        >
           <boxGeometry args={[0.06, 0.12, room.depth]} />
         </mesh>
       ))}
@@ -299,8 +380,24 @@ interface RoomSlabsProps {
   isOutdoor: boolean;
 }
 
-const RoomSlabs = ({ room, base, lot, height, floorMaterial, ceilingMaterial, materials, isEvening, lightsEnabled, isOutdoor, floorHoles, ceilingHoles }: RoomSlabsProps) => {
-  const bounds = useMemo<Bounds>(() => ({ minX: room.x, minY: room.y, maxX: room.x + room.width, maxY: room.y + room.depth }), [room.x, room.y, room.width, room.depth]);
+const RoomSlabs = ({
+  room,
+  base,
+  lot,
+  height,
+  floorMaterial,
+  ceilingMaterial,
+  materials,
+  isEvening,
+  lightsEnabled,
+  isOutdoor,
+  floorHoles,
+  ceilingHoles,
+}: RoomSlabsProps) => {
+  const bounds = useMemo<Bounds>(
+    () => ({ minX: room.x, minY: room.y, maxX: room.x + room.width, maxY: room.y + room.depth }),
+    [room.x, room.y, room.width, room.depth],
+  );
   const floorPieces = useMemo(() => subtractRects(bounds, floorHoles), [bounds, floorHoles]);
   const ceilingPieces = useMemo(() => subtractRects(bounds, ceilingHoles), [bounds, ceilingHoles]);
   // The pendant and its light hang over the largest part of the room that is not a stairwell.
@@ -311,7 +408,11 @@ const RoomSlabs = ({ room, base, lot, height, floorMaterial, ceilingMaterial, ma
       return !best || area > (best.maxX - best.minX) * (best.maxY - best.minY) ? piece : best;
     }, null);
     if (!largest) return null;
-    return { x: (largest.minX + largest.maxX) / 2, y: (largest.minY + largest.maxY) / 2, area: (largest.maxX - largest.minX) * (largest.maxY - largest.minY) };
+    return {
+      x: (largest.minX + largest.maxX) / 2,
+      y: (largest.minY + largest.maxY) / 2,
+      area: (largest.maxX - largest.minX) * (largest.maxY - largest.minY),
+    };
   }, [bounds, floorHoles, ceilingHoles]);
   const isGroundDeck = isOutdoor && base < 0.01;
   const hasPendant = ceilingMaterial !== null && lampSpot !== null && lampSpot.area >= 3;
@@ -355,7 +456,15 @@ const RoomSlabs = ({ room, base, lot, height, floorMaterial, ceilingMaterial, ma
           ) : null}
         </group>
       ) : null}
-      {lightsEnabled && lampSpot ? <pointLight position={[lampX, base + height - 0.6, lampZ]} color="#ffe2c2" intensity={10} distance={9} decay={2} /> : null}
+      {lightsEnabled && lampSpot ? (
+        <pointLight
+          position={[lampX, base + height - 0.6, lampZ]}
+          color="#ffe2c2"
+          intensity={10}
+          distance={9}
+          decay={2}
+        />
+      ) : null}
     </group>
   );
 };
@@ -375,7 +484,17 @@ interface SlabPieceProps {
   castShadow?: boolean;
 }
 
-const SlabPiece = ({ piece, room, lot, bottom, thickness, material, underside, edges, castShadow = false }: SlabPieceProps) => {
+const SlabPiece = ({
+  piece,
+  room,
+  lot,
+  bottom,
+  thickness,
+  material,
+  underside,
+  edges,
+  castShadow = false,
+}: SlabPieceProps) => {
   const width = piece.maxX - piece.minX;
   const depth = piece.maxY - piece.minY;
   // Box top faces map U along +x and V towards -y: offset by the piece's corner within the room.
@@ -386,14 +505,31 @@ const SlabPiece = ({ piece, room, lot, bottom, thickness, material, underside, e
   const [x, z] = toScene({ x: (piece.minX + piece.maxX) / 2, y: (piece.minY + piece.maxY) / 2 }, lot);
   return (
     // BoxGeometry face order: +x, -x, +y, -y, +z, -z.
-    <mesh position={[x, bottom + thickness / 2, z]} receiveShadow castShadow={castShadow} material={[edges ?? top, edges ?? top, top, below, edges ?? top, edges ?? top]}>
+    <mesh
+      position={[x, bottom + thickness / 2, z]}
+      receiveShadow
+      castShadow={castShadow}
+      material={[edges ?? top, edges ?? top, top, below, edges ?? top, edges ?? top]}
+    >
       <boxGeometry args={[width, thickness, depth]} />
     </mesh>
   );
 };
 
 /** Glass railings along the edges of a floor that stay uncovered by the floor above (terraces). */
-const TerraceRailings = ({ floor, nextFloor, top, lot, materials }: { floor: Floor; nextFloor: Floor; top: number; lot: Lot; materials: SceneMaterials }) => {
+const TerraceRailings = ({
+  floor,
+  nextFloor,
+  top,
+  lot,
+  materials,
+}: {
+  floor: Floor;
+  nextFloor: Floor;
+  top: number;
+  lot: Lot;
+  materials: SceneMaterials;
+}) => {
   const rails = useMemo(() => {
     const lower = floorBounds(floor, { indoorOnly: true });
     const upper = floorBounds(nextFloor, { indoorOnly: true });
@@ -444,7 +580,18 @@ interface WallMeshProps {
   doorsOpen: boolean;
 }
 
-const WallMesh = ({ segment, base, lot, indoorRooms, material, exteriorMaterial, materials, joinery, isEvening, doorsOpen }: WallMeshProps) => {
+const WallMesh = ({
+  segment,
+  base,
+  lot,
+  indoorRooms,
+  material,
+  exteriorMaterial,
+  materials,
+  joinery,
+  isEvening,
+  doorsOpen,
+}: WallMeshProps) => {
   const geometry = useMemo(() => buildWallGeometry(segment, segment.thickness), [segment]);
   const cladding = useMemo(() => (segment.exteriorSide === 0 ? null : buildWallGeometry(segment, 0.012)), [segment]);
   useEffect(
@@ -457,20 +604,40 @@ const WallMesh = ({ segment, base, lot, indoorRooms, material, exteriorMaterial,
   const interiorSides = useMemo(() => {
     const middle = vecScale(vecAdd(segment.start, segment.end), 0.5);
     const probe = segment.thickness / 2 + 0.1;
-    return ([1, -1] as const).filter((side) => indoorRooms.some((room) => isPointInRoom(room, vecAdd(middle, vecScale(segment.normal, side * probe)))));
+    return ([1, -1] as const).filter((side) =>
+      indoorRooms.some((room) => isPointInRoom(room, vecAdd(middle, vecScale(segment.normal, side * probe)))),
+    );
   }, [indoorRooms, segment]);
-  const pieces = useMemo(() => buildSolidSegments([segment]).map((piece) => ({ from: vecLengthAlong(segment, piece.start), to: vecLengthAlong(segment, piece.end) })), [segment]);
+  const pieces = useMemo(
+    () =>
+      buildSolidSegments([segment]).map((piece) => ({
+        from: vecLengthAlong(segment, piece.start),
+        to: vecLengthAlong(segment, piece.end),
+      })),
+    [segment],
+  );
   const [x, z] = toScene(segment.start, lot);
   const angle = Math.atan2(segment.direction.y, segment.direction.x);
   const half = segment.thickness / 2;
   return (
     <group position={[x, base, z]} rotation-y={-angle}>
       <mesh geometry={geometry} material={material} castShadow receiveShadow />
-      {cladding ? <mesh geometry={cladding} material={exteriorMaterial} position-z={segment.exteriorSide * (half + 0.006)} castShadow /> : null}
+      {cladding ? (
+        <mesh
+          geometry={cladding}
+          material={exteriorMaterial}
+          position-z={segment.exteriorSide * (half + 0.006)}
+          castShadow
+        />
+      ) : null}
       {/* Baseboards on every interior face, interrupted by doors. */}
       {interiorSides.flatMap((side) =>
         pieces.map((piece, index) => (
-          <mesh key={`${side}-${index}`} position={[(piece.from + piece.to) / 2, BASEBOARD_HEIGHT / 2, side * (half + 0.008)]} material={materials.trim}>
+          <mesh
+            key={`${side}-${index}`}
+            position={[(piece.from + piece.to) / 2, BASEBOARD_HEIGHT / 2, side * (half + 0.008)]}
+            material={materials.trim}
+          >
             <boxGeometry args={[piece.to - piece.from, BASEBOARD_HEIGHT, 0.016]} />
           </mesh>
         )),
@@ -478,16 +645,39 @@ const WallMesh = ({ segment, base, lot, indoorRooms, material, exteriorMaterial,
       {/* Plinth along the ground-floor façade. */}
       {segment.exteriorSide !== 0 && base < 0.01
         ? pieces.map((piece, index) => (
-            <mesh key={`plinth-${index}`} position={[(piece.from + piece.to) / 2, PLINTH_HEIGHT / 2 - 0.02, segment.exteriorSide * (half + 0.022)]} material={materials.plinth} castShadow>
+            <mesh
+              key={`plinth-${index}`}
+              position={[(piece.from + piece.to) / 2, PLINTH_HEIGHT / 2 - 0.02, segment.exteriorSide * (half + 0.022)]}
+              material={materials.plinth}
+              castShadow
+            >
               <boxGeometry args={[piece.to - piece.from + 0.02, PLINTH_HEIGHT, 0.035]} />
             </mesh>
           ))
         : null}
       {segment.openings.map((opening) =>
         opening.kind === "door" ? (
-          <DoorUnit key={opening.id} opening={opening} thickness={segment.thickness} exteriorSide={segment.exteriorSide} materials={materials} style={joinery} facade={exteriorMaterial} isOpen={doorsOpen} />
+          <DoorUnit
+            key={opening.id}
+            opening={opening}
+            thickness={segment.thickness}
+            exteriorSide={segment.exteriorSide}
+            materials={materials}
+            style={joinery}
+            facade={exteriorMaterial}
+            isOpen={doorsOpen}
+          />
         ) : (
-          <WindowUnit key={opening.id} opening={opening} thickness={segment.thickness} exteriorSide={segment.exteriorSide} materials={materials} style={joinery} facade={exteriorMaterial} isLit={isEvening && segment.exteriorSide !== 0} />
+          <WindowUnit
+            key={opening.id}
+            opening={opening}
+            thickness={segment.thickness}
+            exteriorSide={segment.exteriorSide}
+            materials={materials}
+            style={joinery}
+            facade={exteriorMaterial}
+            isLit={isEvening && segment.exteriorSide !== 0}
+          />
         ),
       )}
     </group>

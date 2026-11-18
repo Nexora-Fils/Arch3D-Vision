@@ -7,11 +7,15 @@ import { prisma } from "@/lib/prisma";
 
 const PUBLIC_FIELDS = { id: true, name: true, email: true } as const;
 
-const isEmailTaken = (error: unknown) => error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+const isEmailTaken = (error: unknown) =>
+  error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 
 export const createAccount = async ({ name, email, password }: SignupInput): Promise<CurrentUser> => {
   try {
-    return await prisma.user.create({ data: { name, email, passwordHash: await hashPassword(password) }, select: PUBLIC_FIELDS });
+    return await prisma.user.create({
+      data: { name, email, passwordHash: await hashPassword(password) },
+      select: PUBLIC_FIELDS,
+    });
   } catch (error) {
     if (isEmailTaken(error)) throw new EmailTakenError();
     throw error;

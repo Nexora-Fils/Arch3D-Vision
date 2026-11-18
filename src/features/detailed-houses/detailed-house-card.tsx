@@ -15,7 +15,15 @@ export const DetailedHouseCard = ({ house }: { house: DetailedHouse }) => {
   return (
     <Card className="group flex flex-col overflow-hidden pt-0 transition-shadow hover:shadow-lg">
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-        {image ? <Image src={image} alt={`Rendu 3D du modèle détaillé : ${house.name}`} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" /> : null}
+        {image ? (
+          <Image
+            src={image}
+            alt={`Rendu 3D du modèle détaillé : ${house.name}`}
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          />
+        ) : null}
         <div className="absolute top-3 left-3 flex gap-1.5">
           <Badge className="bg-midnight/80 text-white backdrop-blur">Modèle détaillé</Badge>
           <Badge className="bg-amber-500/90 text-white backdrop-blur">Vue 3D seule</Badge>
@@ -30,11 +38,17 @@ export const DetailedHouseCard = ({ house }: { house: DetailedHouse }) => {
         <TemplateFacts
           facts={[
             { label: "Niveaux", value: String(house.levels) },
-            { label: "Emprise", value: `${formatMeters(house.footprint.width)} × ${formatMeters(house.footprint.depth)}` },
+            {
+              label: "Emprise",
+              value: `${formatMeters(house.footprint.width)} × ${formatMeters(house.footprint.depth)}`,
+            },
             { label: "Hauteur", value: formatMeters(house.height) },
           ]}
         />
-        <p className="text-xs text-muted-foreground">{interiorNote(house)} Non modifiable : maquette sans plan, donc sans surface habitable, chambres ni salles de bain renseignées.</p>
+        <p className="text-xs text-muted-foreground">
+          {interiorNote(house)} Non modifiable : maquette sans plan, donc sans surface habitable, chambres ni salles de
+          bain renseignées.
+        </p>
         <p className="text-xs text-muted-foreground">
           <a href={house.sourceUrl} target="_blank" rel="noreferrer" className="underline hover:text-foreground">
             « {house.sourceTitle} » par {house.author}

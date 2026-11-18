@@ -1,14 +1,4 @@
-import type {
-  Door,
-  DoorType,
-  Floor,
-  Plan,
-  Room,
-  Vec2,
-  Wall,
-  WallSide,
-  Window,
-} from "./schema";
+import type { Door, DoorType, Floor, Plan, Room, Vec2, Wall, WallSide, Window } from "./schema";
 import { WALL_SIDES } from "./schema";
 
 export const EPSILON = 1e-3;
@@ -34,14 +24,11 @@ export const vecNormalize = (a: Vec2): Vec2 => {
 /** Perpendicular (rotated +90°) vector. */
 export const vecPerp = (a: Vec2): Vec2 => ({ x: -a.y, y: a.x });
 
-export const roundTo = (value: number, step = 0.01): number =>
-  Math.round(value / step) * step;
+export const roundTo = (value: number, step = 0.01): number => Math.round(value / step) * step;
 
-export const snapToGrid = (value: number, step: number): number =>
-  step > 0 ? roundTo(value, step) : value;
+export const snapToGrid = (value: number, step: number): number => (step > 0 ? roundTo(value, step) : value);
 
-export const clamp = (value: number, min: number, max: number): number =>
-  Math.min(Math.max(value, min), max);
+export const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max);
 
 // ---------------------------------------------------------------------------
 // Areas
@@ -49,11 +36,9 @@ export const clamp = (value: number, min: number, max: number): number =>
 
 export const roomArea = (room: Room): number => room.width * room.depth;
 
-export const floorArea = (floor: Floor): number =>
-  floor.rooms.reduce((sum, room) => sum + roomArea(room), 0);
+export const floorArea = (floor: Floor): number => floor.rooms.reduce((sum, room) => sum + roomArea(room), 0);
 
-export const formatArea = (area: number): string =>
-  `${area.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} m²`;
+export const formatArea = (area: number): string => `${area.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} m²`;
 
 export const formatMeters = (value: number): string =>
   `${value.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} m`;
@@ -96,7 +81,8 @@ export const findRoomAt = (floor: Floor, point: Vec2): Room | undefined =>
   floor.rooms.find((room) => isPointInRoom(room, point));
 
 /** Terraces, balconies, pools and carports are open-air: no walls, no roof, no interior. */
-export const isOutdoorRoom = (room: Pick<Room, "type">): boolean => room.type === "terrace" || room.type === "pool" || room.type === "carport";
+export const isOutdoorRoom = (room: Pick<Room, "type">): boolean =>
+  room.type === "terrace" || room.type === "pool" || room.type === "carport";
 
 /** Counted in the habitable area (surface habitable): indoor rooms except the garage. Terraces, pools and carports are outdoor. */
 export const isHabitableRoom = (room: Pick<Room, "type">): boolean => !isOutdoorRoom(room) && room.type !== "garage";
@@ -111,11 +97,7 @@ export interface WallDefaults {
   materialId: string | null;
 }
 
-export const createRoomWalls = (
-  room: Room,
-  defaults: WallDefaults,
-  createId: () => string,
-): Wall[] => {
+export const createRoomWalls = (room: Room, defaults: WallDefaults, createId: () => string): Wall[] => {
   const sides = roomSides(room);
   return WALL_SIDES.map((side) => ({
     id: createId(),
@@ -317,7 +299,10 @@ export const buildWallSegments = (floor: Floor): WallSegment[] => {
       const end = vecAdd(group.origin, vecScale(group.direction, part.t2));
       const thickness = Math.max(...part.walls.map((wall) => wall.thickness));
       const segment: WallSegment = {
-        id: part.walls.map((wall) => wall.id).sort().join("+"),
+        id: part.walls
+          .map((wall) => wall.id)
+          .sort()
+          .join("+"),
         start,
         end,
         direction: group.direction,
@@ -396,9 +381,7 @@ export interface SolidSegment extends Segment {
 export const buildSolidSegments = (segments: WallSegment[]): SolidSegment[] => {
   const solids: SolidSegment[] = [];
   for (const segment of segments) {
-    const doors = segment.openings
-      .filter((opening) => opening.kind === "door")
-      .sort((a, b) => a.offset - b.offset);
+    const doors = segment.openings.filter((opening) => opening.kind === "door").sort((a, b) => a.offset - b.offset);
     let cursor = 0;
     const pushPiece = (from: number, to: number) => {
       if (to - from < EPSILON) return;
@@ -421,12 +404,7 @@ export const buildSolidSegments = (segments: WallSegment[]): SolidSegment[] => {
  * Pushes a circle of the given radius out of every solid wall piece. Several
  * passes let the visitor slide along walls and through corners.
  */
-export const resolveCollisions = (
-  position: Vec2,
-  solids: SolidSegment[],
-  radius: number,
-  passes = 3,
-): Vec2 => {
+export const resolveCollisions = (position: Vec2, solids: SolidSegment[], radius: number, passes = 3): Vec2 => {
   let resolved = position;
   for (let pass = 0; pass < passes; pass += 1) {
     for (const solid of solids) {
@@ -502,7 +480,9 @@ const isRoomCoveredBy = (room: Room, coveringRooms: Room[]): boolean => {
   }
 
   const uniqueSorted = (coordinates: number[]) =>
-    coordinates.sort((a, b) => a - b).filter((value, index, values) => index === 0 || Math.abs(value - values[index - 1]) > EPSILON);
+    coordinates
+      .sort((a, b) => a - b)
+      .filter((value, index, values) => index === 0 || Math.abs(value - values[index - 1]) > EPSILON);
   const xs = uniqueSorted(xCoordinates);
   const ys = uniqueSorted(yCoordinates);
 

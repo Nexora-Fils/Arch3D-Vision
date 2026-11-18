@@ -73,7 +73,9 @@ export const GridLayer = ({ lot, scale, showGrid, viewport, grassImage }: GridLa
         shadowBlur={18 * pixel}
         shadowOpacity={0.25}
       />
-      {grassImage ? <Rect x={0} y={0} width={lot.width} height={lot.depth} fill="#4f8a32" opacity={0.28} listening={false} /> : null}
+      {grassImage ? (
+        <Rect x={0} y={0} width={lot.width} height={lot.depth} fill="#4f8a32" opacity={0.28} listening={false} />
+      ) : null}
       {showGrid ? (
         <Shape
           listening={false}
@@ -83,7 +85,15 @@ export const GridLayer = ({ lot, scale, showGrid, viewport, grassImage }: GridLa
           }}
         />
       ) : null}
-      <Text x={0.15} y={-0.5} text={`Terrain ${lot.width} × ${lot.depth} m`} fontSize={0.3} fontFamily="system-ui, sans-serif" fill="#475569" listening={false} />
+      <Text
+        x={0.15}
+        y={-0.5}
+        text={`Terrain ${lot.width} × ${lot.depth} m`}
+        fontSize={0.3}
+        fontFamily="system-ui, sans-serif"
+        fill="#475569"
+        listening={false}
+      />
     </>
   );
 };

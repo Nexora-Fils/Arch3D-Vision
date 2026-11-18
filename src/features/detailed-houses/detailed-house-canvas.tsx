@@ -28,7 +28,12 @@ export const DetailedHouseCanvas = ({ house }: { house: DetailedHouse }) => {
     <Canvas
       shadows="percentage"
       dpr={quality === "high" ? [1, 2] : [1, 1.25]}
-      camera={{ position: [distance * 0.82, Math.max(3, house.height * 0.55 + distance * 0.18), distance * 0.8], fov: 42, near: 0.1, far: 1000 }}
+      camera={{
+        position: [distance * 0.82, Math.max(3, house.height * 0.55 + distance * 0.18), distance * 0.8],
+        fov: 42,
+        near: 0.1,
+        far: 1000,
+      }}
       gl={{ antialias: quality !== "high", preserveDrawingBuffer: true, powerPreference: "high-performance" }}
     >
       <SceneEnvironment timeOfDay={timeOfDay} quality={quality} shadowSize={span} />
@@ -36,7 +41,15 @@ export const DetailedHouseCanvas = ({ house }: { house: DetailedHouse }) => {
         <Surroundings house={house} quality={quality} />
         <DetailedModel house={house} />
       </Suspense>
-      <OrbitControls makeDefault target={[0, house.height * 0.35, 0]} enableDamping dampingFactor={0.08} maxPolarAngle={Math.PI / 2 - 0.03} minDistance={4} maxDistance={140} />
+      <OrbitControls
+        makeDefault
+        target={[0, house.height * 0.35, 0]}
+        enableDamping
+        dampingFactor={0.08}
+        maxPolarAngle={Math.PI / 2 - 0.03}
+        minDistance={4}
+        maxDistance={140}
+      />
       {quality === "high" ? <SceneEffects /> : null}
     </Canvas>
   );
@@ -44,7 +57,10 @@ export const DetailedHouseCanvas = ({ house }: { house: DetailedHouse }) => {
 
 const Surroundings = ({ house, quality }: { house: DetailedHouse; quality: "low" | "high" }) => {
   const materials = useSceneMaterials([], "#2b2f36", quality);
-  const lot = useMemo(() => ({ width: house.footprint.width + LAWN_MARGIN * 2, depth: house.footprint.depth + LAWN_MARGIN * 2 }), [house.footprint]);
+  const lot = useMemo(
+    () => ({ width: house.footprint.width + LAWN_MARGIN * 2, depth: house.footprint.depth + LAWN_MARGIN * 2 }),
+    [house.footprint],
+  );
   return <Ground lot={lot} materials={materials} quality={quality} />;
 };
 

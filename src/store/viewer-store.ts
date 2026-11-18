@@ -58,7 +58,9 @@ export const useViewerStore = create<ViewerState>()((set) => ({
   toggleAutoRotate: () => set((state) => ({ autoRotate: !state.autoRotate })),
   setFloorVisible: (floorId, visible) =>
     set((state) => ({
-      hiddenFloorIds: visible ? state.hiddenFloorIds.filter((id) => id !== floorId) : [...new Set([...state.hiddenFloorIds, floorId])],
+      hiddenFloorIds: visible
+        ? state.hiddenFloorIds.filter((id) => id !== floorId)
+        : [...new Set([...state.hiddenFloorIds, floorId])],
     })),
   requestCamera: (cameraPreset) => set((state) => ({ cameraPreset, cameraRequest: state.cameraRequest + 1 })),
   setWalkFloor: (walkFloorId) => set({ walkFloorId }),

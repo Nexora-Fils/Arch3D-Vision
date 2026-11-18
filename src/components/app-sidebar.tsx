@@ -58,14 +58,20 @@ export const AppSidebar = ({ profile, isProfilePending = false }: AppSidebarProp
               key={href}
               href={href}
               aria-current={isActive(href) ? "page" : undefined}
-              className={cn("flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white", isActive(href) && "bg-electric text-white hover:bg-electric")}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white",
+                isActive(href) && "bg-electric text-white hover:bg-electric",
+              )}
             >
               <Icon className="size-4" aria-hidden />
               {label}
             </Link>
           ))}
         </nav>
-        <Link href={account.href} className="mt-auto flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">
+        <Link
+          href={account.href}
+          className="mt-auto flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10"
+        >
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-electric text-sm font-semibold">
             {profile ? profile.initials : <UserRound className="size-4" aria-hidden />}
           </span>
@@ -79,9 +85,20 @@ export const AppSidebar = ({ profile, isProfilePending = false }: AppSidebarProp
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between bg-[#0d1830] px-4 text-white md:hidden">
         <BrandLogo inverted href="/dashboard" />
       </header>
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Navigation mobile">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
+        aria-label="Navigation mobile"
+      >
         {NAV_ITEMS.map(({ href, mobileLabel, icon: Icon }) => (
-          <Link key={href} href={href} aria-current={isActive(href) ? "page" : undefined} className={cn("flex flex-col items-center gap-0.5 py-2 text-[11px] text-muted-foreground", isActive(href) && "text-electric")}>
+          <Link
+            key={href}
+            href={href}
+            aria-current={isActive(href) ? "page" : undefined}
+            className={cn(
+              "flex flex-col items-center gap-0.5 py-2 text-[11px] text-muted-foreground",
+              isActive(href) && "text-electric",
+            )}
+          >
             <Icon className="size-5" aria-hidden />
             {mobileLabel}
           </Link>

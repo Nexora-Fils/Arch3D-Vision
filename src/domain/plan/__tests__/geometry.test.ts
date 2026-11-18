@@ -86,13 +86,9 @@ describe("rooms", () => {
   });
 
   it("calculates indoor bounds without including outdoor rooms", () => {
-    const floor = floorWith(
-      [
-        room("indoor", 1, 2, 4, 3),
-        { ...room("terrace", 8, 9, 6, 5), type: "terrace" },
-      ],
-      { walls: [] },
-    );
+    const floor = floorWith([room("indoor", 1, 2, 4, 3), { ...room("terrace", 8, 9, 6, 5), type: "terrace" }], {
+      walls: [],
+    });
     expect(indoorBounds(floor)).toEqual({ minX: 1, minY: 2, maxX: 5, maxY: 5 });
   });
 });
@@ -116,7 +112,15 @@ describe("buildWallSegments", () => {
     const floor = floorWith([room("a", 0, 0, 4, 4), room("b", 4, 0, 4, 4)]);
     const sharedWall = floor.walls.find((wall) => wall.roomId === "a" && wall.side === "east");
     if (!sharedWall) throw new Error("missing wall");
-    floor.doors.push({ id: "door", wallId: sharedWall.id, offset: 1, width: 0.9, height: 2.1, type: "standard", swing: "left" });
+    floor.doors.push({
+      id: "door",
+      wallId: sharedWall.id,
+      offset: 1,
+      width: 0.9,
+      height: 2.1,
+      type: "standard",
+      swing: "left",
+    });
     const segments = buildWallSegments(floor);
     const segment = segments.find((candidate) => candidate.sourceWallIds.includes(sharedWall.id));
     expect(segment?.openings).toHaveLength(1);

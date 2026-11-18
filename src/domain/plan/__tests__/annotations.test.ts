@@ -20,7 +20,9 @@ describe("annotations", () => {
 
   it("gets fresh ids when a plan is cloned", () => {
     const plan = buildDemoPlan();
-    plan.floors[0].annotations = [{ id: "note-1", kind: "text", start: { x: 1, y: 1 }, end: { x: 1, y: 1 }, text: "Jardin" }];
+    plan.floors[0].annotations = [
+      { id: "note-1", kind: "text", start: { x: 1, y: 1 }, end: { x: 1, y: 1 }, text: "Jardin" },
+    ];
     const copy = clonePlan(plan, { name: "Copie" });
     expect(copy.floors[0].annotations).toHaveLength(1);
     expect(copy.floors[0].annotations[0].id).not.toBe("note-1");

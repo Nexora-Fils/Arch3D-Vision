@@ -7,12 +7,19 @@ describe("safeNextPath", () => {
     expect(safeNextPath("/settings?tab=1#mon-compte")).toBe("/settings?tab=1#mon-compte");
   });
 
-  it.each([null, undefined, "", "dashboard", "https://evil.example/", "//evil.example", "/\\evil.example", "/\t/evil.example", "javascript:alert(1)"])(
-    "falls back to the dashboard for %j",
-    (value) => {
-      expect(safeNextPath(value)).toBe("/dashboard");
-    },
-  );
+  it.each([
+    null,
+    undefined,
+    "",
+    "dashboard",
+    "https://evil.example/",
+    "//evil.example",
+    "/\\evil.example",
+    "/\t/evil.example",
+    "javascript:alert(1)",
+  ])("falls back to the dashboard for %j", (value) => {
+    expect(safeNextPath(value)).toBe("/dashboard");
+  });
 });
 
 describe("loginPath", () => {

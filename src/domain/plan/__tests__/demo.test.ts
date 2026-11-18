@@ -9,10 +9,18 @@ describe("demo project", () => {
   it("matches the announced areas: 300 m² lot, 108 + 84 m² of indoor rooms", () => {
     expect(plan.lot.width * plan.lot.depth).toBe(300);
     expect(plan.floors).toHaveLength(2);
-    const indoor = (index: number) => ({ ...plan.floors[index], rooms: plan.floors[index].rooms.filter((room) => !isOutdoorRoom(room)) });
+    const indoor = (index: number) => ({
+      ...plan.floors[index],
+      rooms: plan.floors[index].rooms.filter((room) => !isOutdoorRoom(room)),
+    });
     expect(floorArea(indoor(0))).toBeCloseTo(108, 6);
     expect(floorArea(indoor(1))).toBeCloseTo(84, 6);
-    expect(plan.floors.flatMap((floor) => floor.rooms).filter(isOutdoorRoom).map((room) => room.name)).toEqual(["Carport", "Terrasse", "Piscine", "Balcon"]);
+    expect(
+      plan.floors
+        .flatMap((floor) => floor.rooms)
+        .filter(isOutdoorRoom)
+        .map((room) => room.name),
+    ).toEqual(["Carport", "Terrasse", "Piscine", "Balcon"]);
   });
 
   it("contains the required rooms", () => {
