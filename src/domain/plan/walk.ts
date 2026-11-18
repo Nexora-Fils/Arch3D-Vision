@@ -1,16 +1,15 @@
 import { floorBaseHeight, vecAdd, vecScale } from "./geometry";
 import { buildSolidSegments, buildWallSegments, resolveCollisions, type SolidSegment } from "./wall-segments";
 import type { Plan, Vec2 } from "./schema";
+import { buildStairFlights, type StairFlight } from "./stairs";
 import {
-  buildStairFlights,
   isOnStair,
   locateOnStair,
   lowerStairSolids,
   stairElevation,
   stairSideSolids,
   upperStairSolids,
-  type StairFlight,
-} from "./stairs";
+} from "./stair-walk";
 
 /** Everything the walkthrough needs to move a visitor across levels. */
 export interface WalkWorld {

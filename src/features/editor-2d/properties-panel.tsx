@@ -31,14 +31,8 @@ import {
   ROOM_TYPE_LABELS,
   WALL_SIDE_LABELS,
 } from "@/domain/plan/labels";
-import {
-  buildStairShape,
-  checkStairs,
-  doorBlockedByStair,
-  isStairs,
-  STAIR_TYPES,
-  type StairType,
-} from "@/domain/plan/stairs";
+import { buildStairShape, isStairs, STAIR_TYPES, type StairType } from "@/domain/plan/stairs";
+import { checkStairs, doorBlockedByStair } from "@/domain/plan/stair-checks";
 import { formatDimension } from "@/features/editor-2d/canvas/annotation-shape";
 import {
   type Annotation,

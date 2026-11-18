@@ -6,14 +6,13 @@ import type { SolidSegment } from "@/domain/plan/wall-segments";
 import type { Furniture, Lot, Vec2 } from "@/domain/plan/schema";
 import {
   buildStairShape,
-  distanceToWalls,
-  edgeElevation,
   type LocalVec,
   type StairEdge,
   type StairFlight,
   type StairPiece,
   type StairShape,
 } from "@/domain/plan/stairs";
+import { distanceToWalls, edgeElevation } from "@/domain/plan/stair-walk";
 import { useMergedBoxes, type BoxPart } from "@/features/viewer-3d/architecture/merged-boxes";
 import { AlongSegment, MetricBox } from "@/features/viewer-3d/architecture/parts";
 import { toScene } from "@/features/viewer-3d/convert";

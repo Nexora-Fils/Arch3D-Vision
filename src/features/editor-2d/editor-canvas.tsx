@@ -9,7 +9,8 @@ import { findWallAt, floorBelow, indoorBounds, pointAlongWall, snapToGrid } from
 import { FURNITURE_PRESETS, ROOM_TYPE_LABELS } from "@/domain/plan/labels";
 import type { Floor, Vec2 } from "@/domain/plan/schema";
 import { Minus, Plus } from "lucide-react";
-import { buildStairFlights, isStairs, stairIssues } from "@/domain/plan/stairs";
+import { buildStairFlights, isStairs } from "@/domain/plan/stairs";
+import { stairIssues } from "@/domain/plan/stair-checks";
 import { AnnotationShape, DimensionLine } from "@/features/editor-2d/canvas/annotation-shape";
 import { StairwellOutline } from "@/features/editor-2d/canvas/stairwell-outline";
 import { DraftRoom, DraftWall, WallHoverMarker } from "@/features/editor-2d/canvas/draft-shapes";
