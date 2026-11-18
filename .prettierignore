@@ -1,0 +1,2 @@
+# Prettier also skips the paths listed in .gitignore.
+pnpm-lock.yaml
