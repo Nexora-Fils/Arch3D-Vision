@@ -6,15 +6,12 @@ import { FURNITURE_PRESETS } from "../labels";
 import {
   buildStairFlights,
   buildStairShape,
-  checkStairs,
-  DOOR_STAIR_PASSAGE_DEPTH,
-  doorBlockedByStairShape,
   STAIR_TYPES,
-  stairIssues,
   subtractRect,
   subtractRects,
   type StairType,
 } from "../stairs";
+import { checkStairs, DOOR_STAIR_PASSAGE_DEPTH, doorBlockedByStairShape, stairIssues } from "../stair-checks";
 import { HOUSE_TEMPLATES, buildPlanFromSpec } from "../templates";
 import {
   createWalkWorld,

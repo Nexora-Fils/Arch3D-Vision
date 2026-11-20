@@ -1,5 +1,5 @@
 import { ExtrudeGeometry, Path, Shape } from "three";
-import type { WallSegment } from "@/domain/plan/geometry";
+import type { WallSegment } from "@/domain/plan/wall-segments";
 
 /**
  * Extrudes a wall segment: a rectangle (length × height) with one hole per

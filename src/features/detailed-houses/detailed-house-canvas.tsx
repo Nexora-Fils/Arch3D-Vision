@@ -5,7 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo } from "react";
 import { Box3, Mesh, MeshBasicMaterial, MeshStandardMaterial, Vector3 } from "three";
 import type { DetailedHouse } from "@/features/detailed-houses/catalog";
-import { Ground } from "@/features/viewer-3d/landscape/garden";
+import { Ground } from "@/features/viewer-3d/landscape/ground";
 import { SceneEffects } from "@/features/viewer-3d/scene-effects";
 import { SceneEnvironment } from "@/features/viewer-3d/scene-environment";
 import { useSceneMaterials } from "@/features/viewer-3d/scene-materials";

@@ -1,18 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildSolidSegments,
-  buildWallSegments,
   clampOpeningOffset,
   createRoomWalls,
   floorBelow,
   findRoomAt,
   findWallAt,
   indoorBounds,
-  resolveCollisions,
   roomsOutsideFloorFootprint,
   roomArea,
   syncRoomWalls,
 } from "../geometry";
+import { buildSolidSegments, buildWallSegments, resolveCollisions } from "../wall-segments";
 import type { Floor, Room } from "../schema";
 
 const room = (id: string, x: number, y: number, width: number, depth: number): Room => ({

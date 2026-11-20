@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildWallSegments, floorArea, habitableArea, isOutdoorRoom, wallLength } from "../geometry";
+import { floorArea, habitableArea, isOutdoorRoom, wallLength } from "../geometry";
+import { buildWallSegments } from "../wall-segments";
 import { planSchema } from "../schema";
 import { HOUSE_TEMPLATES, buildPlanFromSpec } from "../templates";
 
